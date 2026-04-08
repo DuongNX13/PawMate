@@ -1,0 +1,793 @@
+openapi: 3.0.3
+info:
+  title: PawMate Phase 1 API
+  version: 1.0.0
+  description: Phase 1 contract for auth, pets, vets, reviews, health records, reminders, and notifications.
+servers:
+  - url: http://localhost:3000
+  - url: https://api.pawmate.example
+tags:
+  - name: Health
+  - name: Auth
+  - name: Pets
+  - name: Vets
+  - name: Reviews
+  - name: HealthRecords
+  - name: Reminders
+  - name: Notifications
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Service health check
+      security: []
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authenticated session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate a refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Refreshed session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+
+  /auth/oauth:
+    post:
+      tags: [Auth]
+      summary: Sign in with Google or Apple
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuthRequest'
+      responses:
+        '200':
+          description: Authenticated session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '500': { $ref: '#/components/responses/Error' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the active session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Logged out
+        '401': { $ref: '#/components/responses/Error' }
+
+  /pets:
+    get:
+      tags: [Pets]
+      summary: List current user's pets
+      responses:
+        '200':
+          description: Pet list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetList'
+    post:
+      tags: [Pets]
+      summary: Create a pet profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetCreateRequest'
+      responses:
+        '201':
+          description: Pet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetItem'
+
+  /pets/{petId}:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+    get:
+      tags: [Pets]
+      summary: Get a pet profile
+      responses:
+        '200':
+          description: Pet profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetItem'
+    put:
+      tags: [Pets]
+      summary: Update a pet profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetUpdateRequest'
+      responses:
+        '200':
+          description: Updated pet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetItem'
+    delete:
+      tags: [Pets]
+      summary: Soft delete a pet profile
+      responses:
+        '204':
+          description: Pet removed
+
+  /vets/nearby:
+    get:
+      tags: [Vets]
+      summary: Search nearby clinics
+      parameters:
+        - in: query
+          name: lat
+          schema: { type: number, format: float }
+        - in: query
+          name: lng
+          schema: { type: number, format: float }
+        - in: query
+          name: radiusKm
+          schema: { type: integer, default: 5, minimum: 1, maximum: 50 }
+        - in: query
+          name: openNow
+          schema: { type: boolean }
+        - in: query
+          name: emergency24h
+          schema: { type: boolean }
+        - in: query
+          name: minRating
+          schema: { type: number, format: float, minimum: 0, maximum: 5 }
+      responses:
+        '200':
+          description: Nearby clinics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VetList'
+
+  /vets/search:
+    get:
+      tags: [Vets]
+      summary: Search clinics by text and filters
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: service
+          schema: { type: string }
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VetList'
+
+  /vets/{vetId}:
+    parameters:
+      - $ref: '#/components/parameters/VetId'
+    get:
+      tags: [Vets]
+      summary: Get clinic detail
+      responses:
+        '200':
+          description: Clinic detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VetItem'
+
+  /vets/{vetId}/reviews:
+    parameters:
+      - $ref: '#/components/parameters/VetId'
+    get:
+      tags: [Reviews]
+      summary: List reviews for a clinic
+      responses:
+        '200':
+          description: Review list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewList'
+    post:
+      tags: [Reviews]
+      summary: Create a clinic review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpsert'
+      responses:
+        '201':
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewItem'
+
+  /pets/{petId}/health-records:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+    get:
+      tags: [HealthRecords]
+      summary: List health records for a pet
+      responses:
+        '200':
+          description: Health record list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecordList'
+    post:
+      tags: [HealthRecords]
+      summary: Create a health record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthRecordUpsert'
+      responses:
+        '201':
+          description: Health record created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecordItem'
+
+  /pets/{petId}/health-records/{recordId}:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+      - $ref: '#/components/parameters/RecordId'
+    get:
+      tags: [HealthRecords]
+      summary: Get a health record
+      responses:
+        '200':
+          description: Health record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecordItem'
+    put:
+      tags: [HealthRecords]
+      summary: Update a health record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HealthRecordUpsert'
+      responses:
+        '200':
+          description: Updated health record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthRecordItem'
+    delete:
+      tags: [HealthRecords]
+      summary: Delete a health record
+      responses:
+        '204':
+          description: Health record removed
+
+  /pets/{petId}/reminders:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+    get:
+      tags: [Reminders]
+      summary: List reminders for a pet
+      responses:
+        '200':
+          description: Reminder list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderList'
+    post:
+      tags: [Reminders]
+      summary: Create a reminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderUpsert'
+      responses:
+        '201':
+          description: Reminder created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderItem'
+
+  /pets/{petId}/reminders/{reminderId}:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+      - $ref: '#/components/parameters/ReminderId'
+    get:
+      tags: [Reminders]
+      summary: Get a reminder
+      responses:
+        '200':
+          description: Reminder
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderItem'
+    put:
+      tags: [Reminders]
+      summary: Update a reminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderUpsert'
+      responses:
+        '200':
+          description: Updated reminder
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderItem'
+    delete:
+      tags: [Reminders]
+      summary: Delete a reminder
+      responses:
+        '204':
+          description: Reminder removed
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: List notifications for the current user
+      responses:
+        '200':
+          description: Notification list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+
+  /notifications/{notificationId}:
+    parameters:
+      - $ref: '#/components/parameters/NotificationId'
+    patch:
+      tags: [Notifications]
+      summary: Mark a notification as read
+      responses:
+        '200':
+          description: Updated notification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationItem'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    PetId:
+      in: path
+      name: petId
+      required: true
+      schema: { type: string, format: uuid }
+    VetId:
+      in: path
+      name: vetId
+      required: true
+      schema: { type: string, format: uuid }
+    RecordId:
+      in: path
+      name: recordId
+      required: true
+      schema: { type: string, format: uuid }
+    ReminderId:
+      in: path
+      name: reminderId
+      required: true
+      schema: { type: string, format: uuid }
+    NotificationId:
+      in: path
+      name: notificationId
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    HealthCheck:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, example: ok }
+    Error:
+      type: object
+      required: [success, error, requestId]
+      properties:
+        success: { type: boolean, example: false }
+        requestId: { type: string }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, example: AUTH_001 }
+            message: { type: string }
+            field: { type: string, nullable: true }
+    Meta:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+    User:
+      type: object
+      required: [id, email]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string, nullable: true }
+        avatarUrl: { type: string, format: uri, nullable: true }
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        displayName: { type: string, nullable: true }
+    RegisterResponse:
+      type: object
+      required: [userId, message]
+      properties:
+        userId: { type: string, format: uuid }
+        message: { type: string, example: Check your email }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+    OAuthRequest:
+      type: object
+      required: [provider, credential]
+      properties:
+        provider: { type: string, enum: [google, apple] }
+        credential: { type: string }
+        redirectUri: { type: string, format: uri, nullable: true }
+        displayName: { type: string, nullable: true }
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+    AuthSession:
+      type: object
+      required: [accessToken, refreshToken, user]
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        tokenType: { type: string, example: Bearer }
+        expiresIn: { type: integer, example: 900 }
+        user: { $ref: '#/components/schemas/User' }
+    Pet:
+      type: object
+      required: [id, userId, name, species, gender]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        name: { type: string }
+        species: { type: string, enum: [dog, cat, bird, rabbit, other] }
+        breed: { type: string, nullable: true }
+        gender: { type: string, enum: [male, female, unknown] }
+        dob: { type: string, format: date, nullable: true }
+        weightKg: { type: number, format: float, nullable: true }
+        color: { type: string, nullable: true }
+        microchipNumber: { type: string, nullable: true }
+        isNeutered: { type: boolean }
+        avatarUrl: { type: string, format: uri, nullable: true }
+        healthStatus: { type: string, enum: [healthy, monitoring, chronic, recovery, unknown] }
+    PetCreateRequest:
+      type: object
+      required: [name, species, gender]
+      properties:
+        name: { type: string }
+        species: { type: string, enum: [dog, cat, bird, rabbit, other] }
+        breed: { type: string, nullable: true }
+        gender: { type: string, enum: [male, female, unknown] }
+        dob: { type: string, format: date, nullable: true }
+        weightKg: { type: number, format: float, nullable: true }
+        color: { type: string, nullable: true }
+        microchipNumber: { type: string, nullable: true }
+        isNeutered: { type: boolean, default: false }
+        avatarUrl: { type: string, format: uri, nullable: true }
+        healthStatus: { type: string, enum: [healthy, monitoring, chronic, recovery, unknown] }
+    PetUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/PetCreateRequest'
+    PetItem:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Pet' }
+    PetList:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Pet' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Vet:
+      type: object
+      required: [id, name, address, distanceKm]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        phone: { type: string, nullable: true }
+        email: { type: string, format: email, nullable: true }
+        address: { type: string }
+        distanceKm: { type: number, format: float }
+        rating: { type: number, format: float, nullable: true }
+        reviewCount: { type: integer }
+        is24h: { type: boolean }
+        openNow: { type: boolean }
+        services:
+          type: array
+          items: { type: string }
+    VetItem:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/Vet'
+            - type: object
+              properties:
+                latitude: { type: number, format: float }
+                longitude: { type: number, format: float }
+                hours: { type: object, additionalProperties: true }
+                reviewSummary: { type: object, additionalProperties: true }
+    VetList:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Vet' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Review:
+      type: object
+      required: [id, vetId, userId, rating, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        vetId: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        isAnonymous: { type: boolean }
+        createdAt: { type: string, format: date-time }
+    ReviewUpsert:
+      type: object
+      required: [rating]
+      properties:
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        title: { type: string, nullable: true }
+        body: { type: string, nullable: true }
+        isAnonymous: { type: boolean, default: false }
+    ReviewItem:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Review' }
+    ReviewList:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Review' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    HealthRecord:
+      type: object
+      required: [id, petId, recordType, recordDate, notes]
+      properties:
+        id: { type: string, format: uuid }
+        petId: { type: string, format: uuid }
+        recordType: { type: string, enum: [vaccination, checkup, medication, allergy, note] }
+        recordDate: { type: string, format: date }
+        notes: { type: string }
+        attachments:
+          type: array
+          items: { type: string, format: uri }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    HealthRecordUpsert:
+      type: object
+      required: [recordType, recordDate, notes]
+      properties:
+        recordType: { type: string, enum: [vaccination, checkup, medication, allergy, note] }
+        recordDate: { type: string, format: date }
+        notes: { type: string }
+        attachments:
+          type: array
+          items: { type: string, format: uri }
+    HealthRecordItem:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/HealthRecord' }
+    HealthRecordList:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/HealthRecord' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Reminder:
+      type: object
+      required: [id, petId, title, reminderAt, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        petId: { type: string, format: uuid }
+        title: { type: string }
+        reminderAt: { type: string, format: date-time }
+        repeatRule: { type: string, nullable: true }
+        status: { type: string, enum: [active, paused, completed, cancelled] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ReminderUpsert:
+      type: object
+      required: [title, reminderAt]
+      properties:
+        title: { type: string }
+        reminderAt: { type: string, format: date-time }
+        repeatRule: { type: string, nullable: true }
+        status: { type: string, enum: [active, paused, completed, cancelled] }
+    ReminderItem:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Reminder' }
+    ReminderList:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Reminder' }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Notification:
+      type: object
+      required: [id, userId, type, title, body, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        petId: { type: string, format: uuid, nullable: true }
+        reminderId: { type: string, format: uuid, nullable: true }
+        type: { type: string, enum: [reminder, record, system, vet] }
+        title: { type: string }
+        body: { type: string }
+        readAt: { type: string, format: date-time, nullable: true }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+    NotificationItem:
+      type: object
+      required: [data]
+      properties:
+        data: { $ref: '#/components/schemas/Notification' }
+    NotificationList:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/Notification' }
+        meta: { $ref: '#/components/schemas/Meta' }

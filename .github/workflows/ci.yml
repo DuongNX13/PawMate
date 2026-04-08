@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  backend-lint-test:
+    name: Backend lint + test + prisma scaffold
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+        if: ${{ hashFiles('backend/package-lock.json') != '' }}
+
+      - name: Verify backend scaffold exists
+        run: |
+          test -d .
+          echo "backend directory present"
+
+      - name: Install backend deps
+        if: ${{ hashFiles('backend/package.json') != '' }}
+        run: npm ci
+
+      - name: Lint backend
+        if: ${{ hashFiles('backend/package.json') != '' }}
+        run: npm run lint --if-present
+
+      - name: Test backend
+        if: ${{ hashFiles('backend/package.json') != '' }}
+        run: npm test --if-present
+
+      - name: Validate Prisma schema
+        if: ${{ hashFiles('backend/prisma/schema.prisma') != '' }}
+        run: npm run prisma:validate --if-present
+
+      - name: Backend scaffold note
+        if: ${{ hashFiles('backend/package.json') == '' }}
+        run: echo "backend/package.json not present yet; scaffold-only CI lane passes with note"
+
+  mobile-analyze-test-build:
+    name: Mobile analyze + test + debug build scaffold
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        if: ${{ hashFiles('mobile/pubspec.yaml') != '' }}
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Verify mobile scaffold exists
+        run: |
+          test -d .
+          echo "mobile directory present"
+
+      - name: Flutter pub get
+        if: ${{ hashFiles('mobile/pubspec.yaml') != '' }}
+        run: flutter pub get
+
+      - name: Dart analyze
+        if: ${{ hashFiles('mobile/pubspec.yaml') != '' }}
+        run: dart analyze
+
+      - name: Flutter test
+        if: ${{ hashFiles('mobile/pubspec.yaml') != '' }}
+        run: flutter test
+
+      - name: Flutter debug build check
+        if: ${{ hashFiles('mobile/pubspec.yaml') != '' }}
+        run: flutter build apk --debug
+
+      - name: Mobile scaffold note
+        if: ${{ hashFiles('mobile/pubspec.yaml') == '' }}
+        run: echo "mobile/pubspec.yaml not present yet; scaffold-only CI lane passes with note"

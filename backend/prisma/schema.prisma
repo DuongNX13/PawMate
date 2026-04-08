@@ -1,0 +1,214 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  email
+  google
+  apple
+}
+
+enum PetSpecies {
+  dog
+  cat
+  bird
+  rabbit
+  other
+}
+
+enum PetGender {
+  male
+  female
+  unknown
+}
+
+enum HealthRecordType {
+  vaccination
+  checkup
+  medication
+  allergy
+  note
+}
+
+enum ReminderStatus {
+  scheduled
+  sent
+  cancelled
+}
+
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  email         String         @unique
+  passwordHash  String?        @map("password_hash")
+  displayName   String?        @map("display_name")
+  phone         String?
+  avatarUrl     String?        @map("avatar_url")
+  authProvider  AuthProvider   @default(email) @map("auth_provider")
+  emailVerified Boolean        @default(false) @map("email_verified")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+  sessions      Session[]
+  pets          Pet[]
+  reviews       Review[]
+  notifications Notification[]
+  healthRecords HealthRecord[] @relation("HealthRecordCreatedBy")
+  reminders     Reminder[]     @relation("ReminderCreatedBy")
+
+  @@map("users")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  deviceId         String?   @map("device_id")
+  userAgent        String?   @map("user_agent")
+  ipAddress        String?   @map("ip_address")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@map("sessions")
+}
+
+model Pet {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String         @map("user_id") @db.Uuid
+  name            String
+  species         PetSpecies
+  breed           String?
+  gender          PetGender      @default(unknown)
+  dob             DateTime?      @db.Date
+  weightKg        Decimal?       @map("weight_kg") @db.Decimal(5, 2)
+  color           String?
+  microchipNumber String?        @unique @map("microchip_number")
+  isNeutered      Boolean        @default(false) @map("is_neutered")
+  avatarUrl       String?        @map("avatar_url")
+  healthStatus    String?        @map("health_status")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  healthRecords   HealthRecord[]
+  reminders       Reminder[]
+  notifications   Notification[]
+
+  @@index([userId, deletedAt])
+  @@map("pets")
+}
+
+model Vet {
+  id            String                               @id @default(uuid()) @db.Uuid
+  name          String
+  phone         String?
+  email         String?
+  address       String
+  ward          String?
+  district      String?
+  city          String?
+  location      Unsupported("geography(Point,4326)")
+  openingHours  Json?                                @map("opening_hours")
+  is24h         Boolean                              @default(false) @map("is_24h")
+  averageRating Decimal?                             @map("average_rating") @db.Decimal(3, 2)
+  reviewCount   Int                                  @default(0) @map("review_count")
+  createdAt     DateTime                             @default(now()) @map("created_at")
+  updatedAt     DateTime                             @updatedAt @map("updated_at")
+  services      VetService[]
+  reviews       Review[]
+
+  @@index([is24h, averageRating])
+  @@map("vets")
+}
+
+model VetService {
+  id          String   @id @default(uuid()) @db.Uuid
+  vetId       String   @map("vet_id") @db.Uuid
+  serviceName String   @map("service_name")
+  isEmergency Boolean  @default(false) @map("is_emergency")
+  createdAt   DateTime @default(now()) @map("created_at")
+  vet         Vet      @relation(fields: [vetId], references: [id], onDelete: Cascade)
+
+  @@index([vetId, serviceName])
+  @@map("vet_services")
+}
+
+model Review {
+  id          String   @id @default(uuid()) @db.Uuid
+  vetId       String   @map("vet_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  rating      Int
+  title       String?
+  body        String?
+  isAnonymous Boolean  @default(false) @map("is_anonymous")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  vet         Vet      @relation(fields: [vetId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([vetId, userId])
+  @@index([vetId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("reviews")
+}
+
+model HealthRecord {
+  id              String           @id @default(uuid()) @db.Uuid
+  petId           String           @map("pet_id") @db.Uuid
+  createdByUserId String           @map("created_by_user_id") @db.Uuid
+  recordType      HealthRecordType @map("record_type")
+  recordDate      DateTime         @map("record_date") @db.Date
+  notes           String?
+  attachments     Json?
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  pet             Pet              @relation(fields: [petId], references: [id], onDelete: Cascade)
+  createdByUser   User             @relation("HealthRecordCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([petId, recordDate(sort: Desc)])
+  @@map("health_records")
+}
+
+model Reminder {
+  id              String         @id @default(uuid()) @db.Uuid
+  petId           String         @map("pet_id") @db.Uuid
+  createdByUserId String         @map("created_by_user_id") @db.Uuid
+  title           String
+  reminderAt      DateTime       @map("reminder_at")
+  repeatRule      String?        @map("repeat_rule")
+  status          ReminderStatus @default(scheduled)
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  pet             Pet            @relation(fields: [petId], references: [id], onDelete: Cascade)
+  createdByUser   User           @relation("ReminderCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  notifications   Notification[]
+
+  @@index([petId, reminderAt])
+  @@map("reminders")
+}
+
+model Notification {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  petId       String?   @map("pet_id") @db.Uuid
+  reminderId  String?   @map("reminder_id") @db.Uuid
+  type        String
+  title       String
+  body        String
+  readAt      DateTime? @map("read_at")
+  deliveredAt DateTime? @map("delivered_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet         Pet?      @relation(fields: [petId], references: [id], onDelete: SetNull)
+  reminder    Reminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("notifications")
+}

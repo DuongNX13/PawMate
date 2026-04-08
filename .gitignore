@@ -1,0 +1,13 @@
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/.env.*
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.metadata
+fly.staging.generated.toml
+.DS_Store
+Thumbs.db

@@ -1,0 +1,1651 @@
+{
+  "version": "1.0.0",
+  "project": {
+    "name": "PawMate",
+    "languages": [
+      "dart",
+      "javascript",
+      "json",
+      "markdown",
+      "prisma",
+      "typescript",
+      "yaml"
+    ],
+    "frameworks": [
+      "fastify",
+      "flutter",
+      "go_router",
+      "prisma",
+      "riverpod"
+    ],
+    "description": "PawMate monorepo with a Fastify backend, a Flutter mobile app, and delivery docs for MVP execution.",
+    "analyzedAt": "2026-04-07T09:32:18.361Z",
+    "gitCommitHash": "NO_COMMITS"
+  },
+  "nodes": [
+    {
+      "id": "file:.github/workflows/ci.yml",
+      "type": "file",
+      "name": "ci.yml",
+      "filePath": ".github/workflows/ci.yml",
+      "summary": "Automation workflow. Approx. 93 lines.",
+      "tags": [
+        "ci"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/.eslintrc.cjs",
+      "type": "file",
+      "name": ".eslintrc.cjs",
+      "filePath": "backend/.eslintrc.cjs",
+      "summary": "Project file. Approx. 39 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/jest.config.cjs",
+      "type": "file",
+      "name": "jest.config.cjs",
+      "filePath": "backend/jest.config.cjs",
+      "summary": "Project file. Approx. 11 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/jest.config.js",
+      "type": "file",
+      "name": "jest.config.js",
+      "filePath": "backend/jest.config.js",
+      "summary": "Project file. Approx. 10 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/package.json",
+      "type": "file",
+      "name": "package.json",
+      "filePath": "backend/package.json",
+      "summary": "Dependency manifest. Approx. 51 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/prisma/schema.prisma",
+      "type": "file",
+      "name": "schema.prisma",
+      "filePath": "backend/prisma/schema.prisma",
+      "summary": "Database schema. Approx. 215 lines.",
+      "tags": [
+        "backend",
+        "data",
+        "schema"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:backend/README.md",
+      "type": "file",
+      "name": "README.md",
+      "filePath": "backend/README.md",
+      "summary": "Project file. Approx. 47 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/review_day1_neo.md",
+      "type": "file",
+      "name": "review_day1_neo.md",
+      "filePath": "backend/review_day1_neo.md",
+      "summary": "Project file. Approx. 169 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/scripts/prisma-validate.cjs",
+      "type": "file",
+      "name": "prisma-validate.cjs",
+      "filePath": "backend/scripts/prisma-validate.cjs",
+      "summary": "Project file. Approx. 17 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/src/app.ts",
+      "type": "file",
+      "name": "app.ts",
+      "filePath": "backend/src/app.ts",
+      "summary": "Fastify app bootstrap with 1 functions, 2 imports. Approx. 14 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:backend/src/app.ts:buildApp",
+      "type": "function",
+      "name": "buildApp",
+      "filePath": "backend/src/app.ts",
+      "lineRange": [
+        4,
+        13
+      ],
+      "summary": "Function buildApp declared in app.ts.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/src/config/env.ts",
+      "type": "file",
+      "name": "env.ts",
+      "filePath": "backend/src/config/env.ts",
+      "summary": "Runtime configuration with 6 functions, 1 imports. Approx. 115 lines.",
+      "tags": [
+        "backend",
+        "config"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:backend/src/config/env.ts:trim",
+      "type": "function",
+      "name": "trim",
+      "filePath": "backend/src/config/env.ts",
+      "lineRange": [
+        38,
+        41
+      ],
+      "summary": "Function trim declared in env.ts.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:backend/src/config/env.ts:readNodeEnv",
+      "type": "function",
+      "name": "readNodeEnv",
+      "filePath": "backend/src/config/env.ts",
+      "lineRange": [
+        43,
+        55
+      ],
+      "summary": "Function readNodeEnv declared in env.ts.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:backend/src/config/env.ts:readPort",
+      "type": "function",
+      "name": "readPort",
+      "filePath": "backend/src/config/env.ts",
+      "lineRange": [
+        57,
+        71
+      ],
+      "summary": "Function readPort declared in env.ts.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:backend/src/config/env.ts:readLogLevel",
+      "type": "function",
+      "name": "readLogLevel",
+      "filePath": "backend/src/config/env.ts",
+      "lineRange": [
+        73,
+        81
+      ],
+      "summary": "Function readLogLevel declared in env.ts.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:backend/src/config/env.ts:readUrl",
+      "type": "function",
+      "name": "readUrl",
+      "filePath": "backend/src/config/env.ts",
+      "lineRange": [
+        83,
+        96
+      ],
+      "summary": "Function readUrl declared in env.ts.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "func:backend/src/config/env.ts:loadEnv",
+      "type": "function",
+      "name": "loadEnv",
+      "filePath": "backend/src/config/env.ts",
+      "lineRange": [
+        98,
+        114
+      ],
+      "summary": "Function loadEnv declared in env.ts.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "backend/src/index.ts",
+      "summary": "Backend entry point with 1 functions, 2 imports. Approx. 21 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:backend/src/index.ts:start",
+      "type": "function",
+      "name": "start",
+      "filePath": "backend/src/index.ts",
+      "lineRange": [
+        4,
+        18
+      ],
+      "summary": "Function start declared in index.ts.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/src/routes/health.ts",
+      "type": "file",
+      "name": "health.ts",
+      "filePath": "backend/src/routes/health.ts",
+      "summary": "HTTP route definition with 1 functions, 1 imports. Approx. 8 lines.",
+      "tags": [
+        "backend",
+        "api",
+        "route"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:backend/src/routes/health.ts:healthRoute",
+      "type": "function",
+      "name": "healthRoute",
+      "filePath": "backend/src/routes/health.ts",
+      "lineRange": [
+        3,
+        5
+      ],
+      "summary": "Function healthRoute declared in health.ts.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/tests/env.test.ts",
+      "type": "file",
+      "name": "env.test.ts",
+      "filePath": "backend/tests/env.test.ts",
+      "summary": "Project file with 1 functions, 1 imports. Approx. 67 lines.",
+      "tags": [
+        "backend",
+        "test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:backend/tests/env.test.ts:resetEnv",
+      "type": "function",
+      "name": "resetEnv",
+      "filePath": "backend/tests/env.test.ts",
+      "lineRange": [
+        5,
+        20
+      ],
+      "summary": "Function resetEnv declared in env.test.ts.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/tests/health.test.ts",
+      "type": "file",
+      "name": "health.test.ts",
+      "filePath": "backend/tests/health.test.ts",
+      "summary": "Project file with 1 imports. Approx. 19 lines.",
+      "tags": [
+        "backend",
+        "test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/tsconfig.eslint.json",
+      "type": "file",
+      "name": "tsconfig.eslint.json",
+      "filePath": "backend/tsconfig.eslint.json",
+      "summary": "Project file. Approx. 5 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/tsconfig.json",
+      "type": "file",
+      "name": "tsconfig.json",
+      "filePath": "backend/tsconfig.json",
+      "summary": "Project file. Approx. 18 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:backend/tsconfig.test.json",
+      "type": "file",
+      "name": "tsconfig.test.json",
+      "filePath": "backend/tsconfig.test.json",
+      "summary": "Project file. Approx. 10 lines.",
+      "tags": [
+        "backend"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:CONTRIBUTING.md",
+      "type": "file",
+      "name": "CONTRIBUTING.md",
+      "filePath": "CONTRIBUTING.md",
+      "summary": "Project file. Approx. 35 lines.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docker-compose.yml",
+      "type": "file",
+      "name": "docker-compose.yml",
+      "filePath": "docker-compose.yml",
+      "summary": "Local environment orchestration. Approx. 72 lines.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/architecture/adr.md",
+      "type": "file",
+      "name": "adr.md",
+      "filePath": "docs/architecture/adr.md",
+      "summary": "Project documentation. Approx. 69 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/architecture/erd.md",
+      "type": "file",
+      "name": "erd.md",
+      "filePath": "docs/architecture/erd.md",
+      "summary": "Project documentation. Approx. 171 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:docs/architecture/review_day1_architect.md",
+      "type": "file",
+      "name": "review_day1_architect.md",
+      "filePath": "docs/architecture/review_day1_architect.md",
+      "summary": "Project documentation. Approx. 269 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:docs/design/day1_design_system.md",
+      "type": "file",
+      "name": "day1_design_system.md",
+      "filePath": "docs/design/day1_design_system.md",
+      "summary": "Project documentation. Approx. 252 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:docs/design/day1_flutter_handoff_matrix.md",
+      "type": "file",
+      "name": "day1_flutter_handoff_matrix.md",
+      "filePath": "docs/design/day1_flutter_handoff_matrix.md",
+      "summary": "Project documentation. Approx. 119 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:docs/design/day1_wireframes_and_states.md",
+      "type": "file",
+      "name": "day1_wireframes_and_states.md",
+      "filePath": "docs/design/day1_wireframes_and_states.md",
+      "summary": "Project documentation. Approx. 285 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:docs/design/review_day1_trinity.md",
+      "type": "file",
+      "name": "review_day1_trinity.md",
+      "filePath": "docs/design/review_day1_trinity.md",
+      "summary": "Project documentation. Approx. 372 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:docs/management/day1_execution_board.md",
+      "type": "file",
+      "name": "day1_execution_board.md",
+      "filePath": "docs/management/day1_execution_board.md",
+      "summary": "Project documentation. Approx. 60 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/management/day1_load_plan.md",
+      "type": "file",
+      "name": "day1_load_plan.md",
+      "filePath": "docs/management/day1_load_plan.md",
+      "summary": "Project documentation. Approx. 68 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/management/day1_runtime_blockers.md",
+      "type": "file",
+      "name": "day1_runtime_blockers.md",
+      "filePath": "docs/management/day1_runtime_blockers.md",
+      "summary": "Project documentation. Approx. 60 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/management/review_day1_oracle.md",
+      "type": "file",
+      "name": "review_day1_oracle.md",
+      "filePath": "docs/management/review_day1_oracle.md",
+      "summary": "Project documentation. Approx. 135 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:docs/product/day1_user_stories_and_dod.md",
+      "type": "file",
+      "name": "day1_user_stories_and_dod.md",
+      "filePath": "docs/product/day1_user_stories_and_dod.md",
+      "summary": "Project documentation. Approx. 303 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:docs/product/review_day1_morpheus.md",
+      "type": "file",
+      "name": "review_day1_morpheus.md",
+      "filePath": "docs/product/review_day1_morpheus.md",
+      "summary": "Project documentation. Approx. 306 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:docs/qa/day1_ci_infra_notes.md",
+      "type": "file",
+      "name": "day1_ci_infra_notes.md",
+      "filePath": "docs/qa/day1_ci_infra_notes.md",
+      "summary": "Project documentation. Approx. 59 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/qa/day1_evidence_matrix.md",
+      "type": "file",
+      "name": "day1_evidence_matrix.md",
+      "filePath": "docs/qa/day1_evidence_matrix.md",
+      "summary": "Project documentation. Approx. 53 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:docs/qa/review_day1_cypher.md",
+      "type": "file",
+      "name": "review_day1_cypher.md",
+      "filePath": "docs/qa/review_day1_cypher.md",
+      "summary": "Project documentation. Approx. 247 lines.",
+      "tags": [
+        "docs"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:mobile/analysis_options.yaml",
+      "type": "file",
+      "name": "analysis_options.yaml",
+      "filePath": "mobile/analysis_options.yaml",
+      "summary": "Project file. Approx. 29 lines.",
+      "tags": [
+        "mobile"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/app/pawmate_app.dart",
+      "type": "file",
+      "name": "pawmate_app.dart",
+      "filePath": "mobile/lib/app/pawmate_app.dart",
+      "summary": "Project file with 1 classes, 4 imports. Approx. 23 lines.",
+      "tags": [
+        "mobile"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/app/router/app_router.dart",
+      "type": "file",
+      "name": "app_router.dart",
+      "filePath": "mobile/lib/app/router/app_router.dart",
+      "summary": "Navigation setup with 13 imports. Approx. 78 lines.",
+      "tags": [
+        "mobile",
+        "navigation"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/app/theme/app_theme.dart",
+      "type": "file",
+      "name": "app_theme.dart",
+      "filePath": "mobile/lib/app/theme/app_theme.dart",
+      "summary": "Theme definition with 1 classes, 1 imports. Approx. 46 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "theme"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/core/media/image_picker_service.dart",
+      "type": "file",
+      "name": "image_picker_service.dart",
+      "filePath": "mobile/lib/core/media/image_picker_service.dart",
+      "summary": "Media service with 2 imports. Approx. 7 lines.",
+      "tags": [
+        "mobile",
+        "media"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/core/network/app_dio.dart",
+      "type": "file",
+      "name": "app_dio.dart",
+      "filePath": "mobile/lib/core/network/app_dio.dart",
+      "summary": "Network client with 2 imports. Approx. 14 lines.",
+      "tags": [
+        "mobile",
+        "network"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/core/storage/secure_storage_service.dart",
+      "type": "file",
+      "name": "secure_storage_service.dart",
+      "filePath": "mobile/lib/core/storage/secure_storage_service.dart",
+      "summary": "Secure storage service with 2 imports. Approx. 7 lines.",
+      "tags": [
+        "mobile",
+        "storage"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/core/widgets/placeholder_screen.dart",
+      "type": "file",
+      "name": "placeholder_screen.dart",
+      "filePath": "mobile/lib/core/widgets/placeholder_screen.dart",
+      "summary": "Shared widget with 1 classes, 1 imports. Approx. 61 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "widget"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/auth/presentation/login_screen.dart",
+      "type": "file",
+      "name": "login_screen.dart",
+      "filePath": "mobile/lib/features/auth/presentation/login_screen.dart",
+      "summary": "Feature screen with 1 classes, 2 imports. Approx. 45 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:auth"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/auth/presentation/otp_screen.dart",
+      "type": "file",
+      "name": "otp_screen.dart",
+      "filePath": "mobile/lib/features/auth/presentation/otp_screen.dart",
+      "summary": "Feature screen with 1 classes, 2 imports. Approx. 34 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:auth"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/auth/presentation/register_screen.dart",
+      "type": "file",
+      "name": "register_screen.dart",
+      "filePath": "mobile/lib/features/auth/presentation/register_screen.dart",
+      "summary": "Feature screen with 1 classes, 2 imports. Approx. 39 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:auth"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/community/community_feature.dart",
+      "type": "file",
+      "name": "community_feature.dart",
+      "filePath": "mobile/lib/features/community/community_feature.dart",
+      "summary": "Project file. Approx. 4 lines.",
+      "tags": [
+        "mobile",
+        "feature",
+        "feature:community"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/health/presentation/health_timeline_screen.dart",
+      "type": "file",
+      "name": "health_timeline_screen.dart",
+      "filePath": "mobile/lib/features/health/presentation/health_timeline_screen.dart",
+      "summary": "Feature screen with 1 classes, 2 imports. Approx. 16 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:health"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/onboarding/presentation/onboarding_screen.dart",
+      "type": "file",
+      "name": "onboarding_screen.dart",
+      "filePath": "mobile/lib/features/onboarding/presentation/onboarding_screen.dart",
+      "summary": "Feature screen with 1 classes, 2 imports. Approx. 82 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:onboarding"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:mobile/lib/features/pets/presentation/create_pet_screen.dart",
+      "type": "file",
+      "name": "create_pet_screen.dart",
+      "filePath": "mobile/lib/features/pets/presentation/create_pet_screen.dart",
+      "summary": "Feature screen with 1 classes, 1 imports. Approx. 25 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:pets"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "type": "file",
+      "name": "pet_list_screen.dart",
+      "filePath": "mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "summary": "Feature screen with 2 classes, 2 imports. Approx. 61 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:pets"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/rescue/rescue_feature.dart",
+      "type": "file",
+      "name": "rescue_feature.dart",
+      "filePath": "mobile/lib/features/rescue/rescue_feature.dart",
+      "summary": "Project file. Approx. 4 lines.",
+      "tags": [
+        "mobile",
+        "feature",
+        "feature:rescue"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+      "type": "file",
+      "name": "vet_detail_screen.dart",
+      "filePath": "mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+      "summary": "Feature screen with 1 classes, 1 imports. Approx. 28 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:vets"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "type": "file",
+      "name": "vet_list_screen.dart",
+      "filePath": "mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "summary": "Feature screen with 2 classes, 2 imports. Approx. 61 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:vets"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/features/vets/presentation/vet_map_screen.dart",
+      "type": "file",
+      "name": "vet_map_screen.dart",
+      "filePath": "mobile/lib/features/vets/presentation/vet_map_screen.dart",
+      "summary": "Feature screen with 1 classes, 2 imports. Approx. 17 lines.",
+      "tags": [
+        "mobile",
+        "ui",
+        "presentation",
+        "feature",
+        "feature:vets"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/lib/main.dart",
+      "type": "file",
+      "name": "main.dart",
+      "filePath": "mobile/lib/main.dart",
+      "summary": "Flutter app entry point with 1 functions, 3 imports. Approx. 10 lines.",
+      "tags": [
+        "mobile"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/pubspec.yaml",
+      "type": "file",
+      "name": "pubspec.yaml",
+      "filePath": "mobile/pubspec.yaml",
+      "summary": "Dependency manifest. Approx. 27 lines.",
+      "tags": [
+        "mobile"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:mobile/test/widget_test.dart",
+      "type": "file",
+      "name": "widget_test.dart",
+      "filePath": "mobile/test/widget_test.dart",
+      "summary": "Project file with 1 functions, 3 imports. Approx. 12 lines.",
+      "tags": [
+        "mobile",
+        "test"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/app/pawmate_app.dart:PawMateApp",
+      "type": "class",
+      "name": "PawMateApp",
+      "filePath": "mobile/lib/app/pawmate_app.dart",
+      "lineRange": [
+        6,
+        6
+      ],
+      "summary": "Dart class PawMateApp declared in pawmate_app.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/app/theme/app_theme.dart:AppTheme",
+      "type": "class",
+      "name": "AppTheme",
+      "filePath": "mobile/lib/app/theme/app_theme.dart",
+      "lineRange": [
+        2,
+        2
+      ],
+      "summary": "Dart class AppTheme declared in app_theme.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/core/widgets/placeholder_screen.dart:PlaceholderScreen",
+      "type": "class",
+      "name": "PlaceholderScreen",
+      "filePath": "mobile/lib/core/widgets/placeholder_screen.dart",
+      "lineRange": [
+        2,
+        2
+      ],
+      "summary": "Dart class PlaceholderScreen declared in placeholder_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/auth/presentation/login_screen.dart:LoginScreen",
+      "type": "class",
+      "name": "LoginScreen",
+      "filePath": "mobile/lib/features/auth/presentation/login_screen.dart",
+      "lineRange": [
+        3,
+        3
+      ],
+      "summary": "Dart class LoginScreen declared in login_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/auth/presentation/otp_screen.dart:OtpScreen",
+      "type": "class",
+      "name": "OtpScreen",
+      "filePath": "mobile/lib/features/auth/presentation/otp_screen.dart",
+      "lineRange": [
+        3,
+        3
+      ],
+      "summary": "Dart class OtpScreen declared in otp_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/auth/presentation/register_screen.dart:RegisterScreen",
+      "type": "class",
+      "name": "RegisterScreen",
+      "filePath": "mobile/lib/features/auth/presentation/register_screen.dart",
+      "lineRange": [
+        3,
+        3
+      ],
+      "summary": "Dart class RegisterScreen declared in register_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/health/presentation/health_timeline_screen.dart:HealthTimelineScreen",
+      "type": "class",
+      "name": "HealthTimelineScreen",
+      "filePath": "mobile/lib/features/health/presentation/health_timeline_screen.dart",
+      "lineRange": [
+        4,
+        4
+      ],
+      "summary": "Dart class HealthTimelineScreen declared in health_timeline_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/onboarding/presentation/onboarding_screen.dart:OnboardingScreen",
+      "type": "class",
+      "name": "OnboardingScreen",
+      "filePath": "mobile/lib/features/onboarding/presentation/onboarding_screen.dart",
+      "lineRange": [
+        3,
+        3
+      ],
+      "summary": "Dart class OnboardingScreen declared in onboarding_screen.dart.",
+      "tags": [],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:mobile/lib/features/pets/presentation/create_pet_screen.dart:CreatePetScreen",
+      "type": "class",
+      "name": "CreatePetScreen",
+      "filePath": "mobile/lib/features/pets/presentation/create_pet_screen.dart",
+      "lineRange": [
+        2,
+        2
+      ],
+      "summary": "Dart class CreatePetScreen declared in create_pet_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/pets/presentation/pet_list_screen.dart:PetListScreen",
+      "type": "class",
+      "name": "PetListScreen",
+      "filePath": "mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "lineRange": [
+        3,
+        3
+      ],
+      "summary": "Dart class PetListScreen declared in pet_list_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/pets/presentation/pet_list_screen.dart:_PetCard",
+      "type": "class",
+      "name": "_PetCard",
+      "filePath": "mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "lineRange": [
+        36,
+        36
+      ],
+      "summary": "Dart class _PetCard declared in pet_list_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/vets/presentation/vet_detail_screen.dart:VetDetailScreen",
+      "type": "class",
+      "name": "VetDetailScreen",
+      "filePath": "mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+      "lineRange": [
+        2,
+        2
+      ],
+      "summary": "Dart class VetDetailScreen declared in vet_detail_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/vets/presentation/vet_list_screen.dart:VetListScreen",
+      "type": "class",
+      "name": "VetListScreen",
+      "filePath": "mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "lineRange": [
+        3,
+        3
+      ],
+      "summary": "Dart class VetListScreen declared in vet_list_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/vets/presentation/vet_list_screen.dart:_VetTile",
+      "type": "class",
+      "name": "_VetTile",
+      "filePath": "mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "lineRange": [
+        37,
+        37
+      ],
+      "summary": "Dart class _VetTile declared in vet_list_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:mobile/lib/features/vets/presentation/vet_map_screen.dart:VetMapScreen",
+      "type": "class",
+      "name": "VetMapScreen",
+      "filePath": "mobile/lib/features/vets/presentation/vet_map_screen.dart",
+      "lineRange": [
+        4,
+        4
+      ],
+      "summary": "Dart class VetMapScreen declared in vet_map_screen.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:mobile/lib/main.dart:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "mobile/lib/main.dart",
+      "lineRange": [
+        6,
+        6
+      ],
+      "summary": "Dart function main declared in main.dart.",
+      "tags": [],
+      "complexity": "simple"
+    },
+    {
+      "id": "func:mobile/test/widget_test.dart:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "mobile/test/widget_test.dart",
+      "lineRange": [
+        5,
+        5
+      ],
+      "summary": "Dart function main declared in widget_test.dart.",
+      "tags": [],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/src/app.ts",
+      "target": "func:backend/src/app.ts:buildApp",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/app.ts",
+      "target": "file:backend/src/routes/health.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/src/config/env.ts",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/config/env.ts",
+      "target": "func:backend/src/config/env.ts:readNodeEnv",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/config/env.ts",
+      "target": "func:backend/src/config/env.ts:readPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/config/env.ts",
+      "target": "func:backend/src/config/env.ts:readLogLevel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/config/env.ts",
+      "target": "func:backend/src/config/env.ts:readUrl",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/config/env.ts",
+      "target": "func:backend/src/config/env.ts:loadEnv",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "func:backend/src/config/env.ts:readNodeEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:readPort",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:readLogLevel",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:readUrl",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:readNodeEnv",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:readPort",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:readLogLevel",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:readUrl",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "func:backend/src/config/env.ts:loadEnv",
+      "target": "func:backend/src/config/env.ts:trim",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:backend/src/index.ts",
+      "target": "func:backend/src/index.ts:start",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/src/index.ts",
+      "target": "file:backend/src/app.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/src/index.ts",
+      "target": "file:backend/src/config/env.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/src/routes/health.ts",
+      "target": "func:backend/src/routes/health.ts:healthRoute",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/env.test.ts",
+      "target": "func:backend/tests/env.test.ts:resetEnv",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/env.test.ts",
+      "target": "file:backend/src/config/env.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/health.test.ts",
+      "target": "file:backend/src/app.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/core/widgets/placeholder_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/auth/presentation/login_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/auth/presentation/otp_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/auth/presentation/register_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/health/presentation/health_timeline_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/onboarding/presentation/onboarding_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/pets/presentation/create_pet_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/router/app_router.dart",
+      "target": "file:mobile/lib/features/vets/presentation/vet_map_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/features/health/presentation/health_timeline_screen.dart",
+      "target": "file:mobile/lib/core/widgets/placeholder_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/features/vets/presentation/vet_map_screen.dart",
+      "target": "file:mobile/lib/core/widgets/placeholder_screen.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/test/widget_test.dart",
+      "target": "file:mobile/lib/app/pawmate_app.dart",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:mobile/lib/app/pawmate_app.dart",
+      "target": "class:mobile/lib/app/pawmate_app.dart:PawMateApp",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/app/theme/app_theme.dart",
+      "target": "class:mobile/lib/app/theme/app_theme.dart:AppTheme",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/core/widgets/placeholder_screen.dart",
+      "target": "class:mobile/lib/core/widgets/placeholder_screen.dart:PlaceholderScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/auth/presentation/login_screen.dart",
+      "target": "class:mobile/lib/features/auth/presentation/login_screen.dart:LoginScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/auth/presentation/otp_screen.dart",
+      "target": "class:mobile/lib/features/auth/presentation/otp_screen.dart:OtpScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/auth/presentation/register_screen.dart",
+      "target": "class:mobile/lib/features/auth/presentation/register_screen.dart:RegisterScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/health/presentation/health_timeline_screen.dart",
+      "target": "class:mobile/lib/features/health/presentation/health_timeline_screen.dart:HealthTimelineScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/onboarding/presentation/onboarding_screen.dart",
+      "target": "class:mobile/lib/features/onboarding/presentation/onboarding_screen.dart:OnboardingScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/pets/presentation/create_pet_screen.dart",
+      "target": "class:mobile/lib/features/pets/presentation/create_pet_screen.dart:CreatePetScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "target": "class:mobile/lib/features/pets/presentation/pet_list_screen.dart:PetListScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/pets/presentation/pet_list_screen.dart",
+      "target": "class:mobile/lib/features/pets/presentation/pet_list_screen.dart:_PetCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+      "target": "class:mobile/lib/features/vets/presentation/vet_detail_screen.dart:VetDetailScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "target": "class:mobile/lib/features/vets/presentation/vet_list_screen.dart:VetListScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/vets/presentation/vet_list_screen.dart",
+      "target": "class:mobile/lib/features/vets/presentation/vet_list_screen.dart:_VetTile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/features/vets/presentation/vet_map_screen.dart",
+      "target": "class:mobile/lib/features/vets/presentation/vet_map_screen.dart:VetMapScreen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/lib/main.dart",
+      "target": "func:mobile/lib/main.dart:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:mobile/test/widget_test.dart",
+      "target": "func:mobile/test/widget_test.dart:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:docs-reviews",
+      "name": "Docs & Reviews",
+      "description": "Planning, review, design, and delivery notes for PawMate.",
+      "nodeIds": [
+        "file:backend/README.md",
+        "file:backend/review_day1_neo.md",
+        "file:CONTRIBUTING.md",
+        "file:docs/architecture/adr.md",
+        "file:docs/architecture/erd.md",
+        "file:docs/architecture/review_day1_architect.md",
+        "file:docs/design/day1_design_system.md",
+        "file:docs/design/day1_flutter_handoff_matrix.md",
+        "file:docs/design/day1_wireframes_and_states.md",
+        "file:docs/design/review_day1_trinity.md",
+        "file:docs/management/day1_execution_board.md",
+        "file:docs/management/day1_load_plan.md",
+        "file:docs/management/day1_runtime_blockers.md",
+        "file:docs/management/review_day1_oracle.md",
+        "file:docs/product/day1_user_stories_and_dod.md",
+        "file:docs/product/review_day1_morpheus.md",
+        "file:docs/qa/day1_ci_infra_notes.md",
+        "file:docs/qa/day1_evidence_matrix.md",
+        "file:docs/qa/review_day1_cypher.md"
+      ]
+    },
+    {
+      "id": "layer:ci-config",
+      "name": "CI & Config",
+      "description": "Automation, manifests, linting, test config, and environment wiring.",
+      "nodeIds": [
+        "file:.github/workflows/ci.yml",
+        "file:backend/.eslintrc.cjs",
+        "file:backend/jest.config.cjs",
+        "file:backend/jest.config.js",
+        "file:backend/package.json",
+        "file:backend/tsconfig.eslint.json",
+        "file:backend/tsconfig.json",
+        "file:backend/tsconfig.test.json",
+        "file:docker-compose.yml",
+        "file:mobile/analysis_options.yaml",
+        "file:mobile/pubspec.yaml"
+      ]
+    },
+    {
+      "id": "layer:backend-runtime",
+      "name": "Backend Runtime",
+      "description": "Fastify application runtime, routes, and runtime config.",
+      "nodeIds": [
+        "file:backend/src/app.ts",
+        "file:backend/src/config/env.ts",
+        "file:backend/src/index.ts",
+        "file:backend/src/routes/health.ts"
+      ]
+    },
+    {
+      "id": "layer:backend-data",
+      "name": "Backend Data",
+      "description": "Database schema and backend support scripts for data validation.",
+      "nodeIds": [
+        "file:backend/prisma/schema.prisma",
+        "file:backend/scripts/prisma-validate.cjs"
+      ]
+    },
+    {
+      "id": "layer:backend-tests",
+      "name": "Backend Tests",
+      "description": "Automated checks for backend runtime behavior and environment setup.",
+      "nodeIds": [
+        "file:backend/tests/env.test.ts",
+        "file:backend/tests/health.test.ts"
+      ]
+    },
+    {
+      "id": "layer:mobile-app-shell",
+      "name": "Mobile App Shell",
+      "description": "Flutter entrypoint, app bootstrap, routing, and theme.",
+      "nodeIds": [
+        "file:mobile/lib/app/pawmate_app.dart",
+        "file:mobile/lib/app/router/app_router.dart",
+        "file:mobile/lib/app/theme/app_theme.dart",
+        "file:mobile/lib/main.dart"
+      ]
+    },
+    {
+      "id": "layer:mobile-core-services",
+      "name": "Mobile Core Services",
+      "description": "Shared mobile services and reusable building blocks.",
+      "nodeIds": [
+        "file:mobile/lib/core/media/image_picker_service.dart",
+        "file:mobile/lib/core/network/app_dio.dart",
+        "file:mobile/lib/core/storage/secure_storage_service.dart",
+        "file:mobile/lib/core/widgets/placeholder_screen.dart"
+      ]
+    },
+    {
+      "id": "layer:mobile-features",
+      "name": "Mobile Features",
+      "description": "Feature screens and feature-level mobile modules.",
+      "nodeIds": [
+        "file:mobile/lib/features/auth/presentation/login_screen.dart",
+        "file:mobile/lib/features/auth/presentation/otp_screen.dart",
+        "file:mobile/lib/features/auth/presentation/register_screen.dart",
+        "file:mobile/lib/features/community/community_feature.dart",
+        "file:mobile/lib/features/health/presentation/health_timeline_screen.dart",
+        "file:mobile/lib/features/onboarding/presentation/onboarding_screen.dart",
+        "file:mobile/lib/features/pets/presentation/create_pet_screen.dart",
+        "file:mobile/lib/features/pets/presentation/pet_list_screen.dart",
+        "file:mobile/lib/features/rescue/rescue_feature.dart",
+        "file:mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+        "file:mobile/lib/features/vets/presentation/vet_list_screen.dart",
+        "file:mobile/lib/features/vets/presentation/vet_map_screen.dart"
+      ]
+    },
+    {
+      "id": "layer:mobile-tests",
+      "name": "Mobile Tests",
+      "description": "Flutter widget and app-level tests.",
+      "nodeIds": [
+        "file:mobile/test/widget_test.dart"
+      ]
+    }
+  ],
+  "tour": []
+}

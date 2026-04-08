@@ -1,0 +1,36 @@
+name: Fly Staging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-staging:
+    name: Deploy backend to Fly with remote builder
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP_NAME: ${{ vars.FLY_APP_NAME }}
+      FLY_PRIMARY_REGION: ${{ vars.FLY_PRIMARY_REGION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Fly deployment inputs
+        run: |
+          test -n "$FLY_API_TOKEN"
+          test -n "$FLY_APP_NAME"
+          test -n "$FLY_PRIMARY_REGION"
+
+      - name: Setup flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Render Fly config
+        run: |
+          sed \
+            -e "s/__FLY_APP_NAME__/${FLY_APP_NAME}/g" \
+            -e "s/__FLY_PRIMARY_REGION__/${FLY_PRIMARY_REGION}/g" \
+            deploy/fly.staging.template.toml > fly.staging.generated.toml
+
+      - name: Deploy to Fly
+        run: flyctl deploy --config fly.staging.generated.toml --remote-only
