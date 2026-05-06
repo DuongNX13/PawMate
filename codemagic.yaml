@@ -79,3 +79,87 @@ workflows:
         notify:
           success: true
           failure: true
+
+  ios-browserstack-resign-smoke:
+    name: Day 7 iOS BrowserStack Re-sign Smoke
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        PAWMATE_API_BASE_URL: https://pawmate-api-placeholder.invalid
+        BROWSERSTACK_APP_CUSTOM_ID: pawmate-day7-ios-resign
+    scripts:
+      - name: Explain BrowserStack re-sign path
+        script: |
+          set -euo pipefail
+          echo "This workflow builds a real-device iOS app without Apple signing and packages it as an IPA for BrowserStack re-signing."
+          echo "It is valid for Day 7 install/launch/navigation smoke only, not App Store/TestFlight release parity."
+          if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
+            echo "BrowserStack credentials are missing. The IPA artifact will be produced but not uploaded."
+          fi
+      - name: Install Flutter dependencies
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter pub get
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter analyze
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter test
+      - name: Build real-device iOS app without local signing
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter build ios --release --no-codesign \
+            --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}"
+      - name: Package unsigned IPA for BrowserStack re-signing
+        script: |
+          set -euo pipefail
+          cd mobile
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Expected real-device app not found at $APP_PATH" >&2
+            exit 1
+          fi
+          rm -rf build/ios/browserstack_unsigned build/ios/ipa
+          mkdir -p build/ios/browserstack_unsigned/Payload build/ios/ipa
+          cp -R "$APP_PATH" build/ios/browserstack_unsigned/Payload/Runner.app
+          (cd build/ios/browserstack_unsigned && zip -qry ../ipa/PawMate-browserstack-unsigned.ipa Payload)
+          ls -lh build/ios/ipa
+      - name: Upload IPA to BrowserStack App Automate
+        script: |
+          set -euo pipefail
+          if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
+            echo "Skipping BrowserStack upload because credentials are missing."
+            exit 0
+          fi
+          IPA_PATH="$(find mobile/build/ios/ipa -name '*.ipa' -print -quit)"
+          if [ -z "$IPA_PATH" ]; then
+            echo "No IPA found under mobile/build/ios/ipa" >&2
+            exit 1
+          fi
+          curl -u "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+            -F "file=@${IPA_PATH}" \
+            -F "data={\"custom_id\":\"${BROWSERSTACK_APP_CUSTOM_ID}\"}" \
+            -o browserstack-ios-upload.json
+          cat browserstack-ios-upload.json
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - browserstack-ios-upload.json
+    publishing:
+      email:
+        recipients:
+          - duongngo0708@gmail.com
+        notify:
+          success: true
+          failure: true
