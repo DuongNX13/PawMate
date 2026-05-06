@@ -12,7 +12,7 @@ workflows:
         - pawmate_browserstack
       vars:
         BUNDLE_ID: com.pawmate.pawmateMobile
-        PAWMATE_API_BASE_URL: ""
+        PAWMATE_API_BASE_URL: https://pawmate-api-placeholder.invalid
         BROWSERSTACK_APP_CUSTOM_ID: pawmate-day7-ios
       ios_signing:
         distribution_type: ad_hoc
