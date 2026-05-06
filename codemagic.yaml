@@ -7,9 +7,6 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      groups:
-        - pawmate_ios_signing
-        - pawmate_browserstack
       vars:
         BUNDLE_ID: com.pawmate.pawmateMobile
         PAWMATE_API_BASE_URL: https://pawmate-api-placeholder.invalid
