@@ -9,7 +9,6 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: com.pawmate.pawmateMobile
-        PAWMATE_API_BASE_URL: https://pawmate-api-placeholder.invalid
         BROWSERSTACK_APP_CUSTOM_ID: pawmate-day7-ios
       ios_signing:
         distribution_type: ad_hoc
@@ -19,11 +18,15 @@ workflows:
         script: |
           set -euo pipefail
           if [ -z "${PAWMATE_API_BASE_URL:-}" ]; then
-            echo "PAWMATE_API_BASE_URL is empty. The IPA will still build, but backend-backed smoke steps must be skipped."
+            echo "PAWMATE_API_BASE_URL is required for backend-backed register/login smoke."
           fi
           if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
             echo "BrowserStack credentials are missing. The IPA artifact will be produced but not uploaded."
           fi
+      - name: Validate backend URL for mobile smoke
+        script: |
+          set -euo pipefail
+          node scripts/ci/validate-mobile-backend-url.mjs
       - name: Install Flutter dependencies
         script: |
           set -euo pipefail
@@ -89,7 +92,6 @@ workflows:
       xcode: latest
       cocoapods: default
       vars:
-        PAWMATE_API_BASE_URL: https://pawmate-api-placeholder.invalid
         BROWSERSTACK_APP_CUSTOM_ID: pawmate-day7-ios-resign
     scripts:
       - name: Explain BrowserStack re-sign path
@@ -97,9 +99,14 @@ workflows:
           set -euo pipefail
           echo "This workflow builds a real-device iOS app without Apple signing and packages it as an IPA for BrowserStack re-signing."
           echo "It is valid for Day 7 install/launch/navigation smoke only, not App Store/TestFlight release parity."
+          echo "Backend-backed register/login smoke requires a public HTTPS PAWMATE_API_BASE_URL."
           if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
             echo "BrowserStack credentials are missing. The IPA artifact will be produced but not uploaded."
           fi
+      - name: Validate backend URL for mobile smoke
+        script: |
+          set -euo pipefail
+          node scripts/ci/validate-mobile-backend-url.mjs
       - name: Install Flutter dependencies
         script: |
           set -euo pipefail
@@ -172,14 +179,17 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        PAWMATE_API_BASE_URL: https://pawmate-api-placeholder.invalid
     scripts:
       - name: Explain Appetize simulator path
         script: |
           set -euo pipefail
           echo "This workflow builds an iOS Simulator .app for Appetize."
           echo "Appetize accepts a zip/tar.gz containing a simulator .app; device IPAs are not supported by Appetize."
+          echo "Backend-backed register/login smoke requires a public HTTPS PAWMATE_API_BASE_URL."
+      - name: Validate backend URL for mobile smoke
+        script: |
+          set -euo pipefail
+          node scripts/ci/validate-mobile-backend-url.mjs
       - name: Install Flutter dependencies
         script: |
           set -euo pipefail
