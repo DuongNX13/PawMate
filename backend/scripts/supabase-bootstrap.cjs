@@ -20,6 +20,24 @@ if (!supabaseUrl) {
   );
 }
 
+let parsedSupabaseUrl;
+try {
+  parsedSupabaseUrl = new URL(supabaseUrl);
+} catch {
+  throw new Error(
+    'SUPABASE_URL must be a valid absolute URL in the form https://<project-ref>.supabase.co.',
+  );
+}
+
+if (
+  parsedSupabaseUrl.hostname === 'supabase.com' ||
+  parsedSupabaseUrl.pathname.startsWith('/dashboard/')
+) {
+  throw new Error(
+    'SUPABASE_URL must use the project API host in the form https://<project-ref>.supabase.co, not a dashboard URL.',
+  );
+}
+
 if (!serviceKey) {
   throw new Error(
     'SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is required to bootstrap storage buckets.',
@@ -27,9 +45,22 @@ if (!serviceKey) {
 }
 
 const desiredBuckets = [
-  process.env.SUPABASE_BUCKET_AVATARS?.trim() || 'avatars',
-  process.env.SUPABASE_BUCKET_PET_PHOTOS?.trim() || 'pet-photos',
-  process.env.SUPABASE_BUCKET_POSTS?.trim() || 'posts',
+  {
+    name: process.env.SUPABASE_BUCKET_AVATARS?.trim() || 'avatars',
+    public: false,
+  },
+  {
+    name: process.env.SUPABASE_BUCKET_PET_PHOTOS?.trim() || 'pet-photos',
+    public: false,
+  },
+  {
+    name: process.env.SUPABASE_BUCKET_POSTS?.trim() || 'posts',
+    public: false,
+  },
+  {
+    name: process.env.SUPABASE_BUCKET_REVIEW_PHOTOS?.trim() || 'review-photos',
+    public: true,
+  },
 ];
 
 const supabase = createClient(supabaseUrl, serviceKey, {
@@ -47,28 +78,49 @@ const ensureBuckets = async () => {
     throw new Error(`Unable to list Supabase buckets: ${listError.message}`);
   }
 
-  const existingNames = new Set((existingBuckets || []).map((bucket) => bucket.name));
+  const existingBucketsByName = new Map(
+    (existingBuckets || []).map((bucket) => [bucket.name, bucket]),
+  );
 
-  for (const bucketName of desiredBuckets) {
-    if (existingNames.has(bucketName)) {
-      console.log(`Bucket already exists: ${bucketName}`);
+  for (const bucket of desiredBuckets) {
+    const existingBucket = existingBucketsByName.get(bucket.name);
+    if (existingBucket) {
+      if (existingBucket.public !== bucket.public) {
+        const { error: updateError } = await supabase.storage.updateBucket(
+          bucket.name,
+          {
+            public: bucket.public,
+          },
+        );
+
+        if (updateError) {
+          throw new Error(
+            `Unable to update Supabase bucket "${bucket.name}": ${updateError.message}`,
+          );
+        }
+
+        console.log(`Bucket updated: ${bucket.name}`);
+        continue;
+      }
+
+      console.log(`Bucket already exists: ${bucket.name}`);
       continue;
     }
 
     const { error: createError } = await supabase.storage.createBucket(
-      bucketName,
+      bucket.name,
       {
-        public: false,
+        public: bucket.public,
       },
     );
 
     if (createError) {
       throw new Error(
-        `Unable to create Supabase bucket "${bucketName}": ${createError.message}`,
+        `Unable to create Supabase bucket "${bucket.name}": ${createError.message}`,
       );
     }
 
-    console.log(`Bucket created: ${bucketName}`);
+    console.log(`Bucket created: ${bucket.name}`);
   }
 
   console.log('Supabase storage bootstrap finished.');

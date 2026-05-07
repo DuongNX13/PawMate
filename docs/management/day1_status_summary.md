@@ -5,9 +5,9 @@ Snapshot updated: `2026-04-08`
 
 ## Executive summary
 
-- `15/18` tasks are fully done for Day 1.
+- `16/18` tasks are fully done for Day 1.
 - `2/18` tasks are partially closed and now have a no-admin completion path prepared in the repo.
-- `1/18` task remains blocked by remote account setup and missing first publish actions.
+- `0/18` tasks remain hard-blocked by local admin rights.
 
 ## What was re-verified in this pass
 
@@ -49,7 +49,7 @@ Snapshot updated: `2026-04-08`
 | Task | Current status | Tracking note |
 |---|---|---|
 | `D1-01` Kick-off & Tracking Board | DONE | Board and load plan exist |
-| `D1-02` GitHub Repo + Branch Strategy | BLOCKED | Local publish path is ready, but GitHub login, first commit, and real remote repo ownership still need to happen |
+| `D1-02` GitHub Repo + Branch Strategy | DONE | Repo-local commit exists, `main` and `develop` are pushed to `DuongNX13/PawMate`, and branch protection now requires PR + 1 review on both branches |
 | `D1-03` OpenAPI Contract - Auth Module | DONE | Documented |
 | `D1-04` OpenAPI Contract - Pet/Vet/Review/Health | DONE | Documented |
 | `D1-05` Database ERD | DONE | Documented |
@@ -63,17 +63,16 @@ Snapshot updated: `2026-04-08`
 | `D1-13` Init Backend - Fastify + TypeScript | DONE | Re-verified locally in this pass |
 | `D1-14` Init Flutter Project | DONE | Re-verified locally in this pass; APK build still needs Android SDK |
 | `D1-15` Setup PostgreSQL + PostGIS + Prisma | DONE | Portable PostgreSQL/PostGIS local runtime works; Prisma sync plus spatial patch verified |
-| `D1-16` Setup Redis + Supabase | PARTIAL | Redis local runtime works, and Supabase env/storage bootstrap is now scripted; a real project and provider credentials are still missing |
+| `D1-16` Setup Redis + Supabase | PARTIAL | Redis local runtime works, and Supabase env/storage bootstrap is now scripted; the actual project API URL and provider credentials are still missing |
 | `D1-17` Setup GitHub Actions CI | DONE | Workflow file exists and reflects backend/mobile lanes |
-| `D1-18` Setup Docker Compose + Fly.io Staging | PARTIAL | Compose, hosted smoke workflow, Fly template, and Fly-first deploy workflow exist; Fly login and remote repo push are still missing |
+| `D1-18` Setup Docker Compose + Fly.io Staging | PARTIAL | Compose, hosted smoke workflow, Fly template, and Fly-first deploy workflow exist; Fly token works, but billing must be added before app creation can continue |
 
 ## Remaining blockers
 
 ### External or account-bound
 
-- `D1-02`: GitHub login, local first commit, remote repo ownership, and branch protection
-- `D1-16`: Supabase project URL, keys, and auth provider setup
-- `D1-18`: Fly.io credentials, app name, and hosted workflow execution after repo push
+- `D1-16`: Supabase project API URL and auth provider setup
+- `D1-18`: Fly billing, app creation, and hosted workflow execution after repo push
 
 ### Heavy local runtime not yet provisioned
 
@@ -90,17 +89,27 @@ Snapshot updated: `2026-04-08`
   - stop: `scripts/dev/stop-portable-redis.ps1`
 - GitHub CLI:
   - binary: `D:\My Playground\tools\gh\bin\gh.exe`
-  - current state: installed locally, not logged in
+  - current state: GitHub CLI itself is not logged in, but Git push and GitHub API access work through Git Credential Manager
   - helper: `scripts/dev/bootstrap-github-no-admin.ps1`
+- Git remote:
+  - `origin` -> `https://github.com/DuongNX13/PawMate.git`
+  - remote branches are live: `main`, `develop`
+  - branch protection is active on both branches
 - Fly CLI:
   - binary: `D:\My Playground\tools\flyctl\flyctl.exe`
-  - current state: installed locally, not logged in
+  - current state: token works, but Fly app creation is blocked by billing
   - helper: `scripts/dev/fly-first-deploy.ps1`
 - Supabase bootstrap:
   - env helper: `scripts/dev/bootstrap-supabase-env.ps1`
   - bucket helper: `backend/scripts/supabase-bootstrap.cjs`
 - Cloud-ready runbook:
   - `docs/management/day1_cloud_bootstrap_runbook.md`
+
+## Latest unblock notes
+
+- `D1-02` is now closed end-to-end without Windows admin rights because the machine already had working GitHub credentials through Git Credential Manager, even though `gh auth status` stays unauthenticated.
+- `D1-16` is still partial because the supplied Supabase URL points to the dashboard, not to the project API host. The supplied secret key also cannot query the Supabase Management API, so the real project URL still has to come from the Supabase project settings page.
+- `D1-18` is still partial because the supplied Fly token is valid, but Fly blocks app creation until billing is added to the active organization.
 
 ## Important evidence paths
 

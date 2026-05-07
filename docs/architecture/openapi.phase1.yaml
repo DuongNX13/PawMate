@@ -54,6 +54,50 @@ paths:
         '409': { $ref: '#/components/responses/Error' }
         '500': { $ref: '#/components/responses/Error' }
 
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verify a signup email token from Supabase
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+      responses:
+        '200':
+          description: Email verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailResponse'
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/Error' }
+
+  /auth/resend-verification:
+    post:
+      tags: [Auth]
+      summary: Resend the signup verification email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationRequest'
+      responses:
+        '200':
+          description: Verification email resend accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendVerificationResponse'
+        '400': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '501': { $ref: '#/components/responses/Error' }
+
   /auth/login:
     post:
       tags: [Auth]
@@ -197,6 +241,30 @@ paths:
       responses:
         '204':
           description: Pet removed
+
+  /pets/{petId}/photo:
+    parameters:
+      - $ref: '#/components/parameters/PetId'
+    post:
+      tags: [Pets]
+      summary: Upload or replace a pet avatar photo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetPhotoUploadRequest'
+      responses:
+        '200':
+          description: Pet photo stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetPhotoUploadResponse'
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
 
   /vets/nearby:
     get:
@@ -503,16 +571,75 @@ components:
     Error:
       type: object
       required: [success, error, requestId]
+      additionalProperties: false
       properties:
-        success: { type: boolean, example: false }
+        success:
+          type: boolean
+          enum: [false]
         requestId: { type: string }
         error:
           type: object
           required: [code, message]
+          additionalProperties: false
           properties:
-            code: { type: string, example: AUTH_001 }
+            code:
+              $ref: '#/components/schemas/ErrorCode'
             message: { type: string }
             field: { type: string, nullable: true }
+    ErrorCode:
+      oneOf:
+        - $ref: '#/components/schemas/AuthErrorCode'
+        - $ref: '#/components/schemas/PetErrorCode'
+        - $ref: '#/components/schemas/VetErrorCode'
+    AuthErrorCode:
+      type: string
+      enum:
+        - AUTH_001
+        - AUTH_002
+        - AUTH_003
+        - AUTH_004
+        - AUTH_005
+        - AUTH_006
+        - AUTH_007
+        - AUTH_008
+        - AUTH_009
+        - AUTH_010
+        - AUTH_011
+        - AUTH_012
+        - AUTH_013
+        - AUTH_014
+        - AUTH_015
+        - AUTH_016
+        - AUTH_017
+        - AUTH_018
+        - AUTH_019
+        - AUTH_020
+    PetErrorCode:
+      type: string
+      enum:
+        - PET_001
+        - PET_002
+        - PET_003
+        - PET_004
+        - PET_005
+        - PET_006
+        - PET_007
+        - PET_008
+        - PET_009
+        - PET_010
+    VetErrorCode:
+      type: string
+      enum:
+        - VET_001
+        - VET_002
+        - VET_003
+        - VET_004
+        - VET_005
+        - VET_006
+        - VET_007
+        - VET_008
+        - VET_009
+        - VET_010
     Meta:
       type: object
       required: [page, pageSize, total]
@@ -535,12 +662,41 @@ components:
         email: { type: string, format: email }
         password: { type: string, minLength: 8 }
         displayName: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
     RegisterResponse:
       type: object
       required: [userId, message]
       properties:
         userId: { type: string, format: uuid }
         message: { type: string, example: Check your email }
+    VerifyEmailRequest:
+      oneOf:
+        - type: object
+          required: [tokenHash]
+          properties:
+            tokenHash: { type: string }
+        - type: object
+          required: [email, token]
+          properties:
+            email: { type: string, format: email }
+            token: { type: string }
+    VerifyEmailResponse:
+      type: object
+      required: [userId, email, message]
+      properties:
+        userId: { type: string, format: uuid }
+        email: { type: string, format: email }
+        message: { type: string, example: Email verified }
+    ResendVerificationRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+    ResendVerificationResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string, example: Verification email resent }
     LoginRequest:
       type: object
       required: [email, password]
@@ -558,6 +714,8 @@ components:
       properties:
         provider: { type: string, enum: [google, apple] }
         credential: { type: string }
+        accessToken: { type: string, nullable: true }
+        nonce: { type: string, nullable: true }
         redirectUri: { type: string, format: uri, nullable: true }
         displayName: { type: string, nullable: true }
     LogoutRequest:
@@ -567,13 +725,23 @@ components:
         refreshToken: { type: string }
     AuthSession:
       type: object
-      required: [accessToken, refreshToken, user]
+      required: [accessToken, refreshToken, accessTokenExpiresAt, refreshTokenExpiresAt, user]
       properties:
         accessToken: { type: string }
         refreshToken: { type: string }
-        tokenType: { type: string, example: Bearer }
-        expiresIn: { type: integer, example: 900 }
-        user: { $ref: '#/components/schemas/User' }
+        accessTokenExpiresAt: { type: string, format: date-time }
+        refreshTokenExpiresAt: { type: string, format: date-time }
+        user: { $ref: '#/components/schemas/AuthSessionUser' }
+    AuthSessionUser:
+      type: object
+      required: [id, email, authProvider, emailVerified]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        authProvider: { type: string, enum: [email, google, apple] }
+        emailVerified: { type: boolean }
+        displayName: { type: string, nullable: true }
+        phone: { type: string, nullable: true }
     Pet:
       type: object
       required: [id, userId, name, species, gender]
@@ -581,34 +749,78 @@ components:
         id: { type: string, format: uuid }
         userId: { type: string, format: uuid }
         name: { type: string }
-        species: { type: string, enum: [dog, cat, bird, rabbit, other] }
+        species: { $ref: '#/components/schemas/PetSpecies' }
         breed: { type: string, nullable: true }
-        gender: { type: string, enum: [male, female, unknown] }
+        gender: { $ref: '#/components/schemas/PetGender' }
         dob: { type: string, format: date, nullable: true }
-        weightKg: { type: number, format: float, nullable: true }
+        weight: { type: number, format: float, nullable: true }
         color: { type: string, nullable: true }
-        microchipNumber: { type: string, nullable: true }
+        microchip: { type: string, nullable: true }
         isNeutered: { type: boolean }
         avatarUrl: { type: string, format: uri, nullable: true }
-        healthStatus: { type: string, enum: [healthy, monitoring, chronic, recovery, unknown] }
+        healthStatus: { $ref: '#/components/schemas/PetHealthStatus' }
+    PetSpecies:
+      type: string
+      enum: [dog, cat, bird, rabbit, other]
+    PetGender:
+      type: string
+      enum: [male, female, unknown]
+    PetHealthStatus:
+      type: string
+      enum: [healthy, monitoring, chronic, recovery, unknown]
     PetCreateRequest:
       type: object
       required: [name, species, gender]
       properties:
         name: { type: string }
-        species: { type: string, enum: [dog, cat, bird, rabbit, other] }
+        species: { $ref: '#/components/schemas/PetSpecies' }
         breed: { type: string, nullable: true }
-        gender: { type: string, enum: [male, female, unknown] }
+        gender: { $ref: '#/components/schemas/PetGender' }
         dob: { type: string, format: date, nullable: true }
-        weightKg: { type: number, format: float, nullable: true }
+        weight: { type: number, format: float, nullable: true }
         color: { type: string, nullable: true }
-        microchipNumber: { type: string, nullable: true }
+        microchip: { type: string, nullable: true }
         isNeutered: { type: boolean, default: false }
         avatarUrl: { type: string, format: uri, nullable: true }
-        healthStatus: { type: string, enum: [healthy, monitoring, chronic, recovery, unknown] }
+        healthStatus: { $ref: '#/components/schemas/PetHealthStatus' }
     PetUpdateRequest:
-      allOf:
-        - $ref: '#/components/schemas/PetCreateRequest'
+      type: object
+      properties:
+        name: { type: string }
+        species: { $ref: '#/components/schemas/PetSpecies' }
+        breed: { type: string, nullable: true }
+        gender: { $ref: '#/components/schemas/PetGender' }
+        dob: { type: string, format: date, nullable: true }
+        weight: { type: number, format: float, nullable: true }
+        color: { type: string, nullable: true }
+        microchip: { type: string, nullable: true }
+        isNeutered: { type: boolean }
+        avatarUrl: { type: string, format: uri, nullable: true }
+        healthStatus: { $ref: '#/components/schemas/PetHealthStatus' }
+
+    PetPhotoUploadRequest:
+      type: object
+      required: [fileName, contentType, base64Data]
+      properties:
+        fileName:
+          type: string
+          example: milo.png
+        contentType:
+          type: string
+          enum: [image/jpeg, image/png, image/webp]
+        base64Data:
+          type: string
+          description: Base64-encoded image body without transport headers.
+
+    PetPhotoUploadResponse:
+      type: object
+      required: [avatarUrl, pet]
+      properties:
+        avatarUrl:
+          type: string
+          format: uri
+        pet:
+          $ref: '#/components/schemas/PetItem'
     PetItem:
       type: object
       required: [data]

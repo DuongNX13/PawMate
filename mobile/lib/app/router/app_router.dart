@@ -6,24 +6,40 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/health/presentation/health_timeline_screen.dart';
+import '../../features/notifications/presentation/notification_center_screen.dart';
+import '../../features/onboarding/presentation/onboarding_gate_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/pets/presentation/create_pet_screen.dart';
+import '../../features/pets/presentation/pet_detail_screen.dart';
 import '../../features/pets/presentation/pet_list_screen.dart';
+import '../../features/reminders/presentation/reminder_calendar_screen.dart';
 import '../../features/vets/presentation/vet_detail_screen.dart';
 import '../../features/vets/presentation/vet_list_screen.dart';
 import '../../features/vets/presentation/vet_map_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
+  const initialLocation = String.fromEnvironment(
+    'PAWMATE_INITIAL_ROUTE',
+    defaultValue: '/launch',
+  );
+
   return GoRouter(
-    initialLocation: '/onboarding',
+    initialLocation: initialLocation,
     routes: [
+      GoRoute(
+        path: '/launch',
+        builder: (context, state) => const OnboardingGateScreen(),
+      ),
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
         path: '/auth/login',
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => LoginScreen(
+          initialEmail: state.uri.queryParameters['email'],
+          showVerifiedMessage: state.uri.queryParameters['verified'] == '1',
+        ),
       ),
       GoRoute(
         path: '/auth/register',
@@ -31,7 +47,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/auth/otp',
-        builder: (context, state) => const OtpScreen(),
+        builder: (context, state) =>
+            OtpScreen(email: state.uri.queryParameters['email']),
       ),
       GoRoute(
         path: '/pets',
@@ -40,6 +57,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/pets/create',
         builder: (context, state) => const CreatePetScreen(),
+      ),
+      GoRoute(
+        path: '/pets/:id',
+        builder: (context, state) =>
+            PetDetailScreen(petId: state.pathParameters['id'] ?? ''),
       ),
       GoRoute(
         path: '/vets/map',
@@ -59,10 +81,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HealthTimelineScreen(),
       ),
       GoRoute(
+        path: '/health/reminders',
+        builder: (context, state) => const ReminderCalendarScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationCenterScreen(),
+      ),
+      GoRoute(
         path: '/community',
         builder: (context, state) => const PlaceholderScreen(
           title: 'Community',
           subtitle: 'Deferred after the MVP core flow is stable.',
+        ),
+      ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const PlaceholderScreen(
+          title: 'Profile',
+          subtitle:
+              'Profile hub sẽ được dựng tiếp sau khi auth và pet flow ổn định.',
         ),
       ),
       GoRoute(

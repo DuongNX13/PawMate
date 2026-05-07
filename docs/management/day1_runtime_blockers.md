@@ -9,24 +9,23 @@ See also: `docs/management/day1_cloud_bootstrap_runbook.md` for the exact comman
 
 ## D1-02 - GitHub repo + branch strategy
 
-Status: Blocked by GitHub login and missing first commit, but no-admin publish path is ready
+Status: Closed for Day 1 remote publish and branch governance
 
 What is now done:
 - Portable GitHub CLI is provisioned locally under `D:\My Playground\tools\gh`.
 - `scripts/dev/bootstrap-github-no-admin.ps1` now prepares the remote, optional repo creation, optional push, and branch settings URL in one path.
 - Branch model remains documented in `CONTRIBUTING.md`.
+- Repo-local git author is now configured.
+- The first local commit now exists.
+- `origin` now points to `https://github.com/DuongNX13/PawMate.git`.
+- Local `main` and `develop` both contain the merged remote README history.
+- `main` is pushed and tracks `origin/main`.
+- `develop` is pushed and tracks `origin/develop`.
+- Branch protection is active on both `main` and `develop`.
+- GitHub now requires pull requests plus at least one review on both protected branches.
 
-What is still blocked:
-- `gh auth status` still reports no authenticated GitHub host.
-- The repo does not have a first commit yet.
-- Repo-local git author identity is not configured yet.
-- Actual branch protection still needs a real remote repo and account permissions.
-
-What is needed to unblock:
-- Run `D:\My Playground\tools\gh\bin\gh.exe auth login --web`.
-- Set repo-local git author identity.
-- Create the first commit.
-- Run `scripts/dev/bootstrap-github-no-admin.ps1` with the real owner/repo.
+Carried note:
+- `gh auth status` still reports no authenticated GitHub host, but Day 1 no longer depends on that because the machine already has working GitHub credentials through Git Credential Manager.
 
 ## D1-14 - Flutter project init
 
@@ -78,12 +77,13 @@ What is now done:
 - Backend env loader now accepts both publishable/secret and legacy anon/service-role key names.
 
 What is still blocked:
-- Supabase project, keys, and auth providers are not available in local environment.
+- The provided Supabase dashboard org URL is not a valid project API URL, so the backend cannot resolve the project host.
+- The provided secret key is a project API secret, not a Supabase Management API token, so it cannot be used to discover the project URL automatically.
 - OAuth provider setup still needs Google and Apple credentials.
 - Storage integration cannot be validated end-to-end until a real project is attached.
 
 What is needed to unblock:
-- Create or attach the Supabase project and provide publishable/secret configuration safely through env files.
+- Provide the actual project API URL from Supabase project settings in the form `https://<project-ref>.supabase.co`.
 - Run `scripts/dev/bootstrap-supabase-env.ps1`.
 - Run `npm run supabase:bootstrap` from `backend`.
 - Verify Google and Apple auth provider setup plus storage bucket policy requirements before integration.
@@ -96,18 +96,19 @@ What is now done:
 - `docker-compose.yml`, `backend/Dockerfile`, and `backend/.dockerignore` already exist in the repo.
 - Portable Fly CLI is provisioned locally under `D:\My Playground\tools\flyctl`.
 - `flyctl version` succeeds locally.
+- `flyctl auth whoami` succeeds with the provided token.
 - `deploy/fly.staging.template.toml` now provides a reusable Fly config template.
 - `scripts/dev/fly-first-deploy.ps1` can render Fly config and deploy with `--remote-only`.
 - `.github/workflows/compose-smoke.yml` now provides compose verification on a hosted runner.
 - `.github/workflows/fly-staging.yml` now provides a Fly-first deployment path through GitHub Actions.
 
 What is still blocked:
-- Fly.io account login or token is not available in the local environment.
-- Real Fly app name and secrets are still missing.
+- Fly app creation is blocked because the account still needs billing/payment information.
+- Real staging secrets are still missing.
 - GitHub Actions cannot run until the repo is pushed to a real remote.
 
 What is needed to unblock:
-- Log into Fly.io with `D:\My Playground\tools\flyctl\flyctl.exe auth login` or set `FLY_ACCESS_TOKEN`.
+- Add billing information in Fly for the active personal organization.
 - Generate config with `scripts/dev/fly-first-deploy.ps1 -GenerateOnly`.
 - Push the repo so hosted workflows can run.
 - Add `FLY_API_TOKEN`, `FLY_APP_NAME`, and `FLY_PRIMARY_REGION` to GitHub.

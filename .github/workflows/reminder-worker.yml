@@ -1,0 +1,56 @@
+name: Reminder Worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Maximum due reminders to process in one run
+        required: false
+        default: "100"
+  schedule:
+    - cron: "*/15 * * * *"
+
+concurrency:
+  group: reminder-worker
+  cancel-in-progress: false
+
+jobs:
+  process-due-reminders:
+    name: Process due reminders
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DATABASE_URL: ${{ secrets.PAWMATE_REMINDER_DATABASE_URL || secrets.DATABASE_URL }}
+      REMINDER_PROCESS_LIMIT: ${{ inputs.limit || '100' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Validate worker inputs
+        run: |
+          test -n "$DATABASE_URL"
+          case "$REMINDER_PROCESS_LIMIT" in
+            ''|*[!0-9]*) echo "REMINDER_PROCESS_LIMIT must be a positive integer" >&2; exit 1 ;;
+          esac
+
+      - name: Install backend deps
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Process due reminders
+        run: npm run reminders:process-due -- --limit "$REMINDER_PROCESS_LIMIT"

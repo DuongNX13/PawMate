@@ -1,0 +1,239 @@
+workflows:
+  ios-real-device-smoke:
+    name: Day 7 iOS Real Device Smoke
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: com.pawmate.pawmateMobile
+        BROWSERSTACK_APP_CUSTOM_ID: pawmate-day7-ios
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.pawmate.pawmateMobile
+    scripts:
+      - name: Explain required runtime variables
+        script: |
+          set -euo pipefail
+          if [ -z "${PAWMATE_API_BASE_URL:-}" ]; then
+            echo "PAWMATE_API_BASE_URL is required for backend-backed register/login smoke."
+          fi
+          if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
+            echo "BrowserStack credentials are missing. The IPA artifact will be produced but not uploaded."
+          fi
+      - name: Validate backend URL for mobile smoke
+        script: |
+          set -euo pipefail
+          node scripts/ci/validate-mobile-backend-url.mjs
+      - name: Install Flutter dependencies
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter pub get
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter analyze
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter test
+      - name: Configure iOS signing
+        script: |
+          set -euo pipefail
+          cd mobile
+          xcode-project use-profiles
+      - name: Build signed IPA
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter build ipa --release \
+            --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}"
+      - name: Upload IPA to BrowserStack App Automate
+        script: |
+          set -euo pipefail
+          if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
+            echo "Skipping BrowserStack upload because credentials are missing."
+            exit 0
+          fi
+          IPA_PATH="$(find mobile/build/ios/ipa -name '*.ipa' -print -quit)"
+          if [ -z "$IPA_PATH" ]; then
+            echo "No IPA found under mobile/build/ios/ipa" >&2
+            exit 1
+          fi
+          curl -u "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+            -F "file=@${IPA_PATH}" \
+            -F "data={\"custom_id\":\"${BROWSERSTACK_APP_CUSTOM_ID}\"}" \
+            -o browserstack-ios-upload.json
+          cat browserstack-ios-upload.json
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - mobile/build/ios/archive/*.xcarchive
+      - browserstack-ios-upload.json
+    publishing:
+      email:
+        recipients:
+          - duongngo0708@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  ios-browserstack-resign-smoke:
+    name: Day 7 iOS BrowserStack Re-sign Smoke
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BROWSERSTACK_APP_CUSTOM_ID: pawmate-day7-ios-resign
+    scripts:
+      - name: Explain BrowserStack re-sign path
+        script: |
+          set -euo pipefail
+          echo "This workflow builds a real-device iOS app without Apple signing and packages it as an IPA for BrowserStack re-signing."
+          echo "It is valid for Day 7 install/launch/navigation smoke only, not App Store/TestFlight release parity."
+          echo "Backend-backed register/login smoke requires a public HTTPS PAWMATE_API_BASE_URL."
+          if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
+            echo "BrowserStack credentials are missing. The IPA artifact will be produced but not uploaded."
+          fi
+      - name: Validate backend URL for mobile smoke
+        script: |
+          set -euo pipefail
+          node scripts/ci/validate-mobile-backend-url.mjs
+      - name: Install Flutter dependencies
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter pub get
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter analyze
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter test
+      - name: Build real-device iOS app without local signing
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter build ios --release --no-codesign \
+            --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}"
+      - name: Package unsigned IPA for BrowserStack re-signing
+        script: |
+          set -euo pipefail
+          cd mobile
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Expected real-device app not found at $APP_PATH" >&2
+            exit 1
+          fi
+          rm -rf build/ios/browserstack_unsigned build/ios/ipa
+          mkdir -p build/ios/browserstack_unsigned/Payload build/ios/ipa
+          cp -R "$APP_PATH" build/ios/browserstack_unsigned/Payload/Runner.app
+          (cd build/ios/browserstack_unsigned && zip -qry ../ipa/PawMate-browserstack-unsigned.ipa Payload)
+          ls -lh build/ios/ipa
+      - name: Upload IPA to BrowserStack App Automate
+        script: |
+          set -euo pipefail
+          if [ -z "${BROWSERSTACK_USERNAME:-}" ] || [ -z "${BROWSERSTACK_ACCESS_KEY:-}" ]; then
+            echo "Skipping BrowserStack upload because credentials are missing."
+            exit 0
+          fi
+          IPA_PATH="$(find mobile/build/ios/ipa -name '*.ipa' -print -quit)"
+          if [ -z "$IPA_PATH" ]; then
+            echo "No IPA found under mobile/build/ios/ipa" >&2
+            exit 1
+          fi
+          curl -u "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" \
+            -X POST "https://api-cloud.browserstack.com/app-automate/upload" \
+            -F "file=@${IPA_PATH}" \
+            -F "data={\"custom_id\":\"${BROWSERSTACK_APP_CUSTOM_ID}\"}" \
+            -o browserstack-ios-upload.json
+          cat browserstack-ios-upload.json
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - browserstack-ios-upload.json
+    publishing:
+      email:
+        recipients:
+          - duongngo0708@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  ios-appetize-simulator-smoke:
+    name: Day 7 iOS Appetize Simulator Smoke
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Explain Appetize simulator path
+        script: |
+          set -euo pipefail
+          echo "This workflow builds an iOS Simulator .app for Appetize."
+          echo "Appetize accepts a zip/tar.gz containing a simulator .app; device IPAs are not supported by Appetize."
+          echo "Backend-backed register/login smoke requires a public HTTPS PAWMATE_API_BASE_URL."
+          echo "Set PAWMATE_ENABLE_SYSTEM_PROXY=true when Appetize Network Logs must capture Flutter/Dio traffic."
+      - name: Validate backend URL for mobile smoke
+        script: |
+          set -euo pipefail
+          node scripts/ci/validate-mobile-backend-url.mjs
+      - name: Install Flutter dependencies
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter pub get
+      - name: Static analysis
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter analyze
+      - name: Unit and widget tests
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter test
+      - name: Build iOS simulator app
+        script: |
+          set -euo pipefail
+          cd mobile
+          flutter build ios --simulator --debug \
+            --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}" \
+            --dart-define=PAWMATE_ENABLE_SYSTEM_PROXY="${PAWMATE_ENABLE_SYSTEM_PROXY:-false}"
+      - name: Package Appetize simulator zip
+        script: |
+          set -euo pipefail
+          cd mobile
+          APP_PATH="build/ios/iphonesimulator/Runner.app"
+          ZIP_DIR="build/ios/appetize"
+          ZIP_PATH="${ZIP_DIR}/PawMate-appetize-simulator.zip"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Expected simulator app not found at $APP_PATH" >&2
+            exit 1
+          fi
+          rm -rf "$ZIP_DIR"
+          mkdir -p "$ZIP_DIR"
+          (cd "$(dirname "$APP_PATH")" && zip -qry "../appetize/PawMate-appetize-simulator.zip" "$(basename "$APP_PATH")")
+          ls -lh "$ZIP_PATH"
+    artifacts:
+      - mobile/build/ios/appetize/PawMate-appetize-simulator.zip
+    publishing:
+      email:
+        recipients:
+          - duongngo0708@gmail.com
+        notify:
+          success: true
+          failure: true

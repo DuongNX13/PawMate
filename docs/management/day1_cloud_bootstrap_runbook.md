@@ -11,6 +11,7 @@ This runbook turns the remaining Day 1 blockers into no-admin workflows wherever
 - Portable GitHub CLI exists at `D:\My Playground\tools\gh\bin\gh.exe`.
 - Repo helper exists at `scripts/dev/bootstrap-github-no-admin.ps1`.
 - Branch strategy is already documented in `CONTRIBUTING.md`.
+- If the repo already exists and Git Credential Manager can push to GitHub, the helper can now push branches without requiring `gh auth`.
 
 ### What still needs your account
 

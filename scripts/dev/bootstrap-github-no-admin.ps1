@@ -26,13 +26,20 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $workspaceRoot = Split-Path -Parent $repoRoot
 $gh = Join-Path $workspaceRoot 'tools\gh\bin\gh.exe'
 
-if (!(Test-Path $gh)) {
+$ghReady = Test-Path $gh
+$ghAuthenticated = $false
+
+if ($ghReady) {
+  cmd /d /c "`"$gh`" auth status >nul 2>nul"
+  $ghAuthenticated = $LASTEXITCODE -eq 0
+}
+
+if ($CreateRepo -and !$ghReady) {
   throw "Portable GitHub CLI not found at $gh."
 }
 
-& $gh auth status *> $null
-if ($LASTEXITCODE -ne 0) {
-  throw "GitHub CLI is not authenticated yet. Run `D:\My Playground\tools\gh\bin\gh.exe auth login --web` first."
+if ($CreateRepo -and !$ghAuthenticated) {
+  throw "GitHub CLI is not authenticated yet. Run `D:\My Playground\tools\gh\bin\gh.exe auth login --web` first, or create the repo manually before re-running this helper."
 }
 
 if ($LocalAuthorName) {

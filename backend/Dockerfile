@@ -6,6 +6,7 @@ COPY package*.json ./
 RUN if [ -f package.json ]; then npm ci; else echo "package.json missing; install skipped for scaffold"; fi
 
 COPY . .
+RUN if [ -f prisma/schema.prisma ]; then npx prisma generate; fi
 RUN if [ -f package.json ]; then npm run build; fi
 
 ENV NODE_ENV=production
