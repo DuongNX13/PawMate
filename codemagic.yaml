@@ -186,6 +186,7 @@ workflows:
           echo "This workflow builds an iOS Simulator .app for Appetize."
           echo "Appetize accepts a zip/tar.gz containing a simulator .app; device IPAs are not supported by Appetize."
           echo "Backend-backed register/login smoke requires a public HTTPS PAWMATE_API_BASE_URL."
+          echo "Set PAWMATE_ENABLE_SYSTEM_PROXY=true when Appetize Network Logs must capture Flutter/Dio traffic."
       - name: Validate backend URL for mobile smoke
         script: |
           set -euo pipefail
@@ -210,7 +211,8 @@ workflows:
           set -euo pipefail
           cd mobile
           flutter build ios --simulator --debug \
-            --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}"
+            --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}" \
+            --dart-define=PAWMATE_ENABLE_SYSTEM_PROXY="${PAWMATE_ENABLE_SYSTEM_PROXY:-false}"
       - name: Package Appetize simulator zip
         script: |
           set -euo pipefail
