@@ -1,0 +1,64 @@
+name: Day 7 Cloud Schema Proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Run verification only or apply the Day 6 SQL patch before verifying
+        required: true
+        default: verify-only
+        type: choice
+        options:
+          - verify-only
+          - apply-and-verify
+
+concurrency:
+  group: day7-cloud-schema-proof
+  cancel-in-progress: false
+
+jobs:
+  cloud-schema-proof:
+    name: Supabase cloud schema proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      PAWMATE_DB_MIGRATION_URL: ${{ secrets.PAWMATE_DB_MIGRATION_URL || secrets.DATABASE_DIRECT_URL || secrets.SUPABASE_DATABASE_URL || secrets.SUPABASE_DB_URL || secrets.DATABASE_URL }}
+      PROOF_MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Validate proof inputs
+        run: |
+          test -n "$PAWMATE_DB_MIGRATION_URL"
+          case "$PROOF_MODE" in
+            verify-only|apply-and-verify) ;;
+            *) echo "Unsupported PROOF_MODE: $PROOF_MODE" >&2; exit 1 ;;
+          esac
+
+      - name: Install backend deps
+        run: npm ci
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run cloud schema proof
+        run: |
+          if [ "$PROOF_MODE" = "verify-only" ]; then
+            npm run db:day6:cloud-proof -- --verify-only
+          else
+            npm run db:day6:cloud-proof
+          fi

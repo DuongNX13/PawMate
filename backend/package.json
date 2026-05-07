@@ -13,6 +13,18 @@
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "test": "jest --runInBand --config jest.config.cjs",
+    "test:coverage": "jest --runInBand --config jest.config.cjs --coverage",
+    "smoke:runtime": "tsx ./scripts/day2-runtime-smoke.ts",
+    "auth:live-proof": "tsx ./scripts/day2-auth-live-proof.ts",
+    "seed:vets:build": "node ./scripts/build-day2-vet-seed-candidates.mjs",
+    "seed:vets:validate-geo-pilot": "node ./scripts/validate-day3-vet-geo-pilot.mjs",
+    "seed:vets:sync-geo-pilot": "node ./scripts/sync-day3-vet-geo-pilot.mjs",
+    "seed:vets:perf": "node ./scripts/seed-day3-vet-benchmark.mjs",
+    "benchmark:vets:nearby": "node ./scripts/benchmark-day3-vet-nearby.mjs",
+    "test:vets:nearby-matrix": "tsx ./scripts/day3-vet-nearby-matrix.ts",
+    "db:day5:unblock": "node ./scripts/day5-db-unblock.cjs",
+    "db:day6:cloud-proof": "node ./scripts/day6-cloud-schema-proof.cjs",
+    "reminders:process-due": "tsx ./src/jobs/process-due-reminders.ts",
     "prisma:validate": "node ./scripts/prisma-validate.cjs",
     "supabase:bootstrap": "node ./scripts/supabase-bootstrap.cjs"
   },
@@ -27,11 +39,15 @@
   "dependencies": {
     "@prisma/client": "^6.16.2",
     "@supabase/supabase-js": "^2.102.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
-    "fastify": "^4.29.1"
+    "fastify": "^5.8.5",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.5.2",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.18.0",

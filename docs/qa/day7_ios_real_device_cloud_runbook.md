@@ -177,7 +177,24 @@ Register text-entry evidence:
 - Filled Register form with email, password, confirm password, and terms switch: `temp/qa/day7-ios-cloud-proof/97-appetize-after-text-entry-keyboard-hidden.png`
 - Submit tap result captured: `temp/qa/day7-ios-cloud-proof/99-appetize-register-submit-coord-result.png`
 
-Limitation: Appetize backend-backed register/login E2E is still not claimed. Submit was tapped, but this pass did not capture clear API, OTP, or account-creation proof.
+Backend-backed Register/Login follow-up:
+
+- Rebuilt Codemagic Appetize artifact with `PAWMATE_API_BASE_URL=https://fed-spears-genetics-reviewing.trycloudflare.com` and health timeout `PAWMATE_BACKEND_HEALTH_TIMEOUT_MS=30000`.
+- Uploaded the rebuilt simulator ZIP to Appetize; latest Appetize build id observed as `b_eft7tfzxzyksnqat43ekmaouue`.
+- Filled and submitted Register in Appetize with email `qa07121901@pawmate.local`, password `PawMate123!`, confirm password, and terms switch value `1`.
+- Public backend follow-up proof: `POST /auth/login` for that exact Appetize-only email returned status `200` with token and user id present.
+- Evidence: `temp/qa/day7-ios-cloud-proof/163-fast-poll2.png`, `temp/qa/day7-ios-cloud-proof/164-submit-poll1.png`, `temp/qa/day7-ios-cloud-proof/165-submit-poll2.png`.
+
+Network Logs closure on 2026-05-07:
+
+- Rebuilt and uploaded a proxy-aware Appetize artifact from Codemagic build `69fc2cbd2f5a4736dae72725` with `PAWMATE_ENABLE_SYSTEM_PROXY=true`.
+- Appetize build id: `b_ckyj2jwaqmbjjf63ovx4xjfpny`.
+- Register UI submitted `q132006@p.io`; Appetize HAR captured `POST /auth/register` status `201 Created`.
+- The app then moved to email verification and the verification probe returned `POST /auth/verify-email` status `400 Bad Request` for an invalid/expired token; this is not the login proof path.
+- Login UI submitted verified Appetize-created account `qa07121901@pawmate.local`; Appetize HAR captured `POST /auth/login` status `200 OK`.
+- Redacted HAR evidence: `temp/qa/day7-ios-cloud-proof/appetize-network-captures-run6_register-4b411586.redacted.har.json`, `temp/qa/day7-ios-cloud-proof/appetize-network-captures-run11_login200-3346819a.redacted.har.json`.
+- Combined auth summary: `temp/qa/day7-ios-cloud-proof/appetize-auth-network-summary-run6-run11-69fc2cbd.json`.
+- Result: `APPETIZE_BACKEND_AUTH_NETWORK_PROOF_DONE` for simulator Register/Login backend traffic. Remaining iOS release gap is Apple Developer signing for TestFlight/App Store/Ad Hoc parity.
 
 ## References
 

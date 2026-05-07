@@ -12,7 +12,7 @@ Date: `2026-04-08`
 - portable Redis is provisioned locally under `D:\My Playground\tools\redis-portable`
 - portable GitHub CLI is provisioned locally under `D:\My Playground\tools\gh`
 - portable Fly CLI is provisioned locally under `D:\My Playground\tools\flyctl`
-- no GitHub remote is configured yet for this repository
+- GitHub remote is live at `https://github.com/DuongNX13/PawMate.git`
 - local Docker is still absent, but compose verification now has a hosted-runner fallback via `.github/workflows/compose-smoke.yml`
 
 ## Load Strategy
@@ -29,7 +29,7 @@ Date: `2026-04-08`
 | Task | Owner | Support | Status | Notes |
 |---|---|---|---|---|
 | D1-01 Kick-off & Tracking Board | Oracle | - | DONE | Board and load plan created in `docs/management/` |
-| D1-02 GitHub Repo + Branch Strategy | Architect | Neo | BLOCKED | Repo and `CONTRIBUTING.md` are ready, and `scripts/dev/bootstrap-github-no-admin.ps1` now prepares remote/push flow; the remaining gap is GitHub login plus the first real commit and remote repo ownership |
+| D1-02 GitHub Repo + Branch Strategy | Architect | Neo | DONE | `origin` points to `DuongNX13/PawMate`, `main` and `develop` are pushed, and GitHub branch protection now requires PR + 1 review on both branches |
 | D1-03 OpenAPI Contract - Auth Module | Architect | Morpheus | DONE | Auth contract included in `docs/architecture/openapi.phase1.yaml` |
 | D1-04 OpenAPI Contract - Pet/Vet/Review/Health | Architect | Morpheus | DONE | Phase 1 contract added for pets, vets, reviews, health, reminders, notifications |
 | D1-05 Database ERD | Architect | Neo | DONE | ERD captured in `docs/architecture/erd.md` |
@@ -43,9 +43,9 @@ Date: `2026-04-08`
 | D1-13 Init Backend - Fastify + TypeScript | Neo | Architect | DONE | Fastify 4 + TypeScript scaffold created; `build`, `test`, `lint`, and live `/health` verified |
 | D1-14 Init Flutter Project | Neo | Trinity | DONE | Flutter 3.41.6 installed locally, mobile scaffold created, feature-first folders added, `flutter analyze` and `flutter test` verified via no-space drive alias |
 | D1-15 Setup PostgreSQL + PostGIS + Prisma | Neo | Architect | DONE | Portable PostgreSQL 17.9 + PostGIS 3.6.2 verified locally; `prisma db push` plus spatial SQL patch proved `vets.location` and GIST index setup |
-| D1-16 Setup Redis + Supabase | Neo | Architect | PARTIAL | Portable Redis is done, and Supabase now has env/bootstrap helpers in-repo; the remaining gap is a real Supabase project plus provider credentials |
+| D1-16 Setup Redis + Supabase | Neo | Architect | PARTIAL | Portable Redis is done, and Supabase now has env/bootstrap helpers in-repo; the provided dashboard org URL is not a valid project API URL yet, so bucket bootstrap still cannot reach the project |
 | D1-17 Setup GitHub Actions CI | Cypher | Neo | DONE | `.github/workflows/ci.yml` now covers backend lint/test/prisma and mobile analyze/test/build when pushed |
-| D1-18 Setup Docker Compose + Fly.io Staging | Cypher | Architect | PARTIAL | `docker-compose.yml`, `backend/Dockerfile`, hosted compose smoke workflow, Fly template, and Fly deploy workflow are ready; local Docker is no longer critical, but Fly login, app name, and remote push are still needed |
+| D1-18 Setup Docker Compose + Fly.io Staging | Cypher | Architect | PARTIAL | `docker-compose.yml`, `backend/Dockerfile`, hosted compose smoke workflow, Fly template, and Fly deploy workflow are ready; Fly token now works, but app creation is blocked by missing billing on the Fly account |
 
 ## Checkpoints
 
@@ -69,8 +69,15 @@ Date: `2026-04-08`
   - `scripts/dev/stop-portable-redis.ps1`
   - portable `gh` -> `gh --version`
   - `scripts/dev/bootstrap-github-no-admin.ps1` reaches the expected auth boundary when `gh` is not logged in
+  - first local commit created on `develop`
+  - local `main` branch aligned with merged remote README history
+  - `origin` set to `https://github.com/DuongNX13/PawMate.git`
+  - `main` pushed to remote and tracks `origin/main`
+  - `develop` pushed to remote and tracks `origin/develop`
+  - branch protection is active on `main` and `develop` with PR + 1 review
   - `scripts/dev/bootstrap-supabase-env.ps1` generates a working `.env.local` template
   - `scripts/dev/fly-first-deploy.ps1 -GenerateOnly` renders Fly config without Docker local
   - portable `flyctl` -> `flyctl version`
+  - `flyctl auth whoami` succeeds with provided token
   - `GET /health` -> `{"status":"ok"}`
-- Remaining Day 1 blockers are now mostly login/account related, not planning related; local Docker is off the staging critical path
+- Remaining Day 1 blockers are now mostly Supabase project details and Fly billing, not planning related; local Docker is off the staging critical path

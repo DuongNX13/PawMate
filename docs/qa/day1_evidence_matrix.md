@@ -4,7 +4,7 @@ This file maps the Day 1 board to concrete proof so the team can distinguish sca
 
 | Task | Status basis | Evidence |
 |---|---|---|
-| `D1-02` | Blocked by remote auth | `CONTRIBUTING.md` exists, portable `gh` is installed, and `scripts/dev/bootstrap-github-no-admin.ps1` reaches the expected auth boundary, but remote GitHub branch protection is still missing |
+| `D1-02` | Verified on remote | `CONTRIBUTING.md` exists, `origin` points to `DuongNX13/PawMate`, `main` and `develop` are pushed, and GitHub branch protection is active on both branches with pull request + 1 review requirements |
 | `D1-03` | Documented | `docs/architecture/openapi.phase1.yaml` |
 | `D1-04` | Documented | `docs/architecture/openapi.phase1.yaml` |
 | `D1-05` | Documented | `docs/architecture/erd.md` |
@@ -18,9 +18,9 @@ This file maps the Day 1 board to concrete proof so the team can distinguish sca
 | `D1-13` | Verified | `npm run lint`, `npm test`, `npm run build`, live `/health` check |
 | `D1-14` | Verified for scaffold | Flutter SDK installed, `mobile/` scaffold exists, `flutter analyze` passes, `flutter test` passes via `subst` path alias |
 | `D1-15` | Verified local runtime | `backend/prisma/schema.prisma`, `npm run prisma:validate`, `npx prisma db push --skip-generate`, `backend/prisma/sql/day1_postgis_patch.sql`, `postgis_full_version()`, `pg_indexes` proof for `vets_location_gist_idx` |
-| `D1-16` | Partially verified | `.env.example`, `backend/src/config/env.ts`, `scripts/dev/bootstrap-supabase-env.ps1`, `backend/scripts/supabase-bootstrap.cjs`, portable Redis `PONG`, verified start/stop helper scripts, documented Supabase contract |
+| `D1-16` | Partially verified | `.env.example`, `backend/src/config/env.ts`, `scripts/dev/bootstrap-supabase-env.ps1`, `backend/scripts/supabase-bootstrap.cjs`, portable Redis `PONG`, verified start/stop helper scripts, documented Supabase contract, and proof that the provided dashboard org URL is not a resolvable project API host |
 | `D1-17` | Enforceable once pushed | `.github/workflows/ci.yml` plus backend lint/test/prisma and mobile analyze/test/build lanes |
-| `D1-18` | Partially verified | `docker-compose.yml`, `backend/Dockerfile`, `backend/.dockerignore`, `deploy/fly.staging.template.toml`, `scripts/dev/fly-first-deploy.ps1`, `.github/workflows/compose-smoke.yml`, `.github/workflows/fly-staging.yml`, portable `flyctl version` |
+| `D1-18` | Partially verified | `docker-compose.yml`, `backend/Dockerfile`, `backend/.dockerignore`, `deploy/fly.staging.template.toml`, `scripts/dev/fly-first-deploy.ps1`, `.github/workflows/compose-smoke.yml`, `.github/workflows/fly-staging.yml`, portable `flyctl version`, successful `flyctl auth whoami`, and billing-blocked `fly apps create` evidence |
 
 ## Day 1 proof commands
 
@@ -67,8 +67,7 @@ powershell -File scripts/dev/fly-first-deploy.ps1 -AppName "<fly-app-name>" -Gen
 
 ## Still external
 
-- Remote GitHub branch protection
-- Supabase project and keys
-- Fly.io credentials and staging app
+- Supabase project API URL and provider credentials
+- Fly.io billing and staging app creation
 - Full local Docker runtime verification on this machine
 - Android SDK for local APK build

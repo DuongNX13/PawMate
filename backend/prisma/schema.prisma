@@ -27,9 +27,19 @@ enum PetGender {
   unknown
 }
 
+enum PetHealthStatus {
+  healthy
+  monitoring
+  chronic
+  recovery
+  unknown
+}
+
 enum HealthRecordType {
   vaccination
   checkup
+  deworming
+  grooming
   medication
   allergy
   note
@@ -39,26 +49,59 @@ enum ReminderStatus {
   scheduled
   sent
   cancelled
+  done
+}
+
+enum ReviewStatus {
+  visible
+  hidden
+}
+
+enum ReviewSentiment {
+  UNPROCESSED
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum ReviewReportReason {
+  spam
+  false_information
+  abusive
+  off_topic
+  other
+}
+
+enum ReviewReportStatus {
+  pending
+  approved
+  rejected
 }
 
 model User {
-  id            String         @id @default(uuid()) @db.Uuid
-  email         String         @unique
-  passwordHash  String?        @map("password_hash")
-  displayName   String?        @map("display_name")
-  phone         String?
-  avatarUrl     String?        @map("avatar_url")
-  authProvider  AuthProvider   @default(email) @map("auth_provider")
-  emailVerified Boolean        @default(false) @map("email_verified")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  deletedAt     DateTime?      @map("deleted_at")
-  sessions      Session[]
-  pets          Pet[]
-  reviews       Review[]
-  notifications Notification[]
-  healthRecords HealthRecord[] @relation("HealthRecordCreatedBy")
-  reminders     Reminder[]     @relation("ReminderCreatedBy")
+  id                  String              @id @default(uuid()) @db.Uuid
+  email               String              @unique
+  passwordHash        String?             @map("password_hash")
+  displayName         String?             @map("display_name")
+  phone               String?
+  avatarUrl           String?             @map("avatar_url")
+  authProvider        AuthProvider        @default(email) @map("auth_provider")
+  googleSub           String?             @unique @map("google_sub")
+  appleSub            String?             @unique @map("apple_sub")
+  emailVerified       Boolean             @default(false) @map("email_verified")
+  failedLoginAttempts Int                 @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?           @map("locked_until")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  deletedAt           DateTime?           @map("deleted_at")
+  sessions            Session[]
+  pets                Pet[]
+  reviews             Review[]
+  reviewHelpfulVotes  ReviewHelpfulVote[]
+  reviewReports       ReviewReport[]      @relation("ReviewReportReporter")
+  notifications       Notification[]
+  healthRecords       HealthRecord[]      @relation("HealthRecordCreatedBy")
+  reminders           Reminder[]          @relation("ReminderCreatedBy")
 
   @@map("users")
 }
@@ -80,23 +123,23 @@ model Session {
 }
 
 model Pet {
-  id              String         @id @default(uuid()) @db.Uuid
-  userId          String         @map("user_id") @db.Uuid
+  id              String          @id @default(uuid()) @db.Uuid
+  userId          String          @map("user_id") @db.Uuid
   name            String
   species         PetSpecies
   breed           String?
-  gender          PetGender      @default(unknown)
-  dob             DateTime?      @db.Date
-  weightKg        Decimal?       @map("weight_kg") @db.Decimal(5, 2)
+  gender          PetGender       @default(unknown)
+  dob             DateTime?       @db.Date
+  weightKg        Decimal?        @map("weight_kg") @db.Decimal(5, 2)
   color           String?
-  microchipNumber String?        @unique @map("microchip_number")
-  isNeutered      Boolean        @default(false) @map("is_neutered")
-  avatarUrl       String?        @map("avatar_url")
-  healthStatus    String?        @map("health_status")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-  deletedAt       DateTime?      @map("deleted_at")
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  microchipNumber String?         @unique @map("microchip_number")
+  isNeutered      Boolean         @default(false) @map("is_neutered")
+  avatarUrl       String?         @map("avatar_url")
+  healthStatus    PetHealthStatus @default(healthy) @map("health_status")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  deletedAt       DateTime?       @map("deleted_at")
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   healthRecords   HealthRecord[]
   reminders       Reminder[]
   notifications   Notification[]
@@ -107,6 +150,7 @@ model Pet {
 
 model Vet {
   id            String                               @id @default(uuid()) @db.Uuid
+  externalId    String?                              @unique @map("external_id")
   name          String
   phone         String?
   email         String?
@@ -119,12 +163,16 @@ model Vet {
   is24h         Boolean                              @default(false) @map("is_24h")
   averageRating Decimal?                             @map("average_rating") @db.Decimal(3, 2)
   reviewCount   Int                                  @default(0) @map("review_count")
+  sourceRank    Int                                  @default(0) @map("source_rank")
+  readyForMap   Boolean                              @default(false) @map("ready_for_map")
   createdAt     DateTime                             @default(now()) @map("created_at")
   updatedAt     DateTime                             @updatedAt @map("updated_at")
   services      VetService[]
   reviews       Review[]
+  healthRecords HealthRecord[]
 
   @@index([is24h, averageRating])
+  @@index([readyForMap, sourceRank])
   @@map("vets")
 }
 
@@ -141,22 +189,65 @@ model VetService {
 }
 
 model Review {
-  id          String   @id @default(uuid()) @db.Uuid
-  vetId       String   @map("vet_id") @db.Uuid
-  userId      String   @map("user_id") @db.Uuid
-  rating      Int
-  title       String?
-  body        String?
-  isAnonymous Boolean  @default(false) @map("is_anonymous")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  vet         Vet      @relation(fields: [vetId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String              @id @default(uuid()) @db.Uuid
+  vetId           String              @map("vet_id") @db.Uuid
+  userId          String              @map("user_id") @db.Uuid
+  rating          Int
+  title           String?
+  body            String?
+  photoUrls       Json?               @map("photo_urls")
+  isAnonymous     Boolean             @default(false) @map("is_anonymous")
+  isVerifiedVisit Boolean             @default(false) @map("is_verified_visit")
+  helpfulCount    Int                 @default(0) @map("helpful_count")
+  reportCount     Int                 @default(0) @map("report_count")
+  status          ReviewStatus        @default(visible)
+  sentiment       ReviewSentiment     @default(UNPROCESSED)
+  isFlagged       Boolean             @default(false) @map("is_flagged")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+  vet             Vet                 @relation(fields: [vetId], references: [id], onDelete: Cascade)
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  helpfulVotes    ReviewHelpfulVote[]
+  reports         ReviewReport[]
 
-  @@unique([vetId, userId])
+  @@unique([userId, vetId])
   @@index([vetId, createdAt(sort: Desc)])
+  @@index([vetId, helpfulCount(sort: Desc)])
   @@index([userId])
   @@map("reviews")
+}
+
+model ReviewHelpfulVote {
+  id        String   @id @default(uuid()) @db.Uuid
+  reviewId  String   @map("review_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId])
+  @@index([userId])
+  @@map("review_helpful_votes")
+}
+
+model ReviewReport {
+  id          String             @id @default(uuid()) @db.Uuid
+  reviewId    String             @map("review_id") @db.Uuid
+  reporterId  String             @map("reporter_id") @db.Uuid
+  reason      ReviewReportReason
+  description String?
+  status      ReviewReportStatus @default(pending)
+  resolvedAt  DateTime?          @map("resolved_at")
+  resolverId  String?            @map("resolver_id") @db.Uuid
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  review      Review             @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reporter    User               @relation("ReviewReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, reporterId])
+  @@index([reviewId, status])
+  @@index([reporterId])
+  @@map("review_reports")
 }
 
 model HealthRecord {
@@ -165,14 +256,19 @@ model HealthRecord {
   createdByUserId String           @map("created_by_user_id") @db.Uuid
   recordType      HealthRecordType @map("record_type")
   recordDate      DateTime         @map("record_date") @db.Date
+  title           String?
   notes           String?
+  vetId           String?          @map("vet_id") @db.Uuid
   attachments     Json?
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
+  deletedAt       DateTime?        @map("deleted_at")
   pet             Pet              @relation(fields: [petId], references: [id], onDelete: Cascade)
+  vet             Vet?             @relation(fields: [vetId], references: [id], onDelete: SetNull)
   createdByUser   User             @relation("HealthRecordCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
-  @@index([petId, recordDate(sort: Desc)])
+  @@index([petId, deletedAt, recordDate(sort: Desc)])
+  @@index([vetId])
   @@map("health_records")
 }
 
@@ -181,16 +277,25 @@ model Reminder {
   petId           String         @map("pet_id") @db.Uuid
   createdByUserId String         @map("created_by_user_id") @db.Uuid
   title           String
+  note            String?
   reminderAt      DateTime       @map("reminder_at")
+  nextTriggerAt   DateTime?      @map("next_trigger_at")
+  lastTriggeredAt DateTime?      @map("last_triggered_at")
   repeatRule      String?        @map("repeat_rule")
+  timezone        String         @default("Asia/Bangkok")
+  completedAt     DateTime?      @map("completed_at")
+  cancelledAt     DateTime?      @map("cancelled_at")
+  snoozedUntil    DateTime?      @map("snoozed_until")
   status          ReminderStatus @default(scheduled)
   createdAt       DateTime       @default(now()) @map("created_at")
   updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       DateTime?      @map("deleted_at")
   pet             Pet            @relation(fields: [petId], references: [id], onDelete: Cascade)
   createdByUser   User           @relation("ReminderCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
   notifications   Notification[]
 
-  @@index([petId, reminderAt])
+  @@index([petId, deletedAt, reminderAt])
+  @@index([createdByUserId, status, nextTriggerAt])
   @@map("reminders")
 }
 
@@ -204,11 +309,12 @@ model Notification {
   body        String
   readAt      DateTime? @map("read_at")
   deliveredAt DateTime? @map("delivered_at")
+  dismissedAt DateTime? @map("dismissed_at")
   createdAt   DateTime  @default(now()) @map("created_at")
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   pet         Pet?      @relation(fields: [petId], references: [id], onDelete: SetNull)
   reminder    Reminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
 
-  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@index([userId, dismissedAt, readAt, createdAt(sort: Desc)])
   @@map("notifications")
 }

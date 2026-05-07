@@ -26,14 +26,28 @@ $targetPath = if ($EnvFilePath) {
   Join-Path $repoRoot 'backend\.env.local'
 }
 
+$normalizedSupabaseUrl = $SupabaseUrl.Trim()
+
+try {
+  $supabaseUri = [Uri]$normalizedSupabaseUrl
+} catch {
+  throw 'Supabase URL must be a valid absolute URL.'
+}
+
+if ($supabaseUri.Host -eq 'supabase.com' -or $supabaseUri.AbsolutePath -match '^/dashboard/') {
+  throw 'Supabase URL must be the project API URL in the form https://<project-ref>.supabase.co, not a dashboard URL.'
+}
+
 $projectRefValue = if ($ProjectRef) {
-  $ProjectRef
+  $ProjectRef.Trim()
+} elseif ($supabaseUri.Host -like '*.supabase.co') {
+  $supabaseUri.Host.Split('.')[0]
 } else {
-  try {
-    ([Uri]$SupabaseUrl).Host.Split('.')[0]
-  } catch {
-    ''
-  }
+  ''
+}
+
+if (-not $projectRefValue) {
+  throw 'Unable to infer SUPABASE_PROJECT_REF from the supplied URL. Pass -ProjectRef explicitly or use the default project API URL in the form https://<project-ref>.supabase.co.'
 }
 
 $lines = @(
@@ -49,7 +63,7 @@ $lines = @(
   ''
   '# Supabase'
   "SUPABASE_PROJECT_REF=$projectRefValue"
-  "SUPABASE_URL=$SupabaseUrl"
+  "SUPABASE_URL=$normalizedSupabaseUrl"
   "SUPABASE_PUBLISHABLE_KEY=$PublishableKey"
   "SUPABASE_SECRET_KEY=$SecretKey"
   'SUPABASE_ANON_KEY='
