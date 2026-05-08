@@ -4,16 +4,18 @@ Date: 2026-05-05
 
 ## Current Blockers
 
-Day 7 now has two remaining external/runtime blockers:
+Day 7 now has two remaining external/account blockers:
 
-- `D7-05 Scheduler production enablement`: workflow exists, but GitHub Actions needs a database secret before the scheduled worker can process real reminders.
-- `D7-04 iOS real-device smoke`: local Windows path is blocked, BrowserStack is logged in, but Codemagic is still at auth wall and a signed IPA still requires Apple signing.
+- `D7-09 No-credit durable backend replacement`: Fly app creation is blocked by payment information, so the active MVP path is Render Free Web Service from root `render.yaml`.
+- `D7-04 iOS release parity`: Appetize simulator Register/Login Network Logs are proven, but signed IPA/TestFlight parity still requires Apple Developer/App Store Connect API integration in Codemagic.
 
 Resolved:
 
 - `D7-03 Supabase cloud SQL proof`: completed through Supabase SQL Editor without resetting the database password. Evidence is recorded in `docs/qa/day7_cloud_supabase_proof_report.md`.
+- `D7-05 Scheduler production enablement`: GitHub secret `PAWMATE_REMINDER_DATABASE_URL` was set from the Supabase Session Pooler URL and Reminder Worker passed on `main`.
+- `D7-07 Manual GitHub cloud proof workflow`: passed on `main` with the same Session Pooler fallback.
 
-## Best Path
+## Resolved Scheduler Path
 
 Use one Supabase Session Pooler Postgres URL as the unblock path for `D7-05`.
 
@@ -34,6 +36,16 @@ Why this is the best fit:
 Use Supabase Direct connection only when the runner/environment supports IPv6 or the project has the IPv4 add-on.
 
 Avoid Transaction Pooler on port `6543` for Day 7 unless it is explicitly tested with Prisma pooler settings. It is a fallback, not the preferred unblock path.
+
+## Active Backend Path
+
+Use Render Free Web Service as the Fly replacement for the MVP durable backend proof:
+
+1. Deploy from root `render.yaml` on branch `main`.
+2. Enter the Supabase Session Pooler `DATABASE_URL` only in the Render dashboard.
+3. Let Render generate `AUTH_ACCESS_TOKEN_SECRET` and `AUTH_REFRESH_TOKEN_SECRET`.
+4. Verify `/health` on the Render `onrender.com` URL.
+5. Set Codemagic `PAWMATE_API_BASE_URL` to that Render URL before rebuilding the Appetize artifact.
 
 ## User Steps
 
@@ -69,30 +81,32 @@ Day 7 can be signed off when:
 - local backend/mobile gates remain green;
 - cloud schema proof passes against Supabase;
 - scheduled reminder worker has a valid GitHub secret and passes at least one manual run;
-- iOS smoke either completes through `codemagic.yaml` plus BrowserStack real iPhone evidence, or is explicitly carried as a release-parity gap, not a Day 7 backend blocker.
+- iOS simulator proof completes through Appetize Network Logs, while Apple signing/TestFlight is explicitly carried as a release-parity gap, not a Day 7 backend blocker.
 
 Current sign-off state:
 
 - Local backend/mobile gates are green.
 - Supabase cloud schema proof is green.
-- Scheduled reminder worker cloud run is still blocked by missing Postgres secret.
-- iOS real-device smoke is still blocked by Codemagic login plus Apple signing.
+- Scheduled reminder worker cloud run is green on GitHub Actions.
+- Appetize Register/Login Network Logs are green.
+- Durable backend is switching from Fly to Render Free Web Service because Fly requires payment before app creation.
+- iOS release parity is still blocked by Apple Developer signing assets in Codemagic.
 
 ## iOS Cloud Real-Device Path
 
-Local Windows cannot provide a trustworthy iOS real-device proof. The best no-local-Xcode route is now prepared in:
+Local Windows cannot provide a trustworthy iOS release-signing proof. The active no-local-Xcode route is now prepared in:
 
 - `codemagic.yaml`
 - `docs/qa/day7_ios_real_device_cloud_runbook.md`
+- `docs/management/day7_free_backend_replacement_status_2026-05-08.md`
 
 Required external setup:
 
 1. Connect `DuongNX13/PawMate` to Codemagic.
 2. Configure iOS signing for bundle id `com.pawmate.pawmateMobile`.
-3. Add Codemagic variable group `pawmate_browserstack` with `BROWSERSTACK_USERNAME` and `BROWSERSTACK_ACCESS_KEY`.
-4. Add `PAWMATE_API_BASE_URL` when a public backend is available.
-5. Run Codemagic workflow `ios-real-device-smoke`.
-6. Open the uploaded `bs://...` app on BrowserStack real iPhone and capture smoke evidence.
+3. Add `PAWMATE_API_BASE_URL` after the Render Free Web Service is live.
+4. Run Codemagic workflow `ios-appetize-simulator-smoke` and upload the artifact to Appetize for Network Logs.
+5. Run Codemagic workflow `ios-real-device-smoke` after Apple signing is connected.
 
 ## References
 

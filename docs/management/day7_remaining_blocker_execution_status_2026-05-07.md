@@ -8,9 +8,9 @@ Execute the remaining PawMate blocker-resolution path after Appetize Register/Lo
 
 Appetize auth proof is not a blocker anymore. The GitHub workflow promotion blocker is also cleared: PR `#1` merged `develop` into `main`, and the default branch now exposes the Day 7 workflows. The scheduled reminder cloud blocker was cleared on 2026-05-08 by setting the Supabase Session Pooler secret and running the workflow successfully. Fly local tooling and Fly login are now available, but durable backend creation is still blocked by Fly billing. The remaining blockers are external account/runtime blockers:
 
-- Durable public backend still needs Fly billing/payment information, app creation, and production runtime secrets.
+- Durable public backend no longer has to use Fly for the MVP proof. Fly app creation remains blocked by payment information, so the active no-credit replacement path is Render Free Web Service with `render.yaml`.
 - Release/TestFlight/Ad Hoc iOS parity still needs Apple Developer signing assets in Codemagic.
-- Full real-device exploratory QA still needs longer BrowserStack time or a real iPhone.
+- BrowserStack is no longer the default QA surface. Appetize is the active simulator/network-log path, while final real-device parity still needs TestFlight or a physical iPhone after Apple signing is connected.
 
 ## Execution Attempts
 
@@ -36,6 +36,7 @@ Appetize auth proof is not a blocker anymore. The GitHub workflow promotion bloc
 - Fly auth/tooling check: `flyctl` v0.4.48 was installed and `flyctl auth login` succeeded as `duongngo0708@gmail.com`.
 - Fly app creation check: `flyctl apps create pawmate-api-duongnx13 --org personal --yes --json` failed because Fly requires payment information or credit for the personal org.
 - Codemagic live signing check: Developer Portal is still disconnected, no iOS certificates/provisioning profiles are shared with the personal account, and global variables are read-only with no existing variables.
+- Free backend replacement check: Render Free Web Service is selected as the Fly replacement for MVP because it can run the current Node backend with a public HTTPS URL and no Fly payment setup. Repo support file: `render.yaml`. Decision log: `docs/management/day7_free_backend_replacement_status_2026-05-08.md`.
 
 ## Evidence
 
@@ -54,19 +55,18 @@ Appetize auth proof is not a blocker anymore. The GitHub workflow promotion bloc
 - Fly billing blocker evidence: `temp/qa/day7-fly-app-create-pawmate-api-duongnx13.txt`
 - Codemagic current signing evidence: `temp/qa/codemagic-integrations-current.png`, `temp/qa/codemagic-code-signing-expanded-current.png`, `temp/qa/codemagic-global-vars-current.png`
 
-## What Can Be Done Immediately After Credentials Exist
+## What Can Be Done Immediately After Account Access Exists
 
-1. Add Fly payment information or buy Fly credit for the personal org.
-2. Create `pawmate-api-duongnx13`, set Fly runtime secrets, generate an app deploy token, and set GitHub `FLY_API_TOKEN`.
-3. Set GitHub variables `FLY_APP_NAME=pawmate-api-duongnx13` and `FLY_PRIMARY_REGION=sin`, then run `Fly Staging`.
-4. Verify `GET https://pawmate-api-duongnx13.fly.dev/health` returns `{"status":"ok"}`.
-5. Set Codemagic `PAWMATE_API_BASE_URL` to the durable Fly URL.
+1. Log in to Render and create `pawmate-api` from root `render.yaml`.
+2. Enter the Supabase Session Pooler `DATABASE_URL` only in Render, let Render generate auth token secrets, and deploy the Free Web Service.
+3. Verify `GET https://<render-service-subdomain>.onrender.com/health` returns `{"status":"ok"}`.
+4. Set Codemagic `PAWMATE_API_BASE_URL` to the durable Render URL.
+5. Rerun Codemagic `ios-appetize-simulator-smoke`, upload the artifact to Appetize, and capture `/auth/register` plus `/auth/login` Network Logs.
 6. Configure Apple Developer signing in Codemagic for bundle id `com.pawmate.pawmateMobile`.
-7. Rerun Codemagic `Day 7 iOS Real Device Smoke`.
-8. Rerun BrowserStack or real-iPhone tab-by-tab QA.
+7. Rerun Codemagic `ios-real-device-smoke` after Apple signing is connected.
 
 ## Blocked Items Requiring User/Account Action
 
-- Fly billing/payment information or prepaid credit for app creation.
+- Render account/GitHub connection and `DATABASE_URL` entry in the Render dashboard for `pawmate-api`; Fly payment is no longer the primary path.
 - Apple Developer Program signing assets or App Store Connect API integration.
-- BrowserStack paid/extended time or a physical iPhone for broader real-device QA.
+- TestFlight or a physical iPhone for final real-device QA after Apple signing is connected; Appetize is enough for the current simulator network-log proof.
