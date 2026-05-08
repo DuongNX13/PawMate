@@ -7,6 +7,7 @@ import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
 import '../data/auth_api.dart';
 import '../data/auth_session_store.dart';
+import 'auth_qa_defaults.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({
@@ -32,7 +33,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = widget.initialEmail?.trim() ?? '';
+    _emailController.text =
+        widget.initialEmail?.trim() ??
+        (pawmateQaPrefillAuth ? pawmateQaAuthEmail : '');
+    if (pawmateQaPrefillAuth) {
+      _passwordController.text = pawmateQaAuthPassword;
+    }
     if (widget.showVerifiedMessage) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {

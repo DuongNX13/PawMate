@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/primary_gradient_button.dart';
 import '../data/auth_api.dart';
+import 'auth_qa_defaults.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -24,6 +25,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (pawmateQaPrefillAuth) {
+      _emailController.text = pawmateQaAuthEmail;
+      _phoneController.text = '0901234567';
+      _passwordController.text = pawmateQaAuthPassword;
+      _confirmPasswordController.text = pawmateQaAuthPassword;
+      _agreedToTerms = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -96,10 +109,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
+      final email = _emailController.text.trim();
       final response = await ref
           .read(authApiProvider)
           .register(
-            email: _emailController.text.trim(),
+            email: email,
             password: _passwordController.text,
             phone: _phoneController.text.trim(),
           );
@@ -111,9 +125,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(response.message)));
-      context.go(
-        '/auth/otp?email=${Uri.encodeComponent(_emailController.text.trim())}',
-      );
+      if (pawmateQaPrefillAuth) {
+        context.go(
+          '/auth/login?email=${Uri.encodeComponent(email)}&verified=1',
+        );
+      } else {
+        context.go('/auth/otp?email=${Uri.encodeComponent(email)}');
+      }
     } on AuthApiException catch (error) {
       if (!mounted) {
         return;
