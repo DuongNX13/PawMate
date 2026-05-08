@@ -32,6 +32,7 @@ Appetize auth proof is not a blocker anymore. The GitHub workflow promotion bloc
 - Final credential path: Supabase Database Settings official reset password flow was used for the `postgres` database password, direct Prisma smoke against the Session Pooler passed with `currentUser: postgres`, and GitHub secret `PAWMATE_REMINDER_DATABASE_URL` was updated.
 - GitHub cloud proof: `Reminder Worker` run `25533819243` on `main` completed successfully. The worker output included `processedCount: 0`, `reminderIds: []`, and `limit: 100`.
 - Codex Extension check: Chrome extension and native host were connected, but neither the current Codex API session nor a nested `codex exec` smoke exposed callable `browser_use` or `computer_use` tools. Browser Harness remains the working fallback for authenticated web-state proof.
+- Day 7 Cloud Schema Proof unblock: PR `#2` merged fallback support for `PAWMATE_REMINDER_DATABASE_URL`; run `25540644879` passed `verify-only` on `main` with `status: ok`, schema proof, and CRUD smoke.
 - Fly auth/tooling check: `flyctl` v0.4.48 was installed and `flyctl auth login` succeeded as `duongngo0708@gmail.com`.
 - Fly app creation check: `flyctl apps create pawmate-api-duongnx13 --org personal --yes --json` failed because Fly requires payment information or credit for the personal org.
 - Codemagic live signing check: Developer Portal is still disconnected, no iOS certificates/provisioning profiles are shared with the personal account, and global variables are read-only with no existing variables.
@@ -48,6 +49,8 @@ Appetize auth proof is not a blocker anymore. The GitHub workflow promotion bloc
 - Successful GitHub scheduler run log: `temp/qa/day7-reminder-worker-run-25533819243-success-log-redacted.txt`
 - Successful scheduler run URL: `https://github.com/DuongNX13/PawMate/actions/runs/25533819243`
 - Codex Extension smoke: `temp/qa/codex-extension-smoke-availability.txt`
+- Day 7 Cloud Schema Proof run: `https://github.com/DuongNX13/PawMate/actions/runs/25540644879`
+- Day 7 Cloud Schema Proof redacted log: `temp/qa/day7-cloud-schema-proof-run-25540644879/combined-log-redacted.txt`
 - Fly billing blocker evidence: `temp/qa/day7-fly-app-create-pawmate-api-duongnx13.txt`
 - Codemagic current signing evidence: `temp/qa/codemagic-integrations-current.png`, `temp/qa/codemagic-code-signing-expanded-current.png`, `temp/qa/codemagic-global-vars-current.png`
 
