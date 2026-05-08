@@ -29,6 +29,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isSubmitting = false;
+  bool _qaSmokeStarted = false;
 
   @override
   void initState() {
@@ -38,6 +39,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         (pawmateQaPrefillAuth ? pawmateQaAuthEmail : '');
     if (pawmateQaPrefillAuth) {
       _passwordController.text = pawmateQaAuthPassword;
+    }
+    if (pawmateQaAutorunAuthSmoke) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _runQaAuthSmoke();
+      });
     }
     if (widget.showVerifiedMessage) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,6 +56,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         );
       });
+    }
+  }
+
+  Future<void> _runQaAuthSmoke() async {
+    if (_qaSmokeStarted || _isSubmitting || !mounted) {
+      return;
+    }
+    _qaSmokeStarted = true;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final messenger = ScaffoldMessenger.of(context);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    try {
+      await ref
+          .read(authApiProvider)
+          .register(email: email, password: password, phone: '0901234567');
+    } on AuthApiException catch (error) {
+      if (error.code != 'AUTH_001') {
+        if (mounted) {
+          messenger.showSnackBar(SnackBar(content: Text(error.message)));
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('QA register smoke failed. Continuing to login.'),
+          ),
+        );
+      }
+    }
+
+    try {
+      final session = await ref
+          .read(authApiProvider)
+          .login(email: email, password: password);
+      await ref.read(authSessionStoreProvider).save(session);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('hasActiveSession', true);
+      if (mounted) {
+        context.go('/pets');
+      }
+    } on AuthApiException catch (error) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('QA auth smoke failed. Check Appetize Network Logs.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 

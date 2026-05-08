@@ -76,6 +76,8 @@ workflows:
         PAWMATE_BACKEND_HEALTH_TIMEOUT_MS: "70000"
         PAWMATE_BACKEND_HEALTH_RETRY_INTERVAL_MS: "5000"
         PAWMATE_ENABLE_SYSTEM_PROXY: "true"
+        PAWMATE_INITIAL_ROUTE: /auth/login
+        PAWMATE_QA_AUTORUN_AUTH_SMOKE: "true"
         PAWMATE_QA_PREFILL_AUTH: "true"
     scripts:
       - name: Explain Appetize simulator path
@@ -111,6 +113,8 @@ workflows:
           flutter build ios --simulator --debug \
             --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}" \
             --dart-define=PAWMATE_ENABLE_SYSTEM_PROXY="${PAWMATE_ENABLE_SYSTEM_PROXY:-false}" \
+            --dart-define=PAWMATE_INITIAL_ROUTE="${PAWMATE_INITIAL_ROUTE:-/launch}" \
+            --dart-define=PAWMATE_QA_AUTORUN_AUTH_SMOKE="${PAWMATE_QA_AUTORUN_AUTH_SMOKE:-false}" \
             --dart-define=PAWMATE_QA_PREFILL_AUTH="${PAWMATE_QA_PREFILL_AUTH:-false}"
       - name: Package Appetize simulator zip
         script: |
