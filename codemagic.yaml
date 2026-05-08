@@ -72,6 +72,7 @@ workflows:
       xcode: latest
       cocoapods: default
       vars:
+        PAWMATE_API_BASE_URL: https://pawmate-api-yteu.onrender.com
         PAWMATE_BACKEND_HEALTH_TIMEOUT_MS: "70000"
         PAWMATE_BACKEND_HEALTH_RETRY_INTERVAL_MS: "5000"
         PAWMATE_ENABLE_SYSTEM_PROXY: "true"
