@@ -4,13 +4,13 @@ Date: 2026-05-05
 
 ## Goal
 
-Close `D7-04 iOS real-device smoke` without installing Xcode/Swift locally by using:
+Close `D7-04 iOS cloud smoke` without installing Xcode/Swift locally by using:
 
 - Codemagic cloud macOS builder for a signed `.ipa`.
-- BrowserStack real iPhone device for manual or automated smoke evidence.
-- Appetize iOS simulator as a supplemental demo/QA path when BrowserStack session time is too short.
+- Appetize iOS simulator for the active browser-based demo, exploration, and Network Logs path.
+- TestFlight or a physical iPhone later for release-signing parity after Apple Developer signing is connected.
 
-The BrowserStack path is the real-device path. The Appetize path is a simulator path and must not be used as release-signing proof.
+Appetize is the default Day 7 QA surface now. It is a simulator path and must not be used as release-signing proof.
 
 ## Required Accounts And Secrets
 
@@ -23,12 +23,7 @@ Codemagic variable group `pawmate_ios_signing`:
 
 - Apple Developer Program membership is required for installable iOS signing.
 - Configure Codemagic iOS signing for bundle id `com.pawmate.pawmateMobile`.
-- Recommended signing type for BrowserStack/internal device testing: `ad_hoc`.
-
-Codemagic variable group `pawmate_browserstack`:
-
-- `BROWSERSTACK_USERNAME`
-- `BROWSERSTACK_ACCESS_KEY`
+- Recommended signing type for internal device testing after Apple setup: `ad_hoc` or App Store/TestFlight depending on the release lane.
 
 Required for backend-backed register/login smoke:
 
@@ -40,38 +35,41 @@ If the team intentionally wants visual-only simulator smoke, do not claim regist
 
 ## Workflow To Run
 
-Codemagic workflow:
+Primary Codemagic workflow:
+
+```text
+ios-appetize-simulator-smoke
+```
+
+Expected artifacts:
+
+- `mobile/build/ios/appetize/PawMate-appetize-simulator.zip`
+
+After Apple Developer signing is connected, run the signed IPA workflow separately:
 
 ```text
 ios-real-device-smoke
 ```
 
-Expected artifacts:
+Expected signed artifacts:
 
 - `mobile/build/ios/ipa/*.ipa`
-- `browserstack-ios-upload.json`, if BrowserStack credentials were configured
+- `mobile/build/ios/archive/*.xcarchive`
 
-The upload response must include an `app_url` like:
+## Manual Appetize Smoke Checklist
 
-```text
-bs://...
-```
-
-## Manual BrowserStack Smoke Checklist
-
-Run on a real iPhone, preferably one recent and one older supported iOS device when capacity allows.
+Run on Appetize iOS Simulator. Keep the simulator session short and close the browser tab when evidence capture is done.
 
 Minimum Day 7 sign-off smoke:
 
-1. Install the uploaded PawMate `.ipa` on BrowserStack real iPhone.
+1. Upload `PawMate-appetize-simulator.zip` to Appetize.
 2. Launch app successfully, no crash within 30 seconds.
 3. Onboarding shell renders PawMate branding and primary CTA.
 4. Navigate through auth/register/login screens without layout overflow.
 5. Open Pets, Vet, Health, and Profile tabs; bottom navigation remains stable.
 6. Open Health timeline and Reminder Calendar.
 7. Open Notification Center.
-8. Rotate or background/resume once if BrowserStack device/session supports it.
-9. Capture video, device logs, and screenshots for evidence.
+8. Capture screenshots plus Appetize Network Logs and Debug Logs.
 
 Backend-backed smoke, only after `PAWMATE_API_BASE_URL` points to a public backend and Codemagic preflight passes:
 
@@ -85,32 +83,30 @@ Backend-backed smoke, only after `PAWMATE_API_BASE_URL` points to a public backe
 
 Backend-backed register/login recovery steps:
 
-1. Provision a public HTTPS backend URL. Preferred path is Fly staging after billing/app creation is unblocked; temporary HTTPS tunnel is acceptable only for short-lived QA evidence.
+1. Provision a public HTTPS backend URL. Preferred no-credit path is Render Free Web Service from root `render.yaml`; temporary HTTPS tunnel is acceptable only for short-lived QA evidence.
 2. Verify locally: `GET <PAWMATE_API_BASE_URL>/health` returns `{"status":"ok"}`.
 3. Add/update `PAWMATE_API_BASE_URL` in Codemagic environment variables for `DuongNX13/PawMate`.
-4. Rerun the relevant iOS workflow, then upload the new artifact to BrowserStack or Appetize.
+4. Rerun `ios-appetize-simulator-smoke`, then upload the new artifact to Appetize.
 5. On Appetize, enable `Network Logs` and `Debug Logs` before submitting Register.
 6. Use a unique email for each run, capture the `/auth/register` request/response, and only sign off if the app reaches OTP/login-ready state with backend evidence.
 
 ## Evidence Required
 
-Save these into `temp/qa/day7-ios-real-device/` after a real run:
+Save these into `temp/qa/day7-ios-cloud/` after a run:
 
-- BrowserStack session URL.
-- Device model and iOS version.
-- IPA artifact name/build number.
-- `browserstack-ios-upload.json` with secret-free values only.
+- Appetize app/build ID and simulator device/iOS version.
+- Codemagic artifact name/build number.
 - Screenshots for launch, navigation, reminders, notifications.
-- Video link or exported recording.
+- Redacted HAR or Network Logs for `/auth/register` and `/auth/login` when doing backend proof.
 - Result summary: `PASS`, `FAIL`, or `BLOCKED`, with exact blocker.
 
 ## Sign-Off Rule
 
-`D7-04` can be marked `DONE` only after the app is installed and smoke-tested on a real iPhone device, local or cloud.
+`D7-04` simulator/network-log proof can be marked done after Appetize captures backend-backed Register/Login traffic against a public HTTPS backend.
 
-If Codemagic builds the IPA but no BrowserStack/iPhone session runs, keep `D7-04` as `READY_TO_RUN`, not `DONE`.
+Release/TestFlight parity remains blocked until Apple Developer signing is connected and a signed IPA/TestFlight or physical-device run is captured.
 
-If BrowserStack credentials are missing, keep it blocked on credentials, not code.
+Historical BrowserStack evidence remains useful, but BrowserStack credentials/session time are no longer a required Day 7 blocker.
 
 If Apple signing is missing, keep it blocked on Apple signing, not simulator availability.
 
@@ -200,7 +196,6 @@ Network Logs closure on 2026-05-07:
 
 - Codemagic iOS signing: https://docs.codemagic.io/yaml-code-signing/signing-ios/
 - Codemagic YAML configuration: https://docs.codemagic.io/yaml-basic-configuration/yaml-getting-started/
-- BrowserStack Flutter real-device testing: https://www.browserstack.com/docs/app-automate/flutter
-- BrowserStack app upload API: https://www.browserstack.com/docs/app-automate/appium/getting-started/java/testng/manage-apps/upload-app/from-local-machine
+- Render Free backend replacement status: ../management/day7_free_backend_replacement_status_2026-05-08.md
 - Appetize iOS upload requirements: https://docs.appetize.io/platform/app-management/uploading-apps/ios
 - Appetize JavaScript SDK session API: https://docs.appetize.io/javascript-sdk/api-reference/session

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: pawmate-api
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_ACCESS_TOKEN_SECRET
+        generateValue: true
+      - key: AUTH_REFRESH_TOKEN_SECRET
+        generateValue: true
+      - key: AUTH_EMAIL_RATE_LIMIT_AUTO_VERIFY_FALLBACK
+        value: "false"

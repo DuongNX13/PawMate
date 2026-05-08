@@ -4,7 +4,7 @@ Date: 2026-05-05
 
 ## Scope
 
-Day 7 starts productionization hardening after Day 6 Android-local sign-off. The first patch moves reminder due processing from a user-triggered-only endpoint to an explicit backend worker command that can be scheduled by Fly cron, GitHub Actions, Windows Task Scheduler, or another trusted runner.
+Day 7 starts productionization hardening after Day 6 Android-local sign-off. The first patch moves reminder due processing from a user-triggered-only endpoint to an explicit backend worker command that can be scheduled by Fly/Render, GitHub Actions, Windows Task Scheduler, or another trusted runner.
 
 ## Task Status
 
@@ -18,6 +18,7 @@ Day 7 starts productionization hardening after Day 6 Android-local sign-off. The
 | D7-06 Scheduler/cloud proof runbook | DONE | `docs/management/day7_scheduler_runbook.md`, `docs/management/day7_blocker_resolution_plan.md` |
 | D7-07 Manual GitHub cloud proof workflow | DONE_CLOUD_PROOF | `.github/workflows/day7-cloud-schema-proof.yml` is merged to `main`; workflow now falls back to `PAWMATE_REMINDER_DATABASE_URL`; run `25540644879` passed `verify-only` with schema status `ok` and CRUD smoke |
 | D7-08 Cloud iOS proof path | DONE_CORE_SMOKE + APPETIZE_SIM_DEMO_TEXT_ENTRY / RELEASE_SIGNING_GAP | Codemagic build `69fb0916be8a3ba0bd3513b0` produced `PawMate-browserstack-unsigned.ipa` for BrowserStack re-sign; Codemagic build `69fb188bbe4ca8fb32575ccc` produced `PawMate-appetize-simulator.zip` for Appetize; release/TestFlight build still requires Apple Developer signing assets |
+| D7-09 No-credit durable backend replacement | READY_FOR_RENDER_DASHBOARD | Fly app creation is blocked by payment information; Render Free Web Service is selected as the no-credit MVP replacement. Added `render.yaml`, Appetize-first Codemagic settings, and `docs/management/day7_free_backend_replacement_status_2026-05-08.md` |
 
 ## Operational Notes
 
@@ -68,10 +69,11 @@ Day 7 starts productionization hardening after Day 6 Android-local sign-off. The
 - Cloud schema proof on 2026-05-08: PR `#2` merged fallback support for `PAWMATE_REMINDER_DATABASE_URL`, then GitHub Actions run `25540644879` passed `verify-only` on `main` with `status: ok` and CRUD smoke. Evidence: `temp/qa/day7-cloud-schema-proof-run-25540644879/combined-log-redacted.txt`, `https://github.com/DuongNX13/PawMate/actions/runs/25540644879`.
 - Fly deploy check on 2026-05-08: `flyctl` was installed and `flyctl auth login` completed as `duongngo0708@gmail.com`, but creating `pawmate-api-duongnx13` failed because Fly requires payment information for the personal org before app creation. Evidence: `temp/qa/day7-fly-app-create-pawmate-api-duongnx13.txt`.
 - Codemagic signing check on 2026-05-08: live Codemagic settings still show Developer Portal disconnected, no iOS certificates/provisioning profiles shared with the account, and no global variables. Evidence: `temp/qa/codemagic-integrations-current.png`, `temp/qa/codemagic-code-signing-expanded-current.png`, `temp/qa/codemagic-global-vars-current.png`.
+- Free backend replacement check on 2026-05-08: Render Free Web Service is the selected Fly replacement because it supports a normal Node web service, public HTTPS, monorepo root directories, Blueprint IaC, and free deploy without payment for the MVP path. Railway/Koyeb are not the preferred no-credit route, and serverless/edge platforms would require more backend rewrite. Evidence: `render.yaml`, `docs/management/day7_free_backend_replacement_status_2026-05-08.md`.
 
 ## Next Actions
 
-1. Add Fly payment information or credit for the personal org, then create `pawmate-api-duongnx13`, set runtime secrets, and run `Fly Staging`.
-2. Set Codemagic `PAWMATE_API_BASE_URL` to the durable Fly URL after deploy.
+1. Create the Render Free Web Service from `render.yaml`, enter the Supabase Session Pooler `DATABASE_URL` in Render only, then verify `GET https://<render-service-subdomain>.onrender.com/health`.
+2. Set Codemagic `PAWMATE_API_BASE_URL` to the durable Render URL after deploy, then rerun `ios-appetize-simulator-smoke` and capture Appetize Network Logs for `/auth/register` plus `/auth/login`.
 3. Connect Apple Developer Portal/App Store Connect API in Codemagic and provide signing assets for `com.pawmate.pawmateMobile`, then rerun `ios-real-device-smoke`.
-4. For broader QA, use Appetize for simulator demo/exploration and rerun BrowserStack with a paid/extended session or physical iPhone for real-device tab-by-tab smoke beyond the current Login/Register evidence.
+4. Treat Appetize as the default browser-based QA surface. Use TestFlight or a physical iPhone later for final real-device signing parity after Apple signing is connected.
