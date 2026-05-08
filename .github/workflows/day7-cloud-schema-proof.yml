@@ -25,7 +25,7 @@ jobs:
       run:
         working-directory: backend
     env:
-      PAWMATE_DB_MIGRATION_URL: ${{ secrets.PAWMATE_DB_MIGRATION_URL || secrets.DATABASE_DIRECT_URL || secrets.SUPABASE_DATABASE_URL || secrets.SUPABASE_DB_URL || secrets.DATABASE_URL }}
+      PAWMATE_DB_MIGRATION_URL: ${{ secrets.PAWMATE_DB_MIGRATION_URL || secrets.PAWMATE_REMINDER_DATABASE_URL || secrets.DATABASE_DIRECT_URL || secrets.SUPABASE_DATABASE_URL || secrets.SUPABASE_DB_URL || secrets.DATABASE_URL }}
       PROOF_MODE: ${{ inputs.mode }}
     steps:
       - name: Checkout

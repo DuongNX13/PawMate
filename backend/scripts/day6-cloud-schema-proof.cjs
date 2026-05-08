@@ -17,6 +17,7 @@ dotenv.config({ path: path.join(backendRoot, '.env.local'), override: true });
 
 const migrationUrl =
   process.env.PAWMATE_DB_MIGRATION_URL ||
+  process.env.PAWMATE_REMINDER_DATABASE_URL ||
   process.env.DATABASE_DIRECT_URL ||
   process.env.SUPABASE_DATABASE_URL ||
   process.env.SUPABASE_DB_URL ||
@@ -34,7 +35,7 @@ const redactUrl = (rawUrl) => {
 const parseDatabaseUrl = (rawUrl) => {
   if (!rawUrl) {
     throw new Error(
-      'No database URL found. Set PAWMATE_DB_MIGRATION_URL, DATABASE_DIRECT_URL, SUPABASE_DATABASE_URL, SUPABASE_DB_URL, or DATABASE_URL.',
+      'No database URL found. Set PAWMATE_DB_MIGRATION_URL, PAWMATE_REMINDER_DATABASE_URL, DATABASE_DIRECT_URL, SUPABASE_DATABASE_URL, SUPABASE_DB_URL, or DATABASE_URL.',
     );
   }
 
