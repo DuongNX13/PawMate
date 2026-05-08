@@ -7,7 +7,7 @@ services:
     branch: main
     rootDir: backend
     buildCommand: npm ci --include=dev && npx prisma generate && npm run build
-    startCommand: npm start
+    startCommand: npx prisma db push --skip-generate && npm start
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
