@@ -444,6 +444,7 @@ Prerequisite:
   - `services`
   - `photoUrls`
   - `is24h`
+- Day 9 accepts the validated 12-clinic `day3_vet_geo_pilot.json` overlay as the MVP map dataset; the full 80-clinic Day 2 seed does not need to be map-ready before RC.
 
 Goal:
 - dua map vao nhu mot feature that, khong phai demo shell
@@ -456,6 +457,8 @@ Workstreams:
 - marker selection
 - bottom sheet
 - permission denied / empty / loading states
+- Android map UI exposes radius, 24/7, open-now, and 4+ rating filters from the existing nearby API contract.
+- Warm orange `#FF8A5B` is accepted as the current Figma/Flutter primary token, superseding the older teal Day 1 draft.
 
 Acceptance criteria:
 - nearby results dung ban kinh

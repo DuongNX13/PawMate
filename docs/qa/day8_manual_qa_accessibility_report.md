@@ -88,7 +88,8 @@ Day 8 evidence:
 - Android Vietnamese UI after copy cleanup: `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`
 - Dependency audit fix: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-110940-4f9f2eae.raw.txt`
 - Render core API smoke: `temp/qa/day8-appetize-deep-login/day8-render-api-core-smoke.json`
-- GitHub Actions `main` commit `c768850`: `temp/qa/day8-appetize-deep-login/github-actions-c768850-pass.png`
+- GitHub CI `main` commit `b4ed17d`: `https://github.com/DuongNX13/PawMate/actions/runs/25662051852`
+- GitHub Compose Smoke `main` commit `b4ed17d`: `https://github.com/DuongNX13/PawMate/actions/runs/25662051820`
 - Codemagic Appetize build: `https://codemagic.io/app/69fb006fcb6fc5b8a49301e3/build/6a0157cb3a8de0b0c8f17cf5`
 
 ## Open Findings

@@ -404,6 +404,36 @@ describe('Vet routes', () => {
     await app.close();
   });
 
+  it('falls back to pilot seed nearby data when runtime directory has no geo rows', async () => {
+    const config = buildConfig();
+    const app = buildApp(
+      { logger: false },
+      {
+        config,
+        vetService: createVetService({
+          seedData,
+          pilotSeedData,
+          nearbyStore: {
+            listNearby: async () => [],
+          },
+          now: () => new Date('2026-04-23T03:30:00.000Z'),
+        }),
+      },
+    );
+    await app.ready();
+
+    const nearbyResponse = await app.inject({
+      method: 'GET',
+      url: '/vets/nearby?lat=10.7880&lng=106.6920&radius=6000',
+    });
+
+    expect(nearbyResponse.statusCode).toBe(200);
+    expect(nearbyResponse.json().data).toHaveLength(2);
+    expect(nearbyResponse.json().data[0].id).toBe('hcm-001');
+
+    await app.close();
+  });
+
   it('rejects invalid filter and nearby query values with field-level errors', async () => {
     const app = await buildTestApp();
 

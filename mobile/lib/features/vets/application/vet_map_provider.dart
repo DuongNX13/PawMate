@@ -68,6 +68,9 @@ class VetMapNotifier extends Notifier<VetMapState> {
               latitude: center.latitude,
               longitude: center.longitude,
               radiusMeters: state.radiusMeters,
+              only24h: state.only24h,
+              openNow: state.openNow,
+              minRating: state.minRating,
             ),
           );
 
@@ -100,6 +103,25 @@ class VetMapNotifier extends Notifier<VetMapState> {
     }
 
     state = state.copyWith(radiusMeters: radiusMeters);
+    await refresh();
+  }
+
+  Future<void> toggleOnly24h() async {
+    state = state.copyWith(only24h: !state.only24h);
+    await refresh();
+  }
+
+  Future<void> toggleOpenNow() async {
+    state = state.copyWith(openNow: !state.openNow);
+    await refresh();
+  }
+
+  Future<void> toggleRating4Plus() async {
+    final isSelected = state.minRating == 4;
+    state = state.copyWith(
+      minRating: isSelected ? null : 4,
+      clearMinRating: isSelected,
+    );
     await refresh();
   }
 }

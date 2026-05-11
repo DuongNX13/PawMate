@@ -580,21 +580,20 @@ export const createVetService = (
       const radiusMeters = validateRadius(input.radius);
       const now = nowProvider();
 
-      const nearbyCandidates = options.nearbyStore
-        ? await options.nearbyStore.listNearby({
-            latitude: input.latitude,
-            longitude: input.longitude,
-            radiusMeters,
-            is24h: input.is24h,
-            minRating: input.minRating,
-          })
-        : await listNearbyInMemory({
-            latitude: input.latitude,
-            longitude: input.longitude,
-            radiusMeters,
-            is24h: input.is24h,
-            minRating: input.minRating,
-          });
+      const nearbyQuery = {
+        latitude: input.latitude,
+        longitude: input.longitude,
+        radiusMeters,
+        is24h: input.is24h,
+        minRating: input.minRating,
+      };
+      const storeCandidates = options.nearbyStore
+        ? await options.nearbyStore.listNearby(nearbyQuery)
+        : [];
+      const nearbyCandidates =
+        storeCandidates.length > 0
+          ? storeCandidates
+          : await listNearbyInMemory(nearbyQuery);
 
       const filtered = nearbyCandidates
         .filter((clinic) =>

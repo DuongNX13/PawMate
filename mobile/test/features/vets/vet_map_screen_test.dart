@@ -232,6 +232,70 @@ void main() {
     expect(find.text('fake-map-style:night'), findsOneWidget);
   });
 
+  testWidgets('nearby map filter chips update API query flags', (tester) async {
+    final fakeApi = _FakeVetApi(
+      nearbyItems: const [
+        VetSummary(
+          id: 'vet-1',
+          name: 'PetCare Elite',
+          city: 'TP Hồ Chí Minh',
+          district: 'Quận 1',
+          address: '128 Nguyễn Huệ',
+          phone: '0903111222',
+          services: ['Cấp cứu 24/7'],
+          seedRank: 1,
+          averageRating: 4.9,
+          reviewCount: 124,
+          is24h: true,
+          isOpen: true,
+          readyForMap: true,
+          latitude: 10.778,
+          longitude: 106.701,
+          distanceMeters: 180,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetLocationServiceProvider.overrideWith(
+            (ref) => _FakeLocationService.success(),
+          ),
+          vetMapCanvasBuilderProvider.overrideWith(
+            (ref) =>
+                (
+                  VetMapLocation center,
+                  List<VetSummary> vets,
+                  VetMapStyle mapStyle,
+                  ValueChanged<String> onMarkerTap,
+                ) => Text('fake-map:${vets.length}'),
+          ),
+        ],
+        child: const MaterialApp(home: VetMapScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(fakeApi.nearbyRequests.single.only24h, isFalse);
+    expect(fakeApi.nearbyRequests.single.openNow, isFalse);
+    expect(fakeApi.nearbyRequests.single.minRating, isNull);
+    expect(find.textContaining('Day 3'), findsNothing);
+
+    await tester.tap(find.text('24/7'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Đang mở'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Đánh giá 4+'));
+    await tester.pumpAndSettle();
+
+    final lastRequest = fakeApi.nearbyRequests.last;
+    expect(lastRequest.only24h, isTrue);
+    expect(lastRequest.openNow, isTrue);
+    expect(lastRequest.minRating, 4);
+  });
+
   testWidgets('preview sheet action callbacks are individually tappable', (
     tester,
   ) async {

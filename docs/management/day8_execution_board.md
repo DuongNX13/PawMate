@@ -22,7 +22,7 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 | D8-03 | Appetize deep-login Network Logs proof | DONE | `temp/qa/day8-appetize-deep-login/appetize-network-tab-after-login.png`, `temp/qa/day8-appetize-deep-login/appetize-after-manual-login-12s.png` |
 | D8-04 | Full manual QA matrix | ANDROID_CORE_NORMAL_PASS_WITH_FIXES | `temp/qa/day8-appetize-deep-login/day8-render-api-core-smoke.json`, `temp/qa/day8-android-e2e/34-reminders-after-selector-fix.png`, `temp/qa/day8-android-e2e/36-final-installed-current-build.png`, `docs/qa/day8_manual_qa_accessibility_report.md` |
 | D8-05 | Accessibility pass | DONE | `docs/qa/day8_manual_qa_accessibility_report.md`; Android font scale `1.3` pass captured in `temp/qa/day8-android-large-text/` |
-| D8-06 | CI/Ops proof | DONE | Backend/mobile gates, coverage, audit, Render health, GitHub CI #34, and Compose Smoke #34 passed on `main` commit `c768850` |
+| D8-06 | CI/Ops proof | DONE | Backend/mobile gates, coverage, audit, Render health, GitHub CI and Compose Smoke passed on `main` commit `b4ed17d` |
 | D8-07 | Android functional testcase package | DONE | `docs/qa/day8_android_functional_testcases.md` |
 | D8-08 | Android UI/UX Figma audit package | DONE | `docs/qa/day8_android_uiux_figma_audit.md` |
 | D8-09 | Android UI regression fixes and retest | DONE | `mobile/test/features/reminders/reminder_calendar_screen_test.dart`; latest mobile gates `31/31` pass |
@@ -59,7 +59,7 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 - [x] Appetize Network Logs show `/auth/login` `200` for verified QA account.
 - [x] Appetize app reaches `/pets` after login.
 - [x] Public Render core API smoke covers auth, pets, health records, reminders, notifications, and vet search.
-- [x] GitHub CI #34 and Compose Smoke #34 passed for `c768850`.
+- [x] GitHub CI and Compose Smoke passed for `b4ed17d`.
 - [x] Android normal-text visual QA across exercised core MVP screens has no remaining P0/P1 core-flow bugs after fixes.
 - [x] Full screen-by-screen large-text accessibility pass has no severe contrast/tap-target/text-scale issues.
 
@@ -89,7 +89,8 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 - Appetize Network Logs proof: `temp/qa/day8-appetize-deep-login/appetize-network-tab-after-login.png`
 - Appetize authenticated pets surface: `temp/qa/day8-appetize-deep-login/appetize-after-manual-login-12s.png`
 - Render core API smoke: `temp/qa/day8-appetize-deep-login/day8-render-api-core-smoke.json`
-- GitHub Actions proof for `c768850`: `temp/qa/day8-appetize-deep-login/github-actions-c768850-pass.png`
+- GitHub CI for `b4ed17d`: `https://github.com/DuongNX13/PawMate/actions/runs/25662051852`
+- GitHub Compose Smoke for `b4ed17d`: `https://github.com/DuongNX13/PawMate/actions/runs/25662051820`
 
 ## Risk Register
 

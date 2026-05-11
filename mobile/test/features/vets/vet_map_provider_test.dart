@@ -117,6 +117,60 @@ void main() {
     expect(state.items, hasLength(1));
     expect(fakeApi.nearbyRequests.first.radiusMeters, 3000);
     expect(fakeApi.nearbyRequests.last.radiusMeters, 5000);
+    expect(fakeApi.nearbyRequests.last.only24h, isFalse);
+    expect(fakeApi.nearbyRequests.last.openNow, isFalse);
+    expect(fakeApi.nearbyRequests.last.minRating, isNull);
+  });
+
+  test('forwards nearby filters to the map API request', () async {
+    final fakeApi = _FakeVetApi(
+      nearbyItems: const [
+        VetSummary(
+          id: 'vet-1',
+          name: 'PetCare Elite',
+          city: 'TP Hồ Chí Minh',
+          district: 'Quận 1',
+          address: '128 Nguyễn Huệ',
+          phone: '0903111222',
+          services: ['Cấp cứu 24/7'],
+          seedRank: 1,
+          averageRating: 4.9,
+          reviewCount: 124,
+          is24h: true,
+          isOpen: true,
+          readyForMap: true,
+          latitude: 10.778,
+          longitude: 106.701,
+          distanceMeters: 180,
+        ),
+      ],
+    );
+    final container = ProviderContainer(
+      overrides: [
+        vetApiProvider.overrideWith((ref) => fakeApi),
+        vetLocationServiceProvider.overrideWith(
+          (ref) => _FakeLocationService.success(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container
+        .read(vetMapProvider.notifier)
+        .refresh(forceLocationRefresh: true);
+    await container.read(vetMapProvider.notifier).toggleOnly24h();
+    await container.read(vetMapProvider.notifier).toggleOpenNow();
+    await container.read(vetMapProvider.notifier).toggleRating4Plus();
+
+    final state = container.read(vetMapProvider);
+    final lastRequest = fakeApi.nearbyRequests.last;
+
+    expect(state.only24h, isTrue);
+    expect(state.openNow, isTrue);
+    expect(state.minRating, 4);
+    expect(lastRequest.only24h, isTrue);
+    expect(lastRequest.openNow, isTrue);
+    expect(lastRequest.minRating, 4);
   });
 
   test('returns error state when nearby API throws', () async {

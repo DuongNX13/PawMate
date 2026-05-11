@@ -14,21 +14,23 @@ Scope: `D1-09 Design System - Colors and Typography`, `D1-10 Design System - Spa
 
 ### 2.1 Brand palette
 
-| Token | HSL | Use |
+Day 9 decision: the current Figma intake page and Flutter implementation are the source of truth for brand color. The older teal primary draft is superseded by the warm orange PawMate palette below.
+
+| Token | Value | Use |
 |---|---|---|
-| `primary-50` | `hsl(165 60% 95%)` | Soft background tint |
-| `primary-100` | `hsl(165 55% 88%)` | Subtle fill, chip background |
-| `primary-300` | `hsl(166 60% 62%)` | Hover, secondary emphasis |
-| `primary-500` | `hsl(166 68% 38%)` | Main action color |
-| `primary-700` | `hsl(168 72% 26%)` | Pressed state, strong emphasis |
-| `secondary-50` | `hsl(208 80% 96%)` | Soft info surfaces |
-| `secondary-300` | `hsl(209 72% 62%)` | Supporting accent |
-| `secondary-500` | `hsl(210 78% 45%)` | Links, map emphasis, secondary action |
-| `secondary-700` | `hsl(214 82% 30%)` | Dark supporting emphasis |
-| `accent-50` | `hsl(18 100% 96%)` | Warm highlight background |
-| `accent-300` | `hsl(17 92% 68%)` | Badge, attention accent |
-| `accent-500` | `hsl(16 88% 56%)` | Rare emphasis, urgent hint |
-| `accent-700` | `hsl(14 84% 42%)` | Strong warm emphasis |
+| `primary-50` | `#FFF5F0` | Soft background tint |
+| `primary-100` | `#FCE7DD` | Subtle fill, chip background |
+| `primary-300` | `#FFB18F` | Hover, secondary emphasis |
+| `primary-500` | `#FF8A5B` | Main action color |
+| `primary-700` | `#C55A28` | Pressed state, strong emphasis |
+| `secondary-50` | `#EAF3FF` | Soft info surfaces |
+| `secondary-300` | `#6FA4D6` | Supporting accent |
+| `secondary-500` | `#2D5A88` | Links, map emphasis, secondary action |
+| `secondary-700` | `#173A5C` | Dark supporting emphasis |
+| `accent-50` | `#FFF6D5` | Warm highlight background |
+| `accent-300` | `#FFE766` | Badge, attention accent |
+| `accent-500` | `#FFD700` | Rare emphasis, urgent hint |
+| `accent-700` | `#B88700` | Strong warm emphasis |
 
 ### 2.2 Neutral palette
 

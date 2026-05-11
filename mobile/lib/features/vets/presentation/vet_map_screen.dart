@@ -39,7 +39,7 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/vets/list'),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 120),
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 220),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -84,7 +84,7 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
               ),
               const SizedBox(height: 10),
               Text(
-                'Map tab dùng dữ liệu nearby thật của Day 3. Marker, bottom sheet và radius filter đang chạy trên cùng contract backend.',
+                'Xem các phòng khám lân cận theo vị trí hiện tại, lọc theo bán kính, giờ mở cửa và đánh giá.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondary,
                   height: 1.35,
@@ -95,6 +95,18 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
                 radiusMeters: state.radiusMeters,
                 onSelected: (radius) =>
                     ref.read(vetMapProvider.notifier).selectRadius(radius),
+              ),
+              const SizedBox(height: 12),
+              _MapFilterSelector(
+                only24h: state.only24h,
+                openNow: state.openNow,
+                rating4Plus: state.minRating == 4,
+                onToggleOnly24h: () =>
+                    ref.read(vetMapProvider.notifier).toggleOnly24h(),
+                onToggleOpenNow: () =>
+                    ref.read(vetMapProvider.notifier).toggleOpenNow(),
+                onToggleRating4Plus: () =>
+                    ref.read(vetMapProvider.notifier).toggleRating4Plus(),
               ),
               const SizedBox(height: 12),
               Row(
@@ -175,19 +187,18 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
                 ),
                 const SizedBox(height: 18),
                 _MapInfoCard(
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          state.status == VetMapStatus.empty
-                              ? 'Không có phòng khám trong bán kính ${_radiusLabel(state.radiusMeters)}.'
-                              : '${state.items.length} phòng khám trong bán kính ${_radiusLabel(state.radiusMeters)}.',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      Text(
+                        state.status == VetMapStatus.empty
+                            ? 'Không có phòng khám trong bán kính ${_radiusLabel(state.radiusMeters)}.'
+                            : '${state.items.length} phòng khám trong bán kính ${_radiusLabel(state.radiusMeters)}.',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(height: 8),
                       Text(
                         state.status == VetMapStatus.empty
                             ? 'Trống'
@@ -272,28 +283,99 @@ class _RadiusSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 42,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _options.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (context, index) {
-          final option = _options[index];
-          final selected = option == radiusMeters;
-
-          return ChoiceChip(
-            label: Text(option >= 1000 ? '${option ~/ 1000} km' : '$option m'),
-            selected: selected,
-            onSelected: (_) => onSelected(option),
-            showCheckmark: false,
-            selectedColor: AppColors.primarySoft,
-            side: BorderSide(
-              color: selected ? Colors.transparent : AppColors.border,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final option in _options) ...[
+            ChoiceChip(
+              label: Text(
+                option >= 1000 ? '${option ~/ 1000} km' : '$option m',
+              ),
+              selected: option == radiusMeters,
+              onSelected: (_) => onSelected(option),
+              showCheckmark: false,
+              selectedColor: AppColors.primarySoft,
+              side: BorderSide(
+                color: option == radiusMeters
+                    ? Colors.transparent
+                    : AppColors.border,
+              ),
             ),
-          );
-        },
+            if (option != _options.last) const SizedBox(width: 10),
+          ],
+        ],
       ),
+    );
+  }
+}
+
+class _MapFilterSelector extends StatelessWidget {
+  const _MapFilterSelector({
+    required this.only24h,
+    required this.openNow,
+    required this.rating4Plus,
+    required this.onToggleOnly24h,
+    required this.onToggleOpenNow,
+    required this.onToggleRating4Plus,
+  });
+
+  final bool only24h;
+  final bool openNow;
+  final bool rating4Plus;
+  final VoidCallback onToggleOnly24h;
+  final VoidCallback onToggleOpenNow;
+  final VoidCallback onToggleRating4Plus;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _MapFilterChip(
+            label: '24/7',
+            selected: only24h,
+            onSelected: onToggleOnly24h,
+          ),
+          const SizedBox(width: 10),
+          _MapFilterChip(
+            label: 'Đang mở',
+            selected: openNow,
+            onSelected: onToggleOpenNow,
+          ),
+          const SizedBox(width: 10),
+          _MapFilterChip(
+            label: 'Đánh giá 4+',
+            selected: rating4Plus,
+            onSelected: onToggleRating4Plus,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapFilterChip extends StatelessWidget {
+  const _MapFilterChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
+      showCheckmark: false,
+      selectedColor: AppColors.primarySoft,
+      side: BorderSide(color: selected ? Colors.transparent : AppColors.border),
     );
   }
 }

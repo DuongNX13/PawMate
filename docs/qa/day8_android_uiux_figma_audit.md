@@ -58,7 +58,7 @@ Use these as Android visual acceptance criteria:
 | Area | Expected baseline |
 |---|---|
 | Typography | User-facing Vietnamese uses `Be Vietnam Pro`; labels may use `Inter`; key scale: Display 32, H1 28, H2 24, H3 20, Body 16, Label 14, Caption 12. |
-| Color tokens | Figma page currently shows Primary `#FF8A5B`, Secondary `#2D5A88`, Tertiary `#FFD700`, Neutral `#F9FAFB`. Day 1 doc still defines primary as teal HSL tokens, so this conflict must be resolved by design owner. |
+| Color tokens | Figma page, current Flutter tokens, and the updated Day 1 design system now use Primary `#FF8A5B`, Secondary `#2D5A88`, Tertiary `#FFD700`, Neutral `#F9FAFB`. |
 | Spacing | 4/8/12/16/24/32/48/64 px scale; common screen padding should stay around 16-24 px. |
 | Shapes | Inputs/chips 8 px, cards/buttons 12 px, bottom sheets/featured cards 16 px, hero/onboarding panels 24 px, pills 999 px. |
 | Buttons | Primary action min height 48 px; app theme currently uses 56 px for filled buttons and 48 px for outlined buttons. |
@@ -73,7 +73,7 @@ Use these as Android visual acceptance criteria:
 
 | ID | Severity | Finding | Evidence | Android E2E check |
 |---|---|---|---|---|
-| UIX-D8-01 | High | Design token source conflict: Day 1 design doc defines teal primary tokens, while Figma page and current Flutter code use warm orange `#FF8A5B` as primary. This affects color sign-off because both cannot be the source of truth. | Figma swatch Primary `#FF8A5B`; `mobile/lib/app/theme/app_tokens.dart` has `AppColors.primary500 = Color(0xFFFF8A5B)`; Day 1 doc says `primary-500` is HSL teal. | Capture Android screenshots for auth/pets/health/vet/reminder/notification and decide whether orange theme is accepted as latest Figma source or doc must be updated. |
+| UIX-D8-01 | Closed in Day 9 follow-up | Warm orange `#FF8A5B` is accepted as the PawMate primary token because it matches the current Figma intake page and Flutter implementation. The older teal Day 1 draft was updated. | Figma swatch Primary `#FF8A5B`; `mobile/lib/app/theme/app_tokens.dart` has `AppColors.primary500 = Color(0xFFFF8A5B)`; `docs/design/day1_design_system.md` now uses `#FF8A5B`. | Re-check only if Figma introduces a new published token collection. |
 | UIX-D8-02 | Closed in follow-up | Bottom navigation originally used English labels (`Home`, `Vet`, `Health`, `Profile`) while design goal is Vietnamese-first UI copy. Follow-up changed labels to `Thú cưng`, `Thú y`, `Sức khỏe`, `Hồ sơ` with one-line ellipsis. | `mobile/lib/core/widgets/pawmate_bottom_nav.dart`; `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`. | Re-check when new bottom-nav destinations are added. |
 | UIX-D8-03 | Closed in follow-up | Several Android UI strings were Vietnamese without accents. Follow-up normalized major MVP copy on auth, pets, reminders, notifications, vets/reviews, and placeholder routes. | `mobile/lib/features/**/presentation/*.dart`; `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`. | Re-scan user-visible strings when new screens are added. |
 | UIX-D8-04 | Closed in follow-up | Full text-scale proof is captured for dense surfaces: vet review card, review bottom sheet, reminder calendar, notification cards, and bottom nav. | `temp/qa/day8-android-large-text/19-postfix-reminders.png`, `20-postfix-notifications.png`, `18-postfix-health-scroll.png`, `22-postfix-vet-detail-scroll.png`; bottom padding increased in affected screens. | Re-run at large text when new dense cards/forms are added. |
@@ -133,5 +133,5 @@ After this audit package was produced, the main Android E2E pass implemented and
 
 Remaining UI/UX debt:
 
-- UIX-D8-01 remains a design-owner decision: the live Flutter/Figma warm orange primary conflicts with the older Day 1 teal-token doc.
+- UIX-D8-01 is closed: warm orange `#FF8A5B` is accepted as source of truth and the older Day 1 teal-token draft was updated.
 - UIX-D8-04 is closed for Day 8: Android `font_scale=1.3` evidence covers dense review/reminder/notification surfaces and the bottom-nav/FAB overlap risk.
