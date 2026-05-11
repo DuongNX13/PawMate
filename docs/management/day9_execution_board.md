@@ -24,8 +24,8 @@ Out of scope for Day 9:
 | D9-06 | Add map filters to mobile nearby request | DONE | `mobile/lib/features/vets/domain/vet_map_models.dart`, `mobile/lib/features/vets/application/vet_map_provider.dart` |
 | D9-07 | Automated mobile map regression tests | DONE | `flutter test --no-pub --no-test-assets test/features/vets/vet_map_provider_test.dart`; `flutter test --no-pub --no-test-assets test/features/vets/vet_map_screen_test.dart` |
 | D9-08 | Full backend/mobile quality gates | DONE | Backend gate: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-175106-5a1c8303.raw.txt`; Mobile gate: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-173800-cbea50f6.raw.txt` |
-| D9-09 | Android map E2E evidence | PARTIAL_PASS | Build/install passed; Vet list -> Map, radius/filter controls, tile render, empty state captured under `temp/qa/day9-android-map/` |
-| D9-10 | Render live nearby smoke | CODE_FIXED_PENDING_DEPLOY | Pre-fix live Render `/vets/nearby?lat=10.7769&lng=106.7009&radius=10000` returned empty while `/vets/search` showed map-ready HCM clinics |
+| D9-09 | Android map E2E evidence | DONE | Build/install passed; map reload, marker preview, detail route, and large-text map preview captured under `temp/qa/day9-android-map/` |
+| D9-10 | Render live nearby smoke | DONE | Live Render `/vets/nearby?lat=10.7769&lng=106.7009&radius=10000&limit=5` returns `200` with 4 HCM clinics |
 | D9-11 | Backend fallback when runtime directory has no geo rows | DONE | `backend/src/services/vets/vet-service.ts`, `backend/tests/vet.routes.test.ts`; regression test added |
 
 ## Implementation Notes
@@ -39,6 +39,14 @@ Out of scope for Day 9:
 - Bottom content padding on map is increased to match the Day 8 large-text fix pattern for bottom navigation.
 - Warm orange `#FF8A5B` is accepted as the PawMate primary token because it matches the current Figma intake page and Flutter app.
 - Render exposed a backend edge case: when `DATABASE_URL` is present, `/vets/nearby` used the Prisma/PostGIS nearby store and did not fallback to the committed pilot seed if the runtime directory returned zero geo rows. Day 9 adds a fallback so pilot nearby data still serves while DB geo sync catches up.
+- Commit `84dc545` deployed successfully. GitHub CI and Compose Smoke both completed with `success`.
+- Android normal-text evidence:
+  - `temp/qa/day9-android-map/15-map-live-nearby-reloaded.png`
+  - `temp/qa/day9-android-map/16-marker-preview-sheet.png`
+  - `temp/qa/day9-android-map/17-preview-detail-route.png`
+- Android large-text evidence at `font_scale=1.3`:
+  - `temp/qa/day9-android-map/21-large-text-map.png`
+  - `temp/qa/day9-android-map/22-large-text-marker-preview.png`
 
 ## Verification Checklist
 
@@ -54,9 +62,10 @@ Out of scope for Day 9:
 - [x] Backend full gates pass.
 - [x] Mobile full gates pass.
 - [x] Android latest APK builds and installs.
-- [x] Android manual map E2E captures Vet list -> Map -> radius/filter controls and empty-state behavior.
-- [ ] Android manual map E2E captures marker preview -> detail after Render redeploy returns live nearby rows.
-- [ ] Render live nearby smoke passes after deploy.
+- [x] Android manual map E2E captures Vet list -> Map -> radius/filter controls and live marker behavior.
+- [x] Android manual map E2E captures marker preview -> detail after Render redeploy returns live nearby rows.
+- [x] Android large-text map and marker preview are usable at `font_scale=1.3`.
+- [x] Render live nearby smoke passes after deploy.
 
 ## Risk Register
 
@@ -66,12 +75,12 @@ Out of scope for Day 9:
 | Tile provider key missing or external tiles fail | Low | MITIGATED | Existing map canvas has OSM fallback path |
 | Location permission denied on Android | Medium | COVERED | Existing map state and widget tests cover permission denied and location disabled states |
 | Large text clips horizontal chips or map summary | Medium | MITIGATED | Chip rows are horizontally scrollable without fixed height; summary card no longer forces a tight row |
-| Render `/vets/nearby` returns empty because runtime PostGIS store has no geo rows | High | CODE_FIXED_PENDING_DEPLOY | Service now falls back to committed pilot seed when runtime directory returns zero nearby candidates |
+| Render `/vets/nearby` returns empty because runtime PostGIS store has no geo rows | High | RESOLVED | Service now falls back to committed pilot seed when runtime directory returns zero nearby candidates; live Render returns 4 HCM nearby rows |
 | Apple signing unavailable | Release parity | DEFERRED | Keep as final-day work, not Day 9 map blocker |
 
 ## Exit Gate
 
-Day 9 can close when:
+Day 9 is ready to close because:
 
 - pilot nearby data remains valid,
 - `/vets/nearby` passes radius/filter/detail expectations,
