@@ -7,8 +7,6 @@ on:
         description: Maximum due reminders to process in one run
         required: false
         default: "100"
-  schedule:
-    - cron: "*/15 * * * *"
 
 concurrency:
   group: reminder-worker
