@@ -79,6 +79,7 @@ workflows:
         PAWMATE_INITIAL_ROUTE: /auth/login
         PAWMATE_QA_AUTORUN_AUTH_SMOKE: "true"
         PAWMATE_QA_PREFILL_AUTH: "true"
+        PAWMATE_QA_AUTH_EMAIL: day8-appetize-verified@pawmate.test
     scripts:
       - name: Explain Appetize simulator path
         script: |
