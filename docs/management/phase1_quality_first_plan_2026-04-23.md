@@ -411,12 +411,17 @@ Workstreams:
   - fresh register tren Render co the tra `201` roi login ngay tra `403 AUTH_006`
   - day la expected email verification policy, khong phai ha tang blocker
   - demo login sau dung verified QA account; khong them public auto-verify endpoint
+- Day 8 execution evidence:
+  - Appetize Network Logs captured Render `/auth/login` `200` va `/pets` `200` cho verified QA account
+  - Render core API smoke pass auth, pets, health records, reminders, notifications, vet search
+  - GitHub CI va Compose Smoke pass tren `main` commit `c768850`
+  - full visual/accessibility screen-by-screen pass van can tiep tuc cho cac man health/reminder/vet/review
 
 Acceptance criteria:
 - khong con P0/P1 visual bug tren core flow
 - screen reader/tap target khong co loi nghiem trong
 - 2 flow end-to-end pass tren thiet bi/emulator
-- Appetize Network Logs co `/auth/login` `200` cho verified QA account, hoac ghi ro la backlog neu chi can register-policy proof
+- Appetize Network Logs co `/auth/login` `200` cho verified QA account
 
 Tests:
 - E2E critical flows
