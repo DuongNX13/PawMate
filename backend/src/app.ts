@@ -171,6 +171,28 @@ export const buildApp = (
       return;
     }
 
+    const fastifyError = error as {
+      code?: string;
+      message?: string;
+      statusCode?: number;
+    };
+    const statusCode =
+      typeof fastifyError.statusCode === 'number'
+        ? fastifyError.statusCode
+        : 500;
+
+    if (statusCode >= 400 && statusCode < 500) {
+      reply.status(statusCode).send({
+        success: false,
+        error: {
+          code: fastifyError.code ?? 'REQ_001',
+          message: fastifyError.message ?? 'Invalid request.',
+        },
+        requestId: request.id,
+      });
+      return;
+    }
+
     request.log.error(error);
     reply.status(500).send({
       success: false,

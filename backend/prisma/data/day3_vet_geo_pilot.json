@@ -1,0 +1,211 @@
+{
+  "generatedAt": "2026-04-24T00:00:00.000Z",
+  "note": "Pilot geo overlay for Day 3 nearby/map work. Coordinates are a reviewed local subset used to unblock nearby search, map markers, and benchmark setup. Records not listed here stay on the broader Day 2 seed foundation.",
+  "clinics": [
+    {
+      "id": "hn-001",
+      "latitude": 21.060822,
+      "longitude": 105.8359417,
+      "openHours": [
+        "Mon-Sun 08:00-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tiêm phòng",
+        "Tư vấn chăm sóc thú cưng"
+      ],
+      "averageRating": 4.6,
+      "reviewCount": 42,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hn-006",
+      "latitude": 21.0430646,
+      "longitude": 105.8218397,
+      "openHours": [
+        "Mon-Sun 08:30-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Xét nghiệm cơ bản",
+        "Tẩy giun"
+      ],
+      "averageRating": 4.5,
+      "reviewCount": 28,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hn-007",
+      "latitude": 21.0686976,
+      "longitude": 105.8264776,
+      "openHours": [
+        "Mon-Sun 08:00-21:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tiêm phòng",
+        "Phẫu thuật mềm"
+      ],
+      "averageRating": 4.7,
+      "reviewCount": 56,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hn-009",
+      "latitude": 21.0175731,
+      "longitude": 105.8419546,
+      "openHours": [
+        "Mon-Sat 08:00-20:00",
+        "Sun 08:00-17:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Siêu âm",
+        "Lưu chuồng theo dõi"
+      ],
+      "averageRating": 4.4,
+      "reviewCount": 31,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hcm-031",
+      "latitude": 10.792682,
+      "longitude": 106.6904944,
+      "openHours": [
+        "Mon-Sun 08:00-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tiêm phòng",
+        "Cấp cứu ban ngày"
+      ],
+      "averageRating": 4.6,
+      "reviewCount": 64,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hcm-037",
+      "latitude": 10.7959364,
+      "longitude": 106.671244,
+      "openHours": [
+        "Mon-Sun 08:30-19:30"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tắm spa thú cưng",
+        "Tư vấn dinh dưỡng"
+      ],
+      "averageRating": 4.3,
+      "reviewCount": 22,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hcm-039",
+      "latitude": 10.764536,
+      "longitude": 106.6880882,
+      "openHours": [
+        "Mon-Sun 08:00-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tiêm phòng",
+        "Điều trị nội trú"
+      ],
+      "averageRating": 4.7,
+      "reviewCount": 51,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hcm-040",
+      "latitude": 10.7548867,
+      "longitude": 106.6863635,
+      "openHours": [
+        "Mon-Sun 08:00-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Xét nghiệm",
+        "Phẫu thuật mềm"
+      ],
+      "averageRating": 4.4,
+      "reviewCount": 37,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hp-066",
+      "latitude": 20.8438401,
+      "longitude": 106.6741051,
+      "openHours": [
+        "Mon-Sun 08:00-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tiêm phòng",
+        "Tẩy giun"
+      ],
+      "averageRating": 4.5,
+      "reviewCount": 24,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "hp-068",
+      "latitude": 20.8086305,
+      "longitude": 106.640311,
+      "openHours": [
+        "Mon-Sat 08:00-19:00",
+        "Sun 08:00-16:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tắm spa thú cưng",
+        "Tư vấn chăm sóc"
+      ],
+      "averageRating": 4.2,
+      "reviewCount": 18,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "dn-072",
+      "latitude": 16.0569558,
+      "longitude": 108.184238,
+      "openHours": [
+        "Mon-Sun 08:00-20:00"
+      ],
+      "services": [
+        "Khám tổng quát",
+        "Tiêm phòng",
+        "Siêu âm"
+      ],
+      "averageRating": 4.5,
+      "reviewCount": 29,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    },
+    {
+      "id": "dn-074",
+      "latitude": 16.0646984,
+      "longitude": 108.1967615,
+      "is24h": true,
+      "openHours": [
+        "00:00-23:59"
+      ],
+      "services": [
+        "Cấp cứu 24/7"
+      ],
+      "averageRating": 4.6,
+      "reviewCount": 33,
+      "readyForMap": true,
+      "enrichmentStatus": "pilot-geo-hours-services-ready"
+    }
+  ]
+}

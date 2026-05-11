@@ -48,6 +48,7 @@ class NotificationApi {
     return _perform(
       call: () => _dio.post(
         '/notifications/process-due-reminders',
+        data: const <String, dynamic>{},
         options: _authOptions(accessToken),
       ),
       parser: (json) {

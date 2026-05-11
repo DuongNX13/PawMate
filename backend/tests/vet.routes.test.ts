@@ -198,6 +198,31 @@ const buildTestApp = async () => {
 };
 
 describe('Vet routes', () => {
+  it('loads committed runtime seed files for production search fallback', async () => {
+    const config = buildConfig();
+    const app = buildApp(
+      { logger: false },
+      {
+        config,
+        vetService: createVetService({
+          now: () => new Date('2026-04-23T03:30:00.000Z'),
+        }),
+      },
+    );
+    await app.ready();
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/vets/search?limit=1',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().data).toHaveLength(1);
+    expect(response.json().data[0].id).toBeTruthy();
+
+    await app.close();
+  });
+
   it('returns search results, pagination, and accent-insensitive matching from seed-backed data', async () => {
     const app = await buildTestApp();
 
