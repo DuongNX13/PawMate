@@ -91,7 +91,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
 
   String? _validateName(String? value) {
     if ((value ?? '').trim().isEmpty) {
-      return 'Vui long nhap ten thu cung';
+      return 'Vui lòng nhập tên thú cưng';
     }
     return null;
   }
@@ -99,7 +99,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
   String? _validateWeight(String? value) {
     final weight = double.tryParse((value ?? '').trim());
     if (weight == null || weight <= 0) {
-      return 'Can nang phai lon hon 0';
+      return 'Cân nặng phải lớn hơn 0';
     }
     return null;
   }
@@ -111,7 +111,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
     if (_dateOfBirth == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Vui long chon ngay sinh')));
+      ).showSnackBar(const SnackBar(content: Text('Vui lòng chọn ngày sinh')));
       return;
     }
     setState(() {
@@ -150,7 +150,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
       }
       setState(() {
         _isSubmitting = false;
-        _submitError = 'Khong the luu ho so thu cung. Vui long thu lai.';
+        _submitError = 'Không thể lưu hồ sơ thú cưng. Vui lòng thử lại.';
       });
     }
   }
@@ -160,7 +160,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
     final breeds = _breedsBySpecies[_species] ?? const ['Other'];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Them thu cung')),
+      appBar: AppBar(title: const Text('Thêm thú cưng')),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
@@ -196,7 +196,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                       .map(
                         (species) => DropdownMenuItem(
                           value: species,
-                          child: Text(species.toUpperCase()),
+                          child: Text(_displaySpecies(species)),
                         ),
                       )
                       .toList(),
@@ -210,7 +210,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                           (_breedsBySpecies[value] ?? const ['Other']).first;
                     });
                   },
-                  decoration: const InputDecoration(labelText: 'Loai'),
+                  decoration: const InputDecoration(labelText: 'Loài'),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
@@ -225,7 +225,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                   onChanged: (value) => setState(() {
                     _breed = value;
                   }),
-                  decoration: const InputDecoration(labelText: 'Giong'),
+                  decoration: const InputDecoration(labelText: 'Giống'),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
@@ -246,16 +246,16 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                       _gender = value;
                     });
                   },
-                  decoration: const InputDecoration(labelText: 'Gioi tinh'),
+                  decoration: const InputDecoration(labelText: 'Giới tính'),
                 ),
                 const SizedBox(height: 16),
                 InkWell(
                   onTap: _pickDateOfBirth,
                   child: InputDecorator(
-                    decoration: const InputDecoration(labelText: 'Ngay sinh'),
+                    decoration: const InputDecoration(labelText: 'Ngày sinh'),
                     child: Text(
                       _dateOfBirth == null
-                          ? 'Chon ngay'
+                          ? 'Chọn ngày'
                           : '${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}',
                     ),
                   ),
@@ -267,7 +267,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                     decimal: true,
                   ),
                   decoration: const InputDecoration(
-                    labelText: 'Can nang',
+                    labelText: 'Cân nặng',
                     suffixText: 'kg',
                   ),
                   validator: _validateWeight,
@@ -276,7 +276,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                 TextFormField(
                   controller: _colorController,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: 'Mau sac'),
+                  decoration: const InputDecoration(labelText: 'Màu sắc'),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -304,12 +304,12 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
                     });
                   },
                   decoration: const InputDecoration(
-                    labelText: 'Tinh trang suc khoe',
+                    labelText: 'Tình trạng sức khỏe',
                   ),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Da triet san'),
+                  title: const Text('Đã triệt sản'),
                   value: _isNeutered,
                   onChanged: (value) => setState(() {
                     _isNeutered = value;
@@ -331,7 +331,7 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
           ],
           FilledButton(
             onPressed: _isSubmitting ? null : _submit,
-            child: Text(_isSubmitting ? 'Dang luu...' : 'Luu ho so'),
+            child: Text(_isSubmitting ? 'Đang lưu...' : 'Lưu hồ sơ'),
           ),
         ],
       ),
@@ -341,26 +341,41 @@ class _CreatePetScreenState extends ConsumerState<CreatePetScreen> {
   String _displayGender(String value) {
     switch (value) {
       case 'male':
-        return 'Duc';
+        return 'Đực';
       case 'female':
-        return 'Cai';
+        return 'Cái';
       default:
-        return 'Chua ro';
+        return 'Chưa rõ';
+    }
+  }
+
+  String _displaySpecies(String value) {
+    switch (value) {
+      case 'dog':
+        return 'Chó';
+      case 'cat':
+        return 'Mèo';
+      case 'bird':
+        return 'Chim';
+      case 'rabbit':
+        return 'Thỏ';
+      default:
+        return 'Khác';
     }
   }
 
   String _displayHealthStatus(String value) {
     switch (value) {
       case 'monitoring':
-        return 'Can theo doi';
+        return 'Cần theo dõi';
       case 'chronic':
-        return 'Benh man tinh';
+        return 'Bệnh mạn tính';
       case 'recovery':
-        return 'Dang hoi phuc';
+        return 'Đang hồi phục';
       case 'healthy':
-        return 'On dinh';
+        return 'Ổn định';
       default:
-        return 'Chua ro';
+        return 'Chưa rõ';
     }
   }
 }

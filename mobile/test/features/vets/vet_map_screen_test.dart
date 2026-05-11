@@ -140,11 +140,11 @@ void main() {
 
     expect(find.text('fake-map:0'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Empty'),
+      find.text('Trống'),
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    expect(find.text('Empty'), findsOneWidget);
+    expect(find.text('Trống'), findsOneWidget);
   });
 
   testWidgets('shows API error state when nearby request fails', (

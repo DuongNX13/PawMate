@@ -194,7 +194,7 @@ class VetDetailScreen extends ConsumerWidget {
     ref.invalidate(vetReviewListProvider(vet.id));
     ref.invalidate(vetDetailProvider(vet.id));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Review đã được gửi thành công.')),
+      const SnackBar(content: Text('Đánh giá đã được gửi thành công.')),
     );
   }
 }
@@ -252,7 +252,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
       return 'image/webp';
     }
 
-    throw const VetApiException('Ảnh review chỉ hỗ trợ JPEG, PNG hoặc WEBP.');
+    throw const VetApiException('Ảnh đánh giá chỉ hỗ trợ JPEG, PNG hoặc WEBP.');
   }
 
   Future<void> _pickPhoto() async {
@@ -827,23 +827,23 @@ class _ReviewPreviewCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final ratingLabel = vet.averageRating != null
         ? '${vet.averageRating!.toStringAsFixed(1)} sao'
-        : 'Đang chờ review thật';
+        : 'Đang chờ đánh giá thật';
     final body = vet.reviewCount > 0
-        ? 'Hiện có ${vet.reviewCount} lượt đánh giá trong nguồn kiểm duyệt. Khu vực này đã được khóa layout để nối review thật ở Day 4 mà không lệch màn.'
-        : 'Khối review đã được chừa đúng vị trí theo Figma. Khi bật dữ liệu thật, card này sẽ nhận review mới nhất mà không cần refactor vet detail.';
+        ? 'Hiện có ${vet.reviewCount} lượt đánh giá trong nguồn kiểm duyệt. Khu vực này đã được khóa layout để nối đánh giá thật ở Day 4 mà không lệch màn.'
+        : 'Khối đánh giá đã được chừa đúng vị trí theo Figma. Khi bật dữ liệu thật, card này sẽ nhận đánh giá mới nhất mà không cần refactor chi tiết thú y.';
 
     final liveBody = reviewsAsync.maybeWhen(
-      loading: () => 'Đang tải review thật từ PawMate...',
-      error: (error, _) => 'Chưa tải được review: $error',
+      loading: () => 'Đang tải đánh giá thật từ PawMate...',
+      error: (error, _) => 'Chưa tải được đánh giá: $error',
       data: (reviews) {
         final latestReview = reviews.items.isNotEmpty
             ? reviews.items.first
             : null;
         if (latestReview == null) {
-          return 'Chưa có review PawMate cho ${vet.name}. Form đánh giá đã sẵn sàng để nhận review đầu tiên.';
+          return 'Chưa có đánh giá PawMate cho ${vet.name}. Form đánh giá đã sẵn sàng để nhận đánh giá đầu tiên.';
         }
 
-        return '${latestReview.starLabel} ${latestReview.title ?? latestReview.reviewer.displayName}\n${latestReview.body ?? 'Người dùng chưa nhập nội dung chi tiết.'}\n${reviews.summary.reviewCount} review - ${latestReview.helpfulCount} hữu ích';
+        return '${latestReview.starLabel} ${latestReview.title ?? latestReview.reviewer.displayName}\n${latestReview.body ?? 'Người dùng chưa nhập nội dung chi tiết.'}\n${reviews.summary.reviewCount} đánh giá - ${latestReview.helpfulCount} hữu ích';
       },
       orElse: () => body,
     );
@@ -920,7 +920,7 @@ class _ReviewPreviewCard extends ConsumerWidget {
                             ? null
                             : () => _openReviewListSheet(context, reviews),
                         icon: const Icon(Icons.format_list_bulleted_rounded),
-                        label: const Text('Xem danh sách review'),
+                        label: const Text('Xem danh sách đánh giá'),
                       ),
                     ),
                   ],
@@ -1021,7 +1021,7 @@ class _RatingDistributionChart extends StatelessWidget {
         Text(
           summary.averageRating == null
               ? 'Chưa có điểm trung bình'
-              : '${summary.averageRating!.toStringAsFixed(1)} / 5 từ ${summary.reviewCount} review',
+              : '${summary.averageRating!.toStringAsFixed(1)} / 5 từ ${summary.reviewCount} đánh giá',
           style: theme.textTheme.titleMedium?.copyWith(
             color: AppColors.textSecondary,
             fontWeight: FontWeight.w700,
@@ -1144,7 +1144,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
         return;
       }
       setState(() {
-        _errorMessage = 'Không tải thêm được review. Vui lòng thử lại.';
+        _errorMessage = 'Không tải thêm được đánh giá. Vui lòng thử lại.';
       });
     } finally {
       if (mounted) {
@@ -1180,7 +1180,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
             ),
             const SizedBox(height: 18),
             Text(
-              'Review ${widget.vet.name}',
+              'Đánh giá ${widget.vet.name}',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -1192,7 +1192,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
               child: _items.isEmpty
                   ? Center(
                       child: Text(
-                        'Chưa có review nào.',
+                        'Chưa có đánh giá nào.',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -1220,7 +1220,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
               const SizedBox(height: 12),
               PrimaryGradientButton(
                 key: const Key('review-load-more-button'),
-                label: _isLoadingMore ? 'Đang tải...' : 'Tải thêm review',
+                label: _isLoadingMore ? 'Đang tải...' : 'Tải thêm đánh giá',
                 onPressed: _isLoadingMore ? null : _loadMore,
               ),
             ],
@@ -1316,7 +1316,7 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
     try {
       final accessToken = await ref.read(vetReviewAccessTokenProvider.future);
       if (accessToken == null || accessToken.trim().isEmpty) {
-        throw const VetApiException('Bạn cần đăng nhập để báo cáo review.');
+        throw const VetApiException('Bạn cần đăng nhập để báo cáo đánh giá.');
       }
 
       await ref
@@ -1380,7 +1380,7 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Báo cáo review',
+              'Báo cáo đánh giá',
               style: theme.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),

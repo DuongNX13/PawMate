@@ -212,7 +212,7 @@ void main() {
     expect(submittedInput?.rating, 5);
     expect(submittedInput?.title, 'Chăm sóc kỹ');
     expect(submittedInput?.body, 'Bác sĩ tư vấn rất kỹ và theo dõi sau tiêm.');
-    expect(find.text('Review đã được gửi thành công.'), findsOneWidget);
+    expect(find.text('Đánh giá đã được gửi thành công.'), findsOneWidget);
   });
 
   test('serializes review photo upload payload and result', () {

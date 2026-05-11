@@ -16,7 +16,7 @@ final notificationListProvider = FutureProvider<NotificationListResult>((
   final accessToken = await ref.watch(notificationAccessTokenProvider.future);
   if (accessToken == null) {
     throw const NotificationApiException(
-      'Ban can dang nhap de xem thong bao.',
+      'Bạn cần đăng nhập để xem thông báo.',
       code: 'AUTH_REQUIRED',
       statusCode: 401,
     );

@@ -38,10 +38,11 @@ class _ReminderCalendarScreenState
 
   @override
   Widget build(BuildContext context) {
+    final cachedPets = ref.watch(petListProvider);
     final petsState = ref.watch(petBackendListProvider);
     final pets = petsState.maybeWhen(
       data: (items) => items,
-      orElse: () => const <PetProfile>[],
+      orElse: () => cachedPets,
     );
     final selectedPet = pets.isEmpty
         ? null
@@ -66,7 +67,7 @@ class _ReminderCalendarScreenState
       floatingActionButton: FloatingActionButton.extended(
         onPressed: selectedPet == null ? null : () => _openCreateSheet(query),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Them lich'),
+        label: const Text('Thêm lịch'),
       ),
       body: SafeArea(
         child: ListView(
@@ -80,12 +81,12 @@ class _ReminderCalendarScreenState
                 ),
                 Expanded(
                   child: Text(
-                    'Lich nhac',
+                    'Lịch nhắc',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Thong bao',
+                  tooltip: 'Thông báo',
                   onPressed: () => context.go('/notifications'),
                   icon: const Icon(Icons.notifications_none_rounded),
                 ),
@@ -93,7 +94,7 @@ class _ReminderCalendarScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'Dong bo lich tiem phong, tay giun va tai kham tu backend.',
+              'Đồng bộ lịch tiêm phòng, tẩy giun và tái khám từ backend.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
@@ -125,8 +126,8 @@ class _ReminderCalendarScreenState
             const SizedBox(height: 12),
             if (query == null || remindersState == null)
               const _ReminderStatusCard(
-                title: 'Chua co thu cung',
-                message: 'Tao ho so thu cung truoc khi lap lich nhac.',
+                title: 'Chưa có thú cưng',
+                message: 'Tạo hồ sơ thú cưng trước khi lập lịch nhắc.',
               )
             else
               ..._buildReminderContent(query, remindersState),
@@ -143,16 +144,16 @@ class _ReminderCalendarScreenState
     return remindersState.when(
       loading: () => const [
         _ReminderStatusCard(
-          title: 'Dang dong bo lich nhac',
-          message: 'PawMate dang tai lich nhac tu backend.',
+          title: 'Đang đồng bộ lịch nhắc',
+          message: 'PawMate đang tải lịch nhắc từ backend.',
           showProgress: true,
         ),
       ],
       error: (error, _) => [
         _ReminderStatusCard(
-          title: 'Chua tai duoc lich nhac',
+          title: 'Chưa tải được lịch nhắc',
           message: _reminderErrorMessage(error),
-          actionLabel: 'Thu lai',
+          actionLabel: 'Thử lại',
           onAction: () => ref.invalidate(reminderListProvider(query)),
         ),
       ],
@@ -160,12 +161,12 @@ class _ReminderCalendarScreenState
         return [
           _CalendarGrid(month: _visibleMonth, reminders: result.items),
           const SizedBox(height: 24),
-          Text('Sap toi', style: Theme.of(context).textTheme.titleLarge),
+          Text('Sắp tới', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           if (result.items.isEmpty)
             const _ReminderStatusCard(
-              title: 'Chua co lich nhac',
-              message: 'Tao lich nhac dau tien de PawMate theo doi giup ban.',
+              title: 'Chưa có lịch nhắc',
+              message: 'Tạo lịch nhắc đầu tiên để PawMate theo dõi giúp bạn.',
             )
           else
             ...result.items.map(
@@ -181,7 +182,7 @@ class _ReminderCalendarScreenState
   }
 
   void _openCreateSheet(ReminderListQuery? activeQuery) {
-    _titleController.text = 'Tai kham dinh ky';
+    _titleController.text = 'Tái khám định kỳ';
     _noteController.clear();
     _draftDateTime = DateTime.now().add(const Duration(days: 1));
     _draftRepeatRule = ReminderRepeatRule.none;
@@ -206,18 +207,18 @@ class _ReminderCalendarScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Them lich nhac',
+                    'Thêm lịch nhắc',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Tieu de'),
+                    decoration: const InputDecoration(labelText: 'Tiêu đề'),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _noteController,
-                    decoration: const InputDecoration(labelText: 'Ghi chu'),
+                    decoration: const InputDecoration(labelText: 'Ghi chú'),
                     maxLines: 2,
                   ),
                   const SizedBox(height: 12),
@@ -277,7 +278,7 @@ class _ReminderCalendarScreenState
                   const SizedBox(height: 12),
                   DropdownButtonFormField<ReminderRepeatRule>(
                     initialValue: _draftRepeatRule,
-                    decoration: const InputDecoration(labelText: 'Lap lai'),
+                    decoration: const InputDecoration(labelText: 'Lặp lại'),
                     items: ReminderRepeatRule.values
                         .map(
                           (rule) => DropdownMenuItem(
@@ -313,7 +314,7 @@ class _ReminderCalendarScreenState
                               setSheetState,
                               activeQuery,
                             ),
-                      child: Text(_isSaving ? 'Dang luu...' : 'Luu lich nhac'),
+                      child: Text(_isSaving ? 'Đang lưu...' : 'Lưu lịch nhắc'),
                     ),
                   ),
                 ],
@@ -350,7 +351,7 @@ class _ReminderCalendarScreenState
       final accessToken = await ref.read(reminderAccessTokenProvider.future);
       if (accessToken == null) {
         throw const ReminderApiException(
-          'Ban can dang nhap de luu lich nhac.',
+          'Bạn cần đăng nhập để lưu lịch nhắc.',
           code: 'AUTH_REQUIRED',
           statusCode: 401,
         );
@@ -436,6 +437,11 @@ class _PetSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedPet = pets.cast<PetProfile?>().firstWhere(
+      (pet) => pet?.id == selectedPetId,
+      orElse: () => pets.isEmpty ? null : pets.first,
+    );
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -449,15 +455,17 @@ class _PetSelector extends StatelessWidget {
           Expanded(
             child: Text(
               isLoading
-                  ? 'Dang tai thu cung'
+                  ? 'Đang tải thú cưng'
                   : pets.isEmpty
-                  ? 'Chua co thu cung'
-                  : 'Chon thu cung',
+                  ? 'Chưa có thú cưng'
+                  : selectedPet?.name ?? 'Chọn thú cưng',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
           if (pets.isEmpty && !isLoading)
-            TextButton(onPressed: onRetry, child: const Text('Thu lai'))
+            TextButton(onPressed: onRetry, child: const Text('Thử lại'))
           else if (pets.isNotEmpty)
             DropdownButtonHideUnderline(
               child: DropdownButton<String>(
@@ -469,6 +477,13 @@ class _PetSelector extends StatelessWidget {
                         child: Text(pet.name),
                       ),
                     )
+                    .toList(),
+                icon: const Icon(
+                  Icons.expand_more_rounded,
+                  color: AppColors.primary700,
+                ),
+                selectedItemBuilder: (context) => pets
+                    .map((_) => const SizedBox(width: 1, height: 1))
                     .toList(),
                 onChanged: onChanged,
               ),
@@ -502,7 +517,7 @@ class _MonthHeader extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              'Thang ${month.month}, ${month.year}',
+              'Tháng ${month.month}, ${month.year}',
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
@@ -675,8 +690,8 @@ class _ReminderCard extends StatelessWidget {
               }
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(value: 'done', child: Text('Hoan thanh')),
-              PopupMenuItem(value: 'delete', child: Text('Xoa')),
+              PopupMenuItem(value: 'done', child: Text('Hoàn thành')),
+              PopupMenuItem(value: 'delete', child: Text('Xóa')),
             ],
           ),
         ],
@@ -770,5 +785,5 @@ String _reminderErrorMessage(Object error) {
   if (error is ReminderApiException) {
     return error.message;
   }
-  return 'Khong the dong bo lich nhac. Vui long thu lai.';
+  return 'Không thể đồng bộ lịch nhắc. Vui lòng thử lại.';
 }

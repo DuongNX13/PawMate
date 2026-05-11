@@ -91,23 +91,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/community',
         builder: (context, state) => const PlaceholderScreen(
-          title: 'Community',
-          subtitle: 'Deferred after the MVP core flow is stable.',
+          title: 'Cộng đồng',
+          subtitle: 'Sẽ mở lại sau khi core flow MVP ổn định.',
         ),
       ),
       GoRoute(
         path: '/profile',
         builder: (context, state) => const PlaceholderScreen(
-          title: 'Profile',
+          title: 'Hồ sơ',
           subtitle:
-              'Profile hub sẽ được dựng tiếp sau khi auth và pet flow ổn định.',
+              'Trung tâm hồ sơ sẽ được dựng tiếp sau khi auth và pet flow ổn định.',
         ),
       ),
       GoRoute(
         path: '/rescue',
         builder: (context, state) => const PlaceholderScreen(
-          title: 'Rescue',
-          subtitle: 'Deferred after the MVP core flow is stable.',
+          title: 'Cứu hộ',
+          subtitle: 'Sẽ mở lại sau khi core flow MVP ổn định.',
         ),
       ),
     ],

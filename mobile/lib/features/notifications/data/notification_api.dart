@@ -138,9 +138,9 @@ class NotificationApi {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.sendTimeout:
-        return 'Khong the ket noi toi may chu thong bao.';
+        return 'Không thể kết nối tới máy chủ thông báo.';
       default:
-        return 'Da co loi xay ra khi tai thong bao.';
+        return 'Đã có lỗi xảy ra khi tải thông báo.';
     }
   }
 }
@@ -153,6 +153,6 @@ Map<String, dynamic> _readMap(dynamic value) {
     return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
   }
   throw const NotificationApiException(
-    'May chu tra ve du lieu thong bao khong hop le.',
+    'Máy chủ trả về dữ liệu thông báo không hợp lệ.',
   );
 }

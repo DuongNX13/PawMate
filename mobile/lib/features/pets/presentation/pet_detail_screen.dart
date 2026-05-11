@@ -18,13 +18,13 @@ class PetDetailScreen extends ConsumerWidget {
     if (pet == null) {
       if (backendPetsState.isLoading) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Chi tiet thu cung')),
+          appBar: AppBar(title: const Text('Chi tiết thú cưng')),
           body: const Center(child: CircularProgressIndicator()),
         );
       }
 
       return Scaffold(
-        appBar: AppBar(title: const Text('Chi tiet thu cung')),
+        appBar: AppBar(title: const Text('Chi tiết thú cưng')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -33,15 +33,15 @@ class PetDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   backendPetsState.hasError
-                      ? 'Chua dong bo duoc ho so thu cung'
-                      : 'Khong tim thay thu cung',
+                      ? 'Chưa đồng bộ được hồ sơ thú cưng'
+                      : 'Không tìm thấy thú cưng',
                   textAlign: TextAlign.center,
                 ),
                 if (backendPetsState.hasError) ...[
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: () => ref.invalidate(petBackendListProvider),
-                    child: const Text('Thu lai'),
+                    child: const Text('Thử lại'),
                   ),
                 ],
               ],
@@ -73,33 +73,33 @@ class PetDetailScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          _InfoTile(label: 'Gioi tinh', value: _toDisplayGender(pet.gender)),
+          _InfoTile(label: 'Giới tính', value: _toDisplayGender(pet.gender)),
           _InfoTile(
-            label: 'Ngay sinh',
+            label: 'Ngày sinh',
             value:
                 '${pet.dateOfBirth.day}/${pet.dateOfBirth.month}/${pet.dateOfBirth.year}',
           ),
           _InfoTile(
-            label: 'Can nang',
+            label: 'Cân nặng',
             value: '${pet.weightKg.toStringAsFixed(1)} kg',
           ),
           _InfoTile(
-            label: 'Tinh trang suc khoe',
+            label: 'Tình trạng sức khỏe',
             value: _toDisplayHealthStatus(pet.healthStatus),
           ),
-          if (pet.color != null) _InfoTile(label: 'Mau sac', value: pet.color!),
+          if (pet.color != null) _InfoTile(label: 'Màu sắc', value: pet.color!),
           if (pet.microchip != null)
             _InfoTile(label: 'Microchip', value: pet.microchip!),
           _InfoTile(
-            label: 'Trang thai triet san',
-            value: pet.isNeutered ? 'Da triet san' : 'Chua triet san',
+            label: 'Trạng thái triệt sản',
+            value: pet.isNeutered ? 'Đã triệt sản' : 'Chưa triệt sản',
           ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () => context.go('/pets'),
-              child: const Text('Quay lai danh sach'),
+              child: const Text('Quay lại danh sách'),
             ),
           ),
         ],
@@ -110,41 +110,41 @@ class PetDetailScreen extends ConsumerWidget {
   String _toDisplaySpecies(String species) {
     switch (species) {
       case 'dog':
-        return 'Cho';
+        return 'Chó';
       case 'cat':
-        return 'Meo';
+        return 'Mèo';
       case 'bird':
         return 'Chim';
       case 'rabbit':
-        return 'Tho';
+        return 'Thỏ';
       default:
-        return 'Khac';
+        return 'Khác';
     }
   }
 
   String _toDisplayGender(String gender) {
     switch (gender) {
       case 'male':
-        return 'Duc';
+        return 'Đực';
       case 'female':
-        return 'Cai';
+        return 'Cái';
       default:
-        return 'Chua ro';
+        return 'Chưa rõ';
     }
   }
 
   String _toDisplayHealthStatus(String healthStatus) {
     switch (healthStatus) {
       case 'monitoring':
-        return 'Can theo doi';
+        return 'Cần theo dõi';
       case 'chronic':
-        return 'Benh man tinh';
+        return 'Bệnh mạn tính';
       case 'recovery':
-        return 'Dang hoi phuc';
+        return 'Đang hồi phục';
       case 'healthy':
-        return 'On dinh';
+        return 'Ổn định';
       default:
-        return 'Chua ro';
+        return 'Chưa rõ';
     }
   }
 

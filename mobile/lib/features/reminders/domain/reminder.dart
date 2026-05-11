@@ -19,13 +19,13 @@ extension ReminderRepeatRuleValue on ReminderRepeatRule {
   String get label {
     switch (this) {
       case ReminderRepeatRule.none:
-        return 'Khong lap';
+        return 'Không lặp';
       case ReminderRepeatRule.daily:
-        return 'Hang ngay';
+        return 'Hằng ngày';
       case ReminderRepeatRule.weekly:
-        return 'Hang tuan';
+        return 'Hằng tuần';
       case ReminderRepeatRule.monthly:
-        return 'Hang thang';
+        return 'Hằng tháng';
     }
   }
 }

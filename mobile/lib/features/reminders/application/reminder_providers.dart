@@ -19,7 +19,7 @@ final reminderListProvider =
       final accessToken = await ref.watch(reminderAccessTokenProvider.future);
       if (accessToken == null) {
         throw const ReminderApiException(
-          'Ban can dang nhap de dong bo lich nhac.',
+          'Bạn cần đăng nhập để đồng bộ lịch nhắc.',
           code: 'AUTH_REQUIRED',
           statusCode: 401,
         );

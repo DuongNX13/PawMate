@@ -113,15 +113,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Sức khỏe'), findsOneWidget);
+    expect(find.text('Sức khỏe'), findsWidgets);
     expect(find.text('Thêm sự kiện'), findsWidgets);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Vet'), findsOneWidget);
-    expect(find.text('Health'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.text('Thú cưng'), findsOneWidget);
+    expect(find.text('Thú y'), findsOneWidget);
+    expect(find.text('Sức khỏe'), findsWidgets);
+    expect(find.text('Hồ sơ'), findsOneWidget);
     expect(find.text('Tiêm nhắc lại 5 bệnh'), findsOneWidget);
 
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.text('Hồ sơ'));
     await tester.pumpAndSettle();
 
     expect(find.text('Profile target'), findsOneWidget);

@@ -68,7 +68,7 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
               ),
               const SizedBox(height: 28),
               Text(
-                'Vet Finder',
+                'Tìm phòng khám',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: AppColors.secondary500,
                   fontWeight: FontWeight.w700,
@@ -189,7 +189,9 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        state.status == VetMapStatus.empty ? 'Empty' : 'Live',
+                        state.status == VetMapStatus.empty
+                            ? 'Trống'
+                            : 'Đang có',
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: state.status == VetMapStatus.empty
                               ? AppColors.textSecondary

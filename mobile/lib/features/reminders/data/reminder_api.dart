@@ -123,9 +123,9 @@ class ReminderApi {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.sendTimeout:
-        return 'Khong the ket noi toi may chu lich nhac.';
+        return 'Không thể kết nối tới máy chủ lịch nhắc.';
       default:
-        return 'Da co loi xay ra khi tai lich nhac.';
+        return 'Đã có lỗi xảy ra khi tải lịch nhắc.';
     }
   }
 }
@@ -138,6 +138,6 @@ Map<String, dynamic> _readMap(dynamic value) {
     return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
   }
   throw const ReminderApiException(
-    'May chu tra ve du lieu lich nhac khong hop le.',
+    'Máy chủ trả về dữ liệu lịch nhắc không hợp lệ.',
   );
 }

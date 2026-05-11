@@ -12,22 +12,22 @@ class PawMateBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <_BottomNavItem>[
       const _BottomNavItem(
-        label: 'Home',
+        label: 'Thú cưng',
         icon: Icons.home_outlined,
         route: '/pets',
       ),
       const _BottomNavItem(
-        label: 'Vet',
+        label: 'Thú y',
         icon: Icons.travel_explore_outlined,
         route: '/vets/list',
       ),
       const _BottomNavItem(
-        label: 'Health',
+        label: 'Sức khỏe',
         icon: Icons.favorite_border,
         route: '/health',
       ),
       const _BottomNavItem(
-        label: 'Profile',
+        label: 'Hồ sơ',
         icon: Icons.person_outline,
         route: '/profile',
       ),
@@ -78,6 +78,8 @@ class PawMateBottomNav extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           fontFamily: 'Be Vietnam Pro',
                           fontWeight: FontWeight.w600,

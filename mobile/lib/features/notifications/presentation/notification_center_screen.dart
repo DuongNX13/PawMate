@@ -29,7 +29,7 @@ class NotificationCenterScreen extends ConsumerWidget {
                 ),
                 Expanded(
                   child: Text(
-                    'Thong bao',
+                    'Thông báo',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
@@ -40,13 +40,13 @@ class NotificationCenterScreen extends ConsumerWidget {
                         : () => _markAllRead(ref),
                     orElse: () => null,
                   ),
-                  child: const Text('Doc het'),
+                  child: const Text('Đọc hết'),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              'Cap nhat lich nhac, suc khoe va he thong.',
+              'Cập nhật lịch nhắc, sức khỏe và hệ thống.',
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
@@ -55,16 +55,16 @@ class NotificationCenterScreen extends ConsumerWidget {
             ...notificationsState.when(
               loading: () => const [
                 _NotificationStatusCard(
-                  title: 'Dang tai thong bao',
-                  message: 'PawMate dang dong bo trung tam thong bao.',
+                  title: 'Đang tải thông báo',
+                  message: 'PawMate đang đồng bộ trung tâm thông báo.',
                   showProgress: true,
                 ),
               ],
               error: (error, _) => [
                 _NotificationStatusCard(
-                  title: 'Chua tai duoc thong bao',
+                  title: 'Chưa tải được thông báo',
                   message: _notificationErrorMessage(error),
-                  actionLabel: 'Thu lai',
+                  actionLabel: 'Thử lại',
                   onAction: () => ref.invalidate(notificationListProvider),
                 ),
               ],
@@ -72,9 +72,9 @@ class NotificationCenterScreen extends ConsumerWidget {
                 if (result.items.isEmpty) {
                   return const [
                     _NotificationStatusCard(
-                      title: 'Khong co thong bao',
+                      title: 'Không có thông báo',
                       message:
-                          'Khi co lich nhac den han, PawMate se hien tai day.',
+                          'Khi có lịch nhắc đến hạn, PawMate sẽ hiển thị tại đây.',
                     ),
                   ];
                 }
@@ -149,7 +149,7 @@ class _UnreadBanner extends StatelessWidget {
         border: Border.all(color: AppColors.border),
       ),
       child: Text(
-        unreadCount > 0 ? '$unreadCount thong bao chua doc' : 'Tat ca da doc',
+        unreadCount > 0 ? '$unreadCount thông báo chưa đọc' : 'Tất cả đã đọc',
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
           color: unreadCount > 0
               ? AppColors.primary700
@@ -239,10 +239,10 @@ class _NotificationCard extends StatelessWidget {
             },
             itemBuilder: (context) => [
               if (notification.isUnread)
-                const PopupMenuItem(value: 'read', child: Text('Danh dau doc')),
+                const PopupMenuItem(value: 'read', child: Text('Đánh dấu đọc')),
               const PopupMenuItem(
                 value: 'dismiss',
-                child: Text('An thong bao'),
+                child: Text('Ẩn thông báo'),
               ),
             ],
           ),
@@ -314,13 +314,13 @@ String _formatRelativeDate(DateTime value) {
   if (value.year == now.year &&
       value.month == now.month &&
       value.day == now.day) {
-    return 'Hom nay';
+    return 'Hôm nay';
   }
   final yesterday = now.subtract(const Duration(days: 1));
   if (value.year == yesterday.year &&
       value.month == yesterday.month &&
       value.day == yesterday.day) {
-    return 'Hom qua';
+    return 'Hôm qua';
   }
   final day = value.day.toString().padLeft(2, '0');
   final month = value.month.toString().padLeft(2, '0');
@@ -331,5 +331,5 @@ String _notificationErrorMessage(Object error) {
   if (error is NotificationApiException) {
     return error.message;
   }
-  return 'Khong the dong bo thong bao. Vui long thu lai.';
+  return 'Không thể đồng bộ thông báo. Vui lòng thử lại.';
 }

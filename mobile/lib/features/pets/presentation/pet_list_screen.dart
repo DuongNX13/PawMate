@@ -20,7 +20,7 @@ class PetListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thu cung cua toi'),
+        title: const Text('Thú cưng của tôi'),
         actions: [
           IconButton(
             onPressed: () => context.go('/vets/list'),
@@ -59,12 +59,12 @@ class PetListScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Chua co thu cung nao',
+                      'Chưa có thú cưng nào',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Them ho so dau tien de theo doi thong tin va suc khoe cua be.',
+                      'Thêm hồ sơ đầu tiên để theo dõi thông tin và sức khỏe của bé.',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -72,7 +72,7 @@ class PetListScreen extends ConsumerWidget {
                     FilledButton.icon(
                       onPressed: () => context.go('/pets/create'),
                       icon: const Icon(Icons.add),
-                      label: const Text('Them thu cung'),
+                      label: const Text('Thêm thú cưng'),
                     ),
                   ],
                 ),
@@ -98,12 +98,12 @@ class PetListScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                     ],
                     Text(
-                      'Quan ly danh sach thu cung trong mot cho de xem nhanh thong tin chinh.',
+                      'Quản lý danh sách thú cưng trong một chỗ để xem nhanh thông tin chính.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${pets.length} ho so dang co',
+                      '${pets.length} hồ sơ đang có',
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
                         color: colorScheme.primary,
                       ),
@@ -118,7 +118,7 @@ class PetListScreen extends ConsumerWidget {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: crossAxisCount == 1 ? 1.7 : 0.92,
+                    childAspectRatio: crossAxisCount == 1 ? 1.7 : 0.72,
                   ),
                   itemCount: pets.length,
                   itemBuilder: (context, index) {
@@ -162,7 +162,7 @@ class _PetSyncBanner extends StatelessWidget {
           Icon(Icons.sync_problem_rounded, color: colorScheme.error),
           const SizedBox(width: 10),
           Expanded(child: Text(message)),
-          TextButton(onPressed: onRetry, child: const Text('Thu lai')),
+          TextButton(onPressed: onRetry, child: const Text('Thử lại')),
         ],
       ),
     );
@@ -190,13 +190,13 @@ class _PetSyncError extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              'Chua tai duoc ho so thu cung',
+              'Chưa tải được hồ sơ thú cưng',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Thu lai')),
+            FilledButton(onPressed: onRetry, child: const Text('Thử lại')),
           ],
         ),
       ),
@@ -282,30 +282,30 @@ class _PetCard extends StatelessWidget {
   String _toDisplaySpecies(String species) {
     switch (species) {
       case 'dog':
-        return 'Dog';
+        return 'Chó';
       case 'cat':
-        return 'Cat';
+        return 'Mèo';
       case 'bird':
-        return 'Bird';
+        return 'Chim';
       case 'rabbit':
-        return 'Rabbit';
+        return 'Thỏ';
       default:
-        return 'Other';
+        return 'Khác';
     }
   }
 
   String _toDisplayHealthStatus(String healthStatus) {
     switch (healthStatus) {
       case 'monitoring':
-        return 'Can theo doi';
+        return 'Cần theo dõi';
       case 'chronic':
-        return 'Benh man tinh';
+        return 'Bệnh mạn tính';
       case 'recovery':
-        return 'Dang hoi phuc';
+        return 'Đang hồi phục';
       case 'healthy':
-        return 'On dinh';
+        return 'Ổn định';
       default:
-        return 'Chua ro';
+        return 'Chưa rõ';
     }
   }
 
@@ -328,5 +328,5 @@ class _PetCard extends StatelessWidget {
 }
 
 String _petSyncErrorMessage(Object error) {
-  return 'Khong the dong bo ho so thu cung. Vui long thu lai.';
+  return 'Không thể đồng bộ hồ sơ thú cưng. Vui lòng thử lại.';
 }

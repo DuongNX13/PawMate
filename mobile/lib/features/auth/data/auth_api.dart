@@ -143,7 +143,7 @@ class AuthApi {
       ),
       parser: (json) => RegisterResponse(
         userId: json['userId']?.toString() ?? '',
-        message: json['message']?.toString() ?? 'Check your email',
+        message: json['message']?.toString() ?? 'Hãy kiểm tra email của bạn',
       ),
     );
   }
@@ -160,7 +160,7 @@ class AuthApi {
       parser: (json) => VerifyEmailResponse(
         userId: json['userId']?.toString() ?? '',
         email: json['email']?.toString() ?? email,
-        message: json['message']?.toString() ?? 'Email verified',
+        message: json['message']?.toString() ?? 'Email đã được xác minh',
       ),
     );
   }
@@ -170,7 +170,7 @@ class AuthApi {
       request: () =>
           _dio.post('/auth/resend-verification', data: {'email': email}),
       parser: (json) =>
-          json['message']?.toString() ?? 'Verification email resent',
+          json['message']?.toString() ?? 'Đã gửi lại email xác minh',
     );
   }
 

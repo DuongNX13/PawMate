@@ -39,10 +39,11 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cachedPets = ref.watch(petListProvider);
     final syncedPetsState = ref.watch(petBackendListProvider);
     final pets = syncedPetsState.maybeWhen(
       data: (items) => items,
-      orElse: () => const <PetProfile>[],
+      orElse: () => cachedPets,
     );
     final selectedPet = pets.isEmpty
         ? null
@@ -139,7 +140,10 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
               }),
             ),
             const SizedBox(height: 24),
-            Text('Timeline', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Dòng thời gian',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 12),
             if (recordQuery == null || recordsState == null)
               _EmptyTimeline(onAdd: () => _openAddEventSheet())
@@ -453,10 +457,17 @@ class _PetSelectorCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(petName, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  petName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -470,6 +481,15 @@ class _PetSelectorCard extends StatelessWidget {
                 value: selectedPetId,
                 items: pets,
                 onChanged: onChanged,
+                icon: const SizedBox.shrink(),
+                selectedItemBuilder: (context) => pets
+                    .map(
+                      (_) => const Icon(
+                        Icons.expand_more_rounded,
+                        color: AppColors.primary700,
+                      ),
+                    )
+                    .toList(),
               ),
             ),
         ],
@@ -532,21 +552,18 @@ class _HealthEventCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        event.displayTitle,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-                    Text(
-                      _formatDate(event.occurredAt),
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                Text(
+                  event.displayTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _formatDate(event.occurredAt),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(

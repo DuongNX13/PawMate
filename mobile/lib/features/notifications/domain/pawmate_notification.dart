@@ -29,7 +29,7 @@ class PawMateNotification {
     return PawMateNotification(
       id: json['id']?.toString() ?? '',
       type: json['type']?.toString() ?? 'system',
-      title: json['title']?.toString() ?? 'Thong bao',
+      title: json['title']?.toString() ?? 'Thông báo',
       body: json['body']?.toString() ?? '',
       petId: _readOptionalString(json['petId']),
       reminderId: _readOptionalString(json['reminderId']),
