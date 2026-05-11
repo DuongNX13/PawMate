@@ -26,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>maps</string>
+		<string>tel</string>
+		<string>waze</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>PawMate dùng vị trí để tìm phòng khám thú y gần bạn.</string>
 	<key>UIApplicationSceneManifest</key>

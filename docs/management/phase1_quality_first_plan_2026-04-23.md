@@ -480,11 +480,14 @@ Day 9 exit gate:
 
 Goal:
 - xac dinh app co dat `RC-ready` hay khong
+- chot blocker disposition truoc khi tao RC candidate
+- tach ro `RC-ready` voi `TestFlight/App Store ready`
 
 RC checklist:
 - auth verified end-to-end
 - pet profile stable
 - vet list/detail/search dung backend data that
+- vet nearby/map dung Render live data va Android evidence da capture
 - review core stable
 - health timeline usable
 - reminder/notification usable
@@ -492,12 +495,25 @@ RC checklist:
 - visual QA signed off
 - no unresolved critical runtime blocker
 - no unresolved critical accessibility blocker
+- external call/directions actions co real intent declarations tren Android/iOS
+- GitHub CI + Compose Smoke pass tren commit ung vien
+- Render `/health` va representative API smoke pass
 
 Release outputs:
 - RC checklist
 - known issues list
 - go/no-go recommendation
 - candidate internal build plan
+- final-day Apple signing/TestFlight action list
+
+Execution order:
+1. Refresh blocker inventory from Day 7-9 boards and live runtime checks.
+2. Close any local/repo-owned blocker that can be solved without Apple payment/team dependency.
+3. Run backend + mobile gates on the RC candidate commit.
+4. Run Android RC smoke with Render API base: login, pets, vets list/detail/map, review, health, reminders, notifications.
+5. Refresh Render smoke: `/health`, `/auth/login` with verified QA account if available, `/vets/search`, `/vets/nearby`.
+6. Produce Day 10 RC board, QA matrix, known-issues list, and go/no-go recommendation.
+7. Keep Apple Developer/App Store Connect signing as final-day release-parity dependency until PawMate Apple team/payment is ready.
 
 ## Day 3 Immediate Execution Spec
 
