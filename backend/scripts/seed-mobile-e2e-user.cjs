@@ -5,9 +5,14 @@ const dotenv = require('dotenv');
 const { PrismaClient } = require('@prisma/client');
 
 const backendRoot = path.resolve(__dirname, '..');
+const shouldSkipLocalEnv =
+  process.env.PAWMATE_E2E_SKIP_ENV_LOCAL === 'true' ||
+  process.env.PAWMATE_E2E_SKIP_ENV_LOCAL === '1';
 
 dotenv.config({ path: path.join(backendRoot, '.env'), override: false });
-dotenv.config({ path: path.join(backendRoot, '.env.local'), override: true });
+if (!shouldSkipLocalEnv) {
+  dotenv.config({ path: path.join(backendRoot, '.env.local'), override: true });
+}
 
 const email = process.env.PAWMATE_E2E_EMAIL ?? 'mobile-e2e-owner@pawmate.test';
 const password = process.env.PAWMATE_E2E_PASSWORD ?? 'Pawmate123';

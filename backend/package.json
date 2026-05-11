@@ -16,6 +16,7 @@
     "test:coverage": "jest --runInBand --config jest.config.cjs --coverage",
     "smoke:runtime": "tsx ./scripts/day2-runtime-smoke.ts",
     "auth:live-proof": "tsx ./scripts/day2-auth-live-proof.ts",
+    "seed:mobile-e2e-user": "node ./scripts/seed-mobile-e2e-user.cjs",
     "seed:vets:build": "node ./scripts/build-day2-vet-seed-candidates.mjs",
     "seed:vets:validate-geo-pilot": "node ./scripts/validate-day3-vet-geo-pilot.mjs",
     "seed:vets:sync-geo-pilot": "node ./scripts/sync-day3-vet-geo-pilot.mjs",

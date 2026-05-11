@@ -70,10 +70,13 @@ Day 7 starts productionization hardening after Day 6 Android-local sign-off. The
 - Fly deploy check on 2026-05-08: `flyctl` was installed and `flyctl auth login` completed as `duongngo0708@gmail.com`, but creating `pawmate-api-duongnx13` failed because Fly requires payment information for the personal org before app creation. Evidence: `temp/qa/day7-fly-app-create-pawmate-api-duongnx13.txt`.
 - Codemagic signing check on 2026-05-08: live Codemagic settings still show Developer Portal disconnected, no iOS certificates/provisioning profiles shared with the account, and no global variables. Evidence: `temp/qa/codemagic-integrations-current.png`, `temp/qa/codemagic-code-signing-expanded-current.png`, `temp/qa/codemagic-global-vars-current.png`.
 - Free backend replacement check on 2026-05-08: Render Free Web Service is the selected Fly replacement because it supports a normal Node web service, public HTTPS, monorepo root directories, Blueprint IaC, and free deploy without payment for the MVP path. Railway/Koyeb are not the preferred no-credit route, and serverless/edge platforms would require more backend rewrite. Evidence: `render.yaml`, `docs/management/day7_free_backend_replacement_status_2026-05-08.md`.
+- Render backend closeout on 2026-05-08: `pawmate-api` is live at `https://pawmate-api-yteu.onrender.com`; `/health` returned `200 {"status":"ok"}` and Appetize Network Logs captured real backend calls for `/auth/register` and `/auth/login`. Evidence: `temp/qa/appetize-auth-network-logs-register201-login403.png`.
+- Fresh-email login closeout: `/auth/register` returned `201`, then `/auth/login` returned `403 AUTH_006` because email verification is required. This is expected product policy, not an infrastructure blocker.
+- Reminder notification closeout on 2026-05-11: `.github/workflows/reminder-worker.yml` no longer has `schedule` or `cron`; it keeps only `workflow_dispatch`, so build pass/fail notifications can still happen without repeated Reminder Worker cron spam.
 
 ## Next Actions
 
-1. Create the Render Free Web Service from `render.yaml`, enter the Supabase Session Pooler `DATABASE_URL` in Render only, then verify `GET https://<render-service-subdomain>.onrender.com/health`.
-2. Set Codemagic `PAWMATE_API_BASE_URL` to the durable Render URL after deploy, then rerun `ios-appetize-simulator-smoke` and capture Appetize Network Logs for `/auth/register` plus `/auth/login`.
-3. Connect Apple Developer Portal/App Store Connect API in Codemagic and provide signing assets for `com.pawmate.pawmateMobile`, then rerun `ios-real-device-smoke`.
-4. Treat Appetize as the default browser-based QA surface. Use TestFlight or a physical iPhone later for final real-device signing parity after Apple signing is connected.
+1. Continue into Day 8 full manual QA and accessibility pass.
+2. Use a verified QA account for Appetize deep-login proof so Network Logs can show `/auth/login` `200` and the app can reach `/pets`.
+3. Keep Reminder Worker schedule disabled until the worker failure root cause is fixed and production scheduling is explicitly re-approved.
+4. Connect Apple Developer Portal/App Store Connect API in Codemagic on the final-day signing lane after PawMate team/payment readiness is complete.

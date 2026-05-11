@@ -407,20 +407,27 @@ Workstreams:
   - tap targets
   - semantics labels
 - device smoke cho auth, pet, vet, review, health, reminder
+- Appetize deep-login proof:
+  - fresh register tren Render co the tra `201` roi login ngay tra `403 AUTH_006`
+  - day la expected email verification policy, khong phai ha tang blocker
+  - demo login sau dung verified QA account; khong them public auto-verify endpoint
 
 Acceptance criteria:
 - khong con P0/P1 visual bug tren core flow
 - screen reader/tap target khong co loi nghiem trong
 - 2 flow end-to-end pass tren thiet bi/emulator
+- Appetize Network Logs co `/auth/login` `200` cho verified QA account, hoac ghi ro la backlog neu chi can register-policy proof
 
 Tests:
 - E2E critical flows
 - a11y checklist
 - regression matrix
+- Render auth smoke: register fresh `201`, login unverified `403 AUTH_006`, login verified QA `200`
 
 Day 8 exit gate:
 - core MVP visually signed off
 - risk register chi con low/known debt
+- Apple Developer/App Store Connect signing van la final-day gap, khong chan Day 8 QA
 
 ### Day 9 - Vet Nearby/Map Only If Data Ready
 

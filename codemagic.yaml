@@ -115,7 +115,9 @@ workflows:
             --dart-define=PAWMATE_ENABLE_SYSTEM_PROXY="${PAWMATE_ENABLE_SYSTEM_PROXY:-false}" \
             --dart-define=PAWMATE_INITIAL_ROUTE="${PAWMATE_INITIAL_ROUTE:-/launch}" \
             --dart-define=PAWMATE_QA_AUTORUN_AUTH_SMOKE="${PAWMATE_QA_AUTORUN_AUTH_SMOKE:-false}" \
-            --dart-define=PAWMATE_QA_PREFILL_AUTH="${PAWMATE_QA_PREFILL_AUTH:-false}"
+            --dart-define=PAWMATE_QA_PREFILL_AUTH="${PAWMATE_QA_PREFILL_AUTH:-false}" \
+            --dart-define=PAWMATE_QA_AUTH_EMAIL="${PAWMATE_QA_AUTH_EMAIL:-}" \
+            --dart-define=PAWMATE_QA_AUTH_PASSWORD="${PAWMATE_QA_AUTH_PASSWORD:-}"
       - name: Package Appetize simulator zip
         script: |
           set -euo pipefail
