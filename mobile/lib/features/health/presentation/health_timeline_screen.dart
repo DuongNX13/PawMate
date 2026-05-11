@@ -69,7 +69,7 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 132),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 220),
           children: [
             Text(
               'Sức khỏe',

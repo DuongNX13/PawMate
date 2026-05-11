@@ -21,7 +21,7 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 | D8-02 | Verified QA auth account path for Appetize | DONE | `backend/scripts/seed-mobile-e2e-user.cjs`, `mobile/lib/features/auth/presentation/auth_qa_defaults.dart`, `codemagic.yaml`; public Render `/auth/login` returned `200` for the verified QA account |
 | D8-03 | Appetize deep-login Network Logs proof | DONE | `temp/qa/day8-appetize-deep-login/appetize-network-tab-after-login.png`, `temp/qa/day8-appetize-deep-login/appetize-after-manual-login-12s.png` |
 | D8-04 | Full manual QA matrix | ANDROID_CORE_NORMAL_PASS_WITH_FIXES | `temp/qa/day8-appetize-deep-login/day8-render-api-core-smoke.json`, `temp/qa/day8-android-e2e/34-reminders-after-selector-fix.png`, `temp/qa/day8-android-e2e/36-final-installed-current-build.png`, `docs/qa/day8_manual_qa_accessibility_report.md` |
-| D8-05 | Accessibility pass | ANDROID_NORMAL_PARTIAL_PASS_LARGE_TEXT_PENDING | `docs/qa/day8_manual_qa_accessibility_report.md`; normal Android pass found and fixed core overflow/copy issues |
+| D8-05 | Accessibility pass | DONE | `docs/qa/day8_manual_qa_accessibility_report.md`; Android font scale `1.3` pass captured in `temp/qa/day8-android-large-text/` |
 | D8-06 | CI/Ops proof | DONE | Backend/mobile gates, coverage, audit, Render health, GitHub CI #34, and Compose Smoke #34 passed on `main` commit `c768850` |
 | D8-07 | Android functional testcase package | DONE | `docs/qa/day8_android_functional_testcases.md` |
 | D8-08 | Android UI/UX Figma audit package | DONE | `docs/qa/day8_android_uiux_figma_audit.md` |
@@ -39,6 +39,7 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 - Mobile reminder processing now sends an explicit empty JSON body to avoid content-type ambiguity when calling `POST /notifications/process-due-reminders`.
 - Android Day 8 QA found and fixed the user-visible `Lịch nhắc` pet selector overflow where the selected pet name rendered vertically.
 - Android UI copy was normalized to Vietnamese-first labels on bottom navigation, pets, reminders, notifications, vet/review text, and placeholder routes.
+- Android large-text QA ran at system `font_scale=1.3`; bottom content padding was increased on Health, Reminders, Vet list, Vet detail, and Notifications so content can scroll clear of the bottom nav/FAB.
 
 ## Verification Checklist
 
@@ -60,7 +61,7 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 - [x] Public Render core API smoke covers auth, pets, health records, reminders, notifications, and vet search.
 - [x] GitHub CI #34 and Compose Smoke #34 passed for `c768850`.
 - [x] Android normal-text visual QA across exercised core MVP screens has no remaining P0/P1 core-flow bugs after fixes.
-- [ ] Full screen-by-screen large-text accessibility pass has no severe contrast/tap-target/text-scale issues.
+- [x] Full screen-by-screen large-text accessibility pass has no severe contrast/tap-target/text-scale issues.
 
 ## Evidence
 
@@ -69,6 +70,14 @@ Day 8 also owns the Appetize deep-login follow-up from Day 7:
 - Android build/analyze/test with Render QA defines: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-152400-24ae924a.raw.txt`
 - Android final analyze/test after reminder regression test: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-152954-768ca2d9.raw.txt`
 - Android final build/install on emulator: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-153018-29c153c6.raw.txt`
+- Android large-text analyze: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161518-7ca2bcdb.raw.txt`
+- Android large-text test: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161657-38340603.raw.txt`
+- Android large-text build: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161731-c2457afb.raw.txt`
+- Android large-text install: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161938-3835794c.raw.txt`
+- Android large-text reminders proof: `temp/qa/day8-android-large-text/19-postfix-reminders.png`
+- Android large-text notifications proof: `temp/qa/day8-android-large-text/20-postfix-notifications.png`
+- Android large-text health scroll proof: `temp/qa/day8-android-large-text/18-postfix-health-scroll.png`
+- Android large-text vet detail scroll proof: `temp/qa/day8-android-large-text/22-postfix-vet-detail-scroll.png`
 - Android login/current build screenshot: `temp/qa/day8-android-e2e/36-final-installed-current-build.png`
 - Android reminder selector fix screenshot: `temp/qa/day8-android-e2e/34-reminders-after-selector-fix.png`
 - Android Vietnamese UI screenshot: `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`
@@ -102,4 +111,4 @@ Day 8 can close when:
 - Render health and local CI gates are green,
 - Apple signing remains tracked as a final-day gap only.
 
-Large-text accessibility remains the only Day 8 exit item not fully closed by the Android normal-text run.
+Large-text accessibility is closed for the Day 8 Android QA surface. Apple signing remains tracked as a final-day release-parity gap only.

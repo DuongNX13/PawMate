@@ -182,7 +182,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
           onRefresh: _refresh,
           child: ListView(
             controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 220),
             children: [
               Row(
                 children: [

@@ -54,7 +54,7 @@ class VetDetailScreen extends ConsumerWidget {
             final reviewsAsync = ref.watch(vetReviewListProvider(vet.id));
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 132),
+              padding: const EdgeInsets.fromLTRB(24, 18, 24, 220),
               children: [
                 Row(
                   children: [

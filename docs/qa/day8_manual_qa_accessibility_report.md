@@ -4,7 +4,7 @@ Date: `2026-05-11`
 
 ## Current Status
 
-Day 8 QA is open only for large-text accessibility completion. The highest-risk backend/Appetize blocker is cleared, Android normal-text E2E has been run on the emulator, local automated gates are green, GitHub CI/Compose Smoke are green on `main`, Render core API smoke passes, and Appetize deep-login evidence is captured.
+Day 8 QA large-text accessibility is now closed for the Android QA surface. The highest-risk backend/Appetize blocker is cleared, Android normal-text and large-text E2E have been run on the emulator, local automated gates are green, GitHub CI/Compose Smoke are green on `main`, Render core API smoke passes, and Appetize deep-login evidence is captured.
 
 Known Day 7 carry-over:
 
@@ -19,6 +19,7 @@ Known Day 7 carry-over:
 - Day 8 Appetize reached the authenticated pet-list surface after login.
 - Day 8 Android debug APK now includes `INTERNET` permission, builds with Render API base, installs on emulator, and logs in with the verified QA account.
 - Android normal-text run found and fixed P0/P1 visual issues in pet cards, health timeline/selector, and the reminder pet selector.
+- Android large-text run used system `font_scale=1.3`; Reminders, Notifications, Health, Vet list/detail, Create Pet, and Review sheet showed no severe clipping or unreachable core CTA after the bottom-padding fix.
 
 ## Manual QA Matrix
 
@@ -39,10 +40,10 @@ Known Day 7 carry-over:
 
 | Check | Status | Notes |
 |---|---|---|
-| Contrast | ANDROID_NORMAL_PARTIAL_PASS | No severe contrast issue observed on exercised Android/Appetize auth, pets, vet list, health, reminders, notifications surfaces |
-| Text scale | NORMAL_PASS_LARGE_TEXT_PENDING | Normal-text clipping/overflow bugs found in pets, health, and reminders were fixed; large Android font pass still pending |
-| Tap targets | ANDROID_NORMAL_PARTIAL_PASS | Login, top actions, bottom nav on health/reminder surfaces, calendar controls, and primary CTAs were tappable in the run |
-| Form labels | ANDROID_NORMAL_PARTIAL_PASS | Login and create-pet route were usable; full large-text bottom-sheet/form audit remains |
+| Contrast | ANDROID_PASS | No severe contrast issue observed on exercised Android/Appetize auth, pets, vet list/detail, health, reminders, notifications surfaces |
+| Text scale | ANDROID_LARGE_TEXT_PASS | Android `font_scale=1.3` pass covered pets, create-pet, vet list/detail, health, reminders, notifications, and review sheet; user-reported reminder vertical-text issue stayed fixed |
+| Tap targets | ANDROID_LARGE_TEXT_PASS | Top actions, bottom nav, health/reminder FABs, calendar controls, notification actions, vet map FAB, and primary CTAs were tappable in the large-text run |
+| Form labels | ANDROID_LARGE_TEXT_PASS | Create-pet form and write-review bottom sheet remained readable at large text with visible submit controls |
 | Error states | POLICY_PASS | Fresh unverified login shows policy failure instead of infra failure |
 | Loading/empty states | ANDROID_NORMAL_PASS | Pets, reminders, notifications, and health showed non-blank loading/empty/error states during the run |
 | Navigation semantics | ANDROID_NORMAL_PASS | Auth -> pets, pets -> vet list, health -> notifications/reminders worked in the Android run; route-specific initial builds are kept out of evidence because of emulator renderer instability |
@@ -66,6 +67,18 @@ Day 8 evidence:
 - Android build/analyze/test with Render QA defines: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-152400-24ae924a.raw.txt`
 - Android final analyze/test after reminder selector regression test: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-152954-768ca2d9.raw.txt`
 - Android final build/install on emulator: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-153018-29c153c6.raw.txt`
+- Android large-text analyze: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161518-7ca2bcdb.raw.txt`
+- Android large-text test: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161657-38340603.raw.txt`
+- Android large-text build: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161731-c2457afb.raw.txt`
+- Android large-text install: `C:\Users\duongnx\.codex\output-evidence\codex-rtk-safe-20260511-161938-3835794c.raw.txt`
+- Android large-text pet list: `temp/qa/day8-android-large-text/12-postfix-launch.png`
+- Android large-text create-pet route: `temp/qa/day8-android-large-text/03-large-create-pet.png`
+- Android large-text reminders: `temp/qa/day8-android-large-text/19-postfix-reminders.png`
+- Android large-text notifications: `temp/qa/day8-android-large-text/20-postfix-notifications.png`
+- Android large-text health scroll: `temp/qa/day8-android-large-text/18-postfix-health-scroll.png`
+- Android large-text vet list scroll: `temp/qa/day8-android-large-text/15-postfix-vet-list-scroll.png`
+- Android large-text vet detail scroll: `temp/qa/day8-android-large-text/22-postfix-vet-detail-scroll.png`
+- Android large-text review sheet: `temp/qa/day8-android-large-text/11-large-review-sheet.png`
 - Android verified login/current build screenshot: `temp/qa/day8-android-e2e/36-final-installed-current-build.png`
 - Android pet list after login: `temp/qa/day8-android-e2e/22-after-clean-login.png`
 - Android vet list: `temp/qa/day8-android-e2e/23-vet-list-from-pets.png`
@@ -82,7 +95,7 @@ Day 8 evidence:
 
 - D8-F01: CLOSED. Appetize deep-login browser proof is captured with `/auth/login` `200`, `/pets` `200`, and authenticated pet-list screenshot.
 - D8-F02: CLOSED_FOR_ANDROID_NORMAL_TEXT. Android E2E covered core auth, pets, create-pet route, vet list, health, reminders, and notifications. API smoke already covers auth, pets, health records, reminders, notifications, and vet search.
-- D8-F03: OPEN_LARGE_TEXT. Full accessibility audit is still partial at large Android font scale; normal-text P0/P1 clipping found during the run has been fixed.
+- D8-F03: CLOSED_LARGE_TEXT. Android `font_scale=1.3` accessibility pass is captured. Health, Reminders, Vet list/detail, and Notifications now have enough bottom padding for content to scroll clear of the bottom nav/FAB; no severe clipping or unreachable core CTA remains on exercised Day 8 surfaces.
 - D8-F04: CLOSED. `Lịch nhắc` selected-pet dropdown rendered the pet name vertically on Android. Fixed by moving the selected pet label into the main row text with one-line ellipsis and keeping the dropdown selected builder icon-only. Regression test added in `mobile/test/features/reminders/reminder_calendar_screen_test.dart`.
 - D8-F05: CLOSED. Bottom navigation and major MVP copy now use Vietnamese-first labels with accents. Remaining English strings from test keys/internal filenames are not user-facing.
 - D8-F06: ACCEPTED_FOR_DAY8. Direct `PAWMATE_INITIAL_ROUTE` builds can hit emulator renderer black-screen/Impeller instability. Default installed app navigation works and is the accepted Android QA path for Day 8 evidence.

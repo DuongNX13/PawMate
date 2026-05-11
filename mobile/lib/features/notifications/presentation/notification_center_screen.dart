@@ -19,7 +19,7 @@ class NotificationCenterScreen extends ConsumerWidget {
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/health'),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 132),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 220),
           children: [
             Row(
               children: [

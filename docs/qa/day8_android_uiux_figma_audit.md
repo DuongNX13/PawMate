@@ -46,8 +46,8 @@ Current Day 8 status from repo evidence:
 
 - Appetize deep-login blocker is cleared.
 - Render API smoke covers auth, pets, health records, reminders, notifications, and vet search.
-- Existing visual/manual QA is still partial beyond auth/pets.
-- Full visual manual QA and full screen-by-screen accessibility pass remain open exit-gate items.
+- Existing visual/manual QA has follow-up Android evidence beyond auth/pets.
+- Full screen-by-screen large-text accessibility has been completed by the main Android E2E runner.
 
 This audit is therefore a readiness checklist and design-drift report for the main Android E2E runner.
 
@@ -74,9 +74,9 @@ Use these as Android visual acceptance criteria:
 | ID | Severity | Finding | Evidence | Android E2E check |
 |---|---|---|---|---|
 | UIX-D8-01 | High | Design token source conflict: Day 1 design doc defines teal primary tokens, while Figma page and current Flutter code use warm orange `#FF8A5B` as primary. This affects color sign-off because both cannot be the source of truth. | Figma swatch Primary `#FF8A5B`; `mobile/lib/app/theme/app_tokens.dart` has `AppColors.primary500 = Color(0xFFFF8A5B)`; Day 1 doc says `primary-500` is HSL teal. | Capture Android screenshots for auth/pets/health/vet/reminder/notification and decide whether orange theme is accepted as latest Figma source or doc must be updated. |
-| UIX-D8-02 | Closed in follow-up | Bottom navigation originally used English labels (`Home`, `Vet`, `Health`, `Profile`) while design goal is Vietnamese-first UI copy. Follow-up changed labels to `Thú cưng`, `Thú y`, `Sức khỏe`, `Hồ sơ` with one-line ellipsis. | `mobile/lib/core/widgets/pawmate_bottom_nav.dart`; `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`. | Keep large-text verification open under UIX-D8-04. |
+| UIX-D8-02 | Closed in follow-up | Bottom navigation originally used English labels (`Home`, `Vet`, `Health`, `Profile`) while design goal is Vietnamese-first UI copy. Follow-up changed labels to `Thú cưng`, `Thú y`, `Sức khỏe`, `Hồ sơ` with one-line ellipsis. | `mobile/lib/core/widgets/pawmate_bottom_nav.dart`; `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`. | Re-check when new bottom-nav destinations are added. |
 | UIX-D8-03 | Closed in follow-up | Several Android UI strings were Vietnamese without accents. Follow-up normalized major MVP copy on auth, pets, reminders, notifications, vets/reviews, and placeholder routes. | `mobile/lib/features/**/presentation/*.dart`; `temp/qa/day8-android-e2e/35-vietnamese-ui-after-launch.png`. | Re-scan user-visible strings when new screens are added. |
-| UIX-D8-04 | Medium | Full text-scale proof is still missing for dense surfaces: vet review card, review bottom sheet, reminder calendar, notification cards, and bottom nav. | Existing QA report marks text scale `PARTIAL_PASS`; Day 8 board still has full accessibility unchecked. Code has long dynamic review text and 0.92-height review sheet. | Run Android at normal and large text. Check clipping, overflow, hidden CTAs, and scroll access. |
+| UIX-D8-04 | Closed in follow-up | Full text-scale proof is captured for dense surfaces: vet review card, review bottom sheet, reminder calendar, notification cards, and bottom nav. | `temp/qa/day8-android-large-text/19-postfix-reminders.png`, `20-postfix-notifications.png`, `18-postfix-health-scroll.png`, `22-postfix-vet-detail-scroll.png`; bottom padding increased in affected screens. | Re-run at large text when new dense cards/forms are added. |
 | UIX-D8-05 | Medium | Tap-target semantics should be verified where custom `GestureDetector` or compact icon/text controls are used. | Bottom nav uses `GestureDetector`; pet avatar upload uses `GestureDetector`; many icon-only controls rely on default `IconButton`. | Use Android accessibility/tap pass: bottom nav, avatar upload, map FAB, notification icon, back buttons, review helpful/report/load-more. |
 | UIX-D8-06 | Low | Loading/empty/error states are present in code for major Day 8 surfaces, but visual parity is not proven on Android. | Pets, health, reminders, notifications, vet list/detail, and reviews all include loading/error/empty branches. | Capture each state where feasible or simulate backend failure/offline for at least one representative list screen. |
 
@@ -111,7 +111,7 @@ Do not close Day 8 visual/accessibility exit gate until:
 
 - UIX-D8-01 design token conflict is resolved or explicitly accepted.
 - Android screenshots prove auth, pets, health, reminders, notifications, vet, and review surfaces at normal text scale.
-- At least one large-text Android pass proves no severe clipping or unreachable CTA on dense screens.
+- Large-text Android pass proves no severe clipping or unreachable CTA on dense screens.
 - Bottom nav language and tap-target behavior are either fixed or accepted as MVP debt.
 - The manual QA report is updated by the main/QA owner with screenshot evidence from the Android E2E run.
 
@@ -134,4 +134,4 @@ After this audit package was produced, the main Android E2E pass implemented and
 Remaining UI/UX debt:
 
 - UIX-D8-01 remains a design-owner decision: the live Flutter/Figma warm orange primary conflicts with the older Day 1 teal-token doc.
-- UIX-D8-04 remains open for a full large-text Android pass on dense review/reminder/notification surfaces.
+- UIX-D8-04 is closed for Day 8: Android `font_scale=1.3` evidence covers dense review/reminder/notification surfaces and the bottom-nav/FAB overlap risk.
