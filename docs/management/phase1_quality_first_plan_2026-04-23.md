@@ -476,6 +476,50 @@ Tests:
 Day 9 exit gate:
 - nearby/map production-ready, hoac neu data chua du thi lane nay chinh thuc truot sau RC va khong block release core
 
+### Day 9.5 - Full App UI Stabilization Gate
+
+Trigger:
+- user-visible screenshots show inconsistent typography, oversized text, clipped long clinic names, and cramped action/card layouts
+- Day 9 map path is signed off, but broader full-app UI polish is not safe enough for RC
+
+Goal:
+- test and normalize the whole app UI before Day 10 RC Gate
+- make typography hierarchy, card density, button labels, and long Vietnamese/dynamic content consistent across core MVP screens
+
+Workstreams:
+- typography audit:
+  - ban `headlineSmall` / `titleLarge` trong compact cards, action buttons, quick facts, chips
+  - replace hard-coded large text in dense cards with `titleMedium`, `bodyLarge`, or bounded local styles
+  - define max lines, overflow, and minimum touch targets per component
+- layout audit:
+  - Vet list card, Vet detail hero, quick facts, action buttons, service chips, review preview
+  - Auth/onboarding heading scale, Pets cards/forms, Health timeline, Reminder calendar, Notification center, Bottom nav
+  - small-device portrait `360x800` and common iPhone/Android `390x844`
+- large-text accessibility:
+  - run at `TextScaler` / device font scale `1.3`
+  - no clipped CTA, card title, chip label, bottom nav label, or hidden submit button
+- visual evidence:
+  - normal text screenshots for every core screen
+  - large text screenshots for dense screens
+  - widget tests fail on overflow exceptions
+
+Acceptance criteria:
+- no P0/P1 layout overflow on core MVP flows
+- no oversized text prevents reading primary information
+- card title/body/action hierarchy is consistent and scannable
+- all primary controls keep at least 48dp hit area
+- full UI QA report has evidence paths and known issues classified P0/P1/P2/backlog
+
+Tests:
+- full Flutter widget test suite
+- targeted small-screen + large-text widget tests for vet list/detail, health, reminders, notifications, auth, pets
+- Android/Appetize manual smoke screenshots across core routes
+- optional golden snapshots after typography rules settle
+
+Day 9.5 exit gate:
+- full-app UI stabilization signed off before Day 10 RC Gate resumes
+- Day 10 cannot be marked RC-ready while a P0/P1 visual or accessibility issue remains
+
 ### Day 10 - RC Gate
 
 Goal:
