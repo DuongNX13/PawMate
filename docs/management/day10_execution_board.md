@@ -36,9 +36,9 @@ Out of scope for Day 10:
 | D10-04 | Render API smoke refresh | DONE | `/health`, `/vets/search`, `/vets/nearby`, `/auth/login` all return expected 200 statuses |
 | D10-05 | Android RC smoke pass | DONE_WITH_DAY10_FIX | Evidence in `temp/qa/day10_android_rc/`; map ANR fixed and retested |
 | D10-06 | Appetize/iOS sanity check | SKIPPED_OPTIONAL | Not used to save quota; Android emulator is Day 10 primary QA surface |
-| D10-07 | GitHub candidate verification | PENDING_PUSH | Verify `CI` and `Compose Smoke` after candidate push |
+| D10-07 | GitHub candidate verification | DONE | GitHub `CI` and `Compose Smoke` pass on pushed Day 10 candidate |
 | D10-08 | Known issues list | DONE | Known issues are classified below |
-| D10-09 | Go/no-go recommendation | READY_FOR_CI | Provisional recommendation: `GO_WITH_KNOWN_ISSUES` if GitHub checks pass |
+| D10-09 | Go/no-go recommendation | DONE | Final recommendation: `GO_WITH_KNOWN_ISSUES` |
 | D10-10 | Final-day Apple signing handoff | DONE | Listed as final-day external dependency |
 
 ## RC Acceptance
@@ -82,4 +82,4 @@ Key screenshots:
 
 ## Current Recommendation
 
-`GO_WITH_KNOWN_ISSUES` for internal Android/Render RC candidate, pending GitHub `CI` and `Compose Smoke` on the candidate commit.
+`GO_WITH_KNOWN_ISSUES` for internal Android/Render RC candidate. Local gates, Render smoke, Android smoke, GitHub `CI`, and GitHub `Compose Smoke` are all green.

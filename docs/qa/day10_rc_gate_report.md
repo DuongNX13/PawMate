@@ -4,9 +4,9 @@ Date: `2026-05-13`
 
 ## Summary
 
-Day 10 RC gate has passed local backend/mobile gates, Render API smoke, and Android emulator smoke after one Day 10 map fix. The remaining required external check is GitHub `CI` and `Compose Smoke` on the pushed candidate commit.
+Day 10 RC gate has passed local backend/mobile gates, Render API smoke, Android emulator smoke after one Day 10 map fix, and GitHub `CI` / `Compose Smoke` on the pushed candidate.
 
-Recommendation before GitHub verification: `GO_WITH_KNOWN_ISSUES`.
+Recommendation: `GO_WITH_KNOWN_ISSUES`.
 
 ## Candidate Scope
 
@@ -83,12 +83,12 @@ Post-fix proof:
 
 ## GitHub Verification
 
-Pending candidate push:
+| Workflow | Result |
+|---|---|
+| `CI` | PASS |
+| `Compose Smoke` | PASS |
 
-- `CI`: pending.
-- `Compose Smoke`: pending.
-
-This section must be updated after the candidate commit reaches GitHub and Actions complete.
+Verification used GitHub Actions REST API polling on the pushed Day 10 candidate.
 
 ## Known Issues
 
@@ -101,4 +101,4 @@ This section must be updated after the candidate commit reaches GitHub and Actio
 
 ## Recommendation
 
-`GO_WITH_KNOWN_ISSUES` for internal Android/Render RC after GitHub `CI` and `Compose Smoke` pass on the candidate commit.
+`GO_WITH_KNOWN_ISSUES` for internal Android/Render RC.
