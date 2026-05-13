@@ -1,44 +1,45 @@
 # PawMate Day 10 Execution Board
 
-Date: `2026-05-11`
+Date: `2026-05-13`
 
 ## Scope
 
-Day 10 is the RC Gate. The goal is to decide whether the current PawMate MVP is `RC-ready` for internal candidate use, while keeping TestFlight/App Store signing as a separate final-day dependency.
+Day 10 is the RC Gate for internal Android/Render candidate use. TestFlight/App Store signing remains a final-day release-parity dependency and does not block this Android RC gate.
 
 Out of scope for Day 10:
 
 - Creating or paying for a separate PawMate Apple Developer team.
 - Claiming TestFlight/App Store readiness before Apple signing assets exist.
-- Expanding all 80 Day 2 vet seed candidates into map-ready records.
 - Replacing the current Render/Appetize/Android emulator QA surface with BrowserStack.
+- Spending Appetize quota unless final RC parity requires it.
 
 ## Blocker Disposition
 
-| Blocker | Status | Owner | Decision / Evidence |
-|---|---|---|---|
-| Render `/vets/nearby` returned empty on live backend | RESOLVED | Repo/backend | Fixed in `84dc545`; live Render returns 4 HCM nearby clinics |
-| Android map marker/detail and large-text proof | RESOLVED | Mobile QA | Evidence captured in `temp/qa/day9-android-map/15-map-live-nearby-reloaded.png`, `16-marker-preview-sheet.png`, `17-preview-detail-route.png`, `21-large-text-map.png`, `22-large-text-marker-preview.png` |
-| External call/directions app launch risk | RESOLVED_LOCAL | Mobile | Android/iOS URL scheme declarations added for `tel`, directions, Google navigation, Waze; `flutter analyze` and targeted vet map test passed |
-| Fresh register -> login in Appetize blocked by email verification | NOT_INFRA_BLOCKER | Product policy | Expected `AUTH_006` for unverified fresh email; deep login requires verified QA account or internal test verification |
-| Apple Developer/App Store Connect signing | EXTERNAL_DEPENDENCY | User/account | Final-day release parity only; blocked until PawMate Apple team/payment/signing assets are ready |
-| Pre-existing dirty/generated files in worktree | NOT_PROJECT_BLOCKER | Local workspace | Left untouched; do not revert without explicit user request |
+| Blocker | Status | Decision / Evidence |
+|---|---|---|
+| Day 9.5 UI/accessibility blockers | RESOLVED | `flutter test --no-pub --no-test-assets -r expanded` passes 44 tests after Day 10 map fallback regression was added; Day 9.5 report updated |
+| Large-text login CTA wrap | RESOLVED | `mobile/test/features/auth/login_screen_test.dart` covers the wrapped register CTA |
+| Keyboard-open bottom-sheet flows | RESOLVED | Health/reminder/review/report sheets covered by Flutter widget tests |
+| Accessibility contrast/semantic/tap-target proof | RESOLVED | `mobile/test/accessibility/` and `mobile/test/core/widgets/` pass |
+| Vet map route loading/ANR on emulator | RESOLVED_DAY10 | Reproduced during RC smoke, then fixed with app-level location timeout and Hanoi fallback; post-fix map and preview screenshots captured |
+| Fresh register -> login in Appetize blocked by email verification | NOT_INFRA_BLOCKER | Expected policy; deep login uses verified QA account or internal seed script |
+| Apple Developer/App Store Connect signing | EXTERNAL_DEPENDENCY | Final-day release parity only; still blocked on user payment/team setup |
+| Pre-existing dirty/generated files in worktree | LOCAL_NOISE | Generated/cache/evidence folders remain unstaged unless explicitly needed |
 
 ## Day 10 Task Plan
 
-| ID | Task | Status | Acceptance |
+| ID | Task | Status | Evidence |
 |---|---|---|---|
-| D10-01 | Refresh blocker inventory from Day 7-9 | DONE | Blocker disposition table is current and separates repo-owned vs external blockers |
-| D10-02 | Harden external call/directions declarations | DONE | AndroidManifest and iOS Info.plist include the schemes used by vet call/directions actions |
-| D10-03 | Verify local mobile gate after blocker hardening | DONE | `flutter analyze --no-pub` and targeted vet map screen test pass |
-| D10-04 | Full RC backend gate | TODO | `npm run prisma:validate`, `npm run lint`, `npm run build`, `npm test` pass on candidate commit |
-| D10-05 | Full RC mobile gate | DONE | `flutter analyze --no-pub`, `flutter test --no-pub --no-test-assets`, and `flutter build apk --debug --no-pub --dart-define=PAWMATE_API_BASE_URL=https://pawmate-api-yteu.onrender.com` pass through `P:` path |
-| D10-06 | Render API smoke refresh | TODO | `/health`, `/vets/search`, `/vets/nearby`, and auth login smoke return expected statuses |
-| D10-07 | Android RC smoke pass | TODO | Login, pets, vet list/detail/map, review, health, reminders, notifications have no P0/P1 issue |
-| D10-08 | Appetize/iOS simulator sanity check | OPTIONAL | Reuse Appetize only if quota allows; no BrowserStack dependency |
-| D10-09 | Known issues list | TODO | Known issues are classified as RC blocker, release-parity dependency, or backlog |
-| D10-10 | Go/no-go recommendation | TODO | A concrete `GO`, `GO_WITH_KNOWN_ISSUES`, or `NO_GO` is recorded with evidence paths |
-| D10-11 | Final-day Apple signing handoff | TODO | App Store Connect/Codemagic steps are listed without blocking Android/Render RC gate |
+| D10-01 | Reconcile worktree | DONE | Intentional source/docs/tests separated from generated build/cache/evidence noise |
+| D10-02 | Full RC backend gate | DONE | `npm run prisma:validate`, `npm run lint`, `npm run build`, `npm test` pass; Jest 70/70 |
+| D10-03 | Full RC mobile gate | DONE | `flutter analyze --no-pub`, `flutter test --no-pub --no-test-assets -r expanded` with 44 tests, final debug APK build pass from `P:\mobile` |
+| D10-04 | Render API smoke refresh | DONE | `/health`, `/vets/search`, `/vets/nearby`, `/auth/login` all return expected 200 statuses |
+| D10-05 | Android RC smoke pass | DONE_WITH_DAY10_FIX | Evidence in `temp/qa/day10_android_rc/`; map ANR fixed and retested |
+| D10-06 | Appetize/iOS sanity check | SKIPPED_OPTIONAL | Not used to save quota; Android emulator is Day 10 primary QA surface |
+| D10-07 | GitHub candidate verification | PENDING_PUSH | Verify `CI` and `Compose Smoke` after candidate push |
+| D10-08 | Known issues list | DONE | Known issues are classified below |
+| D10-09 | Go/no-go recommendation | READY_FOR_CI | Provisional recommendation: `GO_WITH_KNOWN_ISSUES` if GitHub checks pass |
+| D10-10 | Final-day Apple signing handoff | DONE | Listed as final-day external dependency |
 
 ## RC Acceptance
 
@@ -51,15 +52,34 @@ Day 10 can sign off `RC-ready` when:
 - known issues are explicit and do not block internal candidate use,
 - Apple signing is tracked as release-parity dependency, not hidden as an unresolved app blocker.
 
-## Day 10 Recommended Order
+## Android Evidence
 
-1. Commit and push the local blocker hardening patch.
-2. Wait for GitHub CI and Compose Smoke.
-3. Run full backend/mobile local gates if CI passes.
-4. Run Android RC smoke with Render API base.
-5. Write `docs/qa/day10_rc_gate_report.md`.
-6. Give final go/no-go recommendation.
+Evidence folder: `temp/qa/day10_android_rc/`.
+
+Key screenshots:
+
+- `01-after-qa-login.png`: verified QA login lands on pets.
+- `07-pets-list-with-data.png`: backend-backed pet list.
+- `08-pet-detail.png`: pet detail.
+- `06-pet-create.png`: pet create route.
+- `02-vets-list.png`: backend-backed vet list.
+- `03-vet-detail.png`: vet detail.
+- `16-vet-map-after-fallback-fix.png`: post-fix map render.
+- `17-vet-map-preview.png`: map marker preview sheet.
+- `19-vet-review-sheet.png`: write review sheet.
+- `09-health.png`: health timeline with seeded event.
+- `10-reminders.png`: reminder calendar/list with seeded upcoming reminder.
+- `11-notifications.png`: notifications list/read proof.
+
+## Known Issues
+
+| Issue | Class | Disposition |
+|---|---|---|
+| Apple Developer/App Store Connect signing not ready | RELEASE_PARITY_DEPENDENCY | Move to final day; blocked by account/payment/team setup |
+| Appetize full deep login not rerun on Day 10 | OPTIONAL_RC_PARITY | Use only when quota is acceptable; local Android proof is current |
+| Map location lookup can timeout on emulator | P2_HANDLED | App now falls back to Hanoi instead of spinning/ANR; keep broader real-device location QA for final parity |
+| Some map seed vet details may have limited review history | P2_BACKLOG | Detail route opens; review sheet opens; enrich seed/review linkage later |
 
 ## Current Recommendation
 
-Proceed into Day 10 RC Gate. Current evidence supports `Day 9 sign-off`; there is no remaining repo-owned Day 9 blocker. The only major unresolved dependency is Apple signing/TestFlight, which should stay on the final-day release parity lane.
+`GO_WITH_KNOWN_ISSUES` for internal Android/Render RC candidate, pending GitHub `CI` and `Compose Smoke` on the candidate commit.

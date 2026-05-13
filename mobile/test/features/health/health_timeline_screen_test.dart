@@ -14,6 +14,8 @@ import 'package:pawmate_mobile/features/pets/application/pet_list_provider.dart'
 import 'package:pawmate_mobile/features/pets/domain/pet_profile.dart';
 import 'package:pawmate_mobile/features/reminders/application/reminder_providers.dart';
 
+import '../../test_support/ui_test_helpers.dart';
+
 void main() {
   testWidgets('health timeline shows backend loading state', (tester) async {
     final completer = Completer<HealthRecordListResult>();
@@ -211,6 +213,61 @@ void main() {
     expect(fakeApi.createdAccessToken, 'health-token');
     expect(fakeApi.createdInput?.type, HealthRecordType.vaccination);
     expect(find.text('Bé uống thuốc đúng lịch.'), findsOneWidget);
+  });
+
+  testWidgets('health add-event sheet stays usable with keyboard open', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(320, 568));
+    final fakeApi = _FakeHealthRecordApi(records: []);
+    final router = GoRouter(
+      initialLocation: '/health',
+      routes: [
+        GoRoute(
+          path: '/health',
+          builder: (context, state) => const HealthTimelineScreen(),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          petBackendListProvider.overrideWith((ref) async => [_samplePet()]),
+          healthRecordApiProvider.overrideWith((ref) => fakeApi),
+          healthRecordAccessTokenProvider.overrideWith(
+            (ref) async => 'health-token',
+          ),
+          upcomingRemindersProvider.overrideWith((ref) async => const []),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(1.3),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextField).first);
+    await setKeyboardInset(tester, bottom: 300);
+    await tester.enterText(
+      find.byType(TextField).first,
+      'Keyboard open health note remains scrollable.',
+    );
+    await tester.ensureVisible(find.byType(FilledButton).last);
+    expectNoFlutterOverflow(tester);
+
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+
+    expect(fakeApi.createdAccessToken, 'health-token');
+    expect(
+      fakeApi.createdInput?.note,
+      'Keyboard open health note remains scrollable.',
+    );
   });
 }
 

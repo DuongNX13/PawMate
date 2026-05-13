@@ -182,7 +182,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
           onRefresh: _refresh,
           child: ListView(
             controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 220),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 220),
             children: [
               Row(
                 children: [
@@ -208,19 +208,19 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 22),
               Text(
                 'Chăm sóc tốt nhất\ncho thú cưng của bạn.',
-                style: theme.textTheme.displaySmall?.copyWith(
+                style: theme.textTheme.headlineLarge?.copyWith(
                   color: AppColors.primary700,
                   fontWeight: FontWeight.w800,
-                  height: 1.12,
+                  height: 1.14,
                 ),
               ),
               const SizedBox(height: 10),
               Text(
                 '$_total phòng khám gần $heroLocation.',
-                style: theme.textTheme.headlineSmall?.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                   height: 1.25,
@@ -250,46 +250,34 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 42,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: cities.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 10),
-                  itemBuilder: (context, index) {
-                    final city = cities[index];
-                    final isSelected = city == _selectedCity;
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (var index = 0; index < cities.length; index++) ...[
+                      Builder(
+                        builder: (context) {
+                          final city = cities[index];
+                          final isSelected = city == _selectedCity;
 
-                    return ChoiceChip(
-                      label: Text(city),
-                      selected: isSelected,
-                      onSelected: (_) => setState(() {
-                        _selectedCity = city;
-                      }),
-                      showCheckmark: false,
-                      selectedColor: const Color(0xFFFFEDD5),
-                      labelStyle: theme.textTheme.labelLarge?.copyWith(
-                        color: isSelected
-                            ? const Color(0xFFC2410C)
-                            : AppColors.secondary500,
+                          return _FilterChip(
+                            label: city,
+                            selected: isSelected,
+                            onSelected: () => setState(() {
+                              _selectedCity = city;
+                            }),
+                          );
+                        },
                       ),
-                      side: BorderSide(
-                        color: isSelected
-                            ? Colors.transparent
-                            : AppColors.border,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                    );
-                  },
+                      if (index != cities.length - 1) const SizedBox(width: 8),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 12),
-              SizedBox(
-                height: 42,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
                   children: [
                     _FilterChip(
                       label: '24h',
@@ -298,7 +286,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
                         _only24h = !_only24h;
                       }),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     _FilterChip(
                       label: 'Đang mở',
                       selected: _openNow,
@@ -306,7 +294,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
                         _openNow = !_openNow;
                       }),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     _FilterChip(
                       label: 'Đánh giá 4+',
                       selected: _rating4Plus,
@@ -458,6 +446,17 @@ class _VetCard extends StatelessWidget {
         ? const Color(0xFF365E86)
         : AppColors.textSecondary;
     final chips = vet.displayServices.take(2).toList();
+    final isCompact =
+        MediaQuery.sizeOf(context).width < 430 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.15;
+    final ratingBadge = _Badge(
+      label: vet.averageRating != null
+          ? '★ ${vet.averageRating!.toStringAsFixed(1)}'
+          : 'Top #${vet.seedRank}',
+      background: AppColors.tertiarySoft,
+      textColor: const Color(0xFF7A6420),
+      compact: isCompact,
+    );
 
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -469,46 +468,58 @@ class _VetCard extends StatelessWidget {
           boxShadow: AppShadows.soft,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(isCompact ? 14 : 18),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _VetThumbnail(vet: vet, featured: featured),
-              const SizedBox(width: 16),
+              _VetThumbnail(vet: vet, featured: featured, compact: isCompact),
+              SizedBox(width: isCompact ? 12 : 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            vet.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: titleColor,
-                              fontWeight: FontWeight.w800,
+                    if (isCompact) ...[
+                      Text(
+                        vet.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: titleColor,
+                          fontWeight: FontWeight.w800,
+                          height: 1.18,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: ratingBadge,
+                      ),
+                    ] else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              vet.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: titleColor,
+                                fontWeight: FontWeight.w800,
+                                height: 1.18,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        _Badge(
-                          label: vet.averageRating != null
-                              ? '★ ${vet.averageRating!.toStringAsFixed(1)}'
-                              : 'Top #${vet.seedRank}',
-                          background: AppColors.tertiarySoft,
-                          textColor: const Color(0xFF7A6420),
-                        ),
-                      ],
-                    ),
+                          const SizedBox(width: 10),
+                          ratingBadge,
+                        ],
+                      ),
                     const SizedBox(height: 8),
                     Text(
                       vet.address,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: subtitleColor,
                         fontWeight: FontWeight.w500,
                         height: 1.25,
@@ -528,6 +539,7 @@ class _VetCard extends StatelessWidget {
                             textColor: i == 0
                                 ? AppColors.primary700
                                 : AppColors.secondary500,
+                            compact: isCompact,
                           ),
                       ],
                     ),
@@ -545,7 +557,7 @@ class _VetCard extends StatelessWidget {
                             '${vet.city} • ${vet.district}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
+                            style: theme.textTheme.bodySmall?.copyWith(
                               color: subtitleColor,
                               fontWeight: FontWeight.w500,
                             ),
@@ -554,7 +566,7 @@ class _VetCard extends StatelessWidget {
                         const SizedBox(width: 10),
                         Text(
                           '(${vet.reviewCount} đánh giá)',
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: subtitleColor,
                             fontWeight: FontWeight.w500,
                           ),
@@ -573,26 +585,33 @@ class _VetCard extends StatelessWidget {
 }
 
 class _VetThumbnail extends StatelessWidget {
-  const _VetThumbnail({required this.vet, required this.featured});
+  const _VetThumbnail({
+    required this.vet,
+    required this.featured,
+    required this.compact,
+  });
 
   final VetSummary vet;
   final bool featured;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final icon = featured ? Icons.local_hospital_outlined : Icons.pets_rounded;
     final iconColor = featured ? AppColors.secondary500 : Colors.white;
+    final size = compact ? 76.0 : (featured ? 92.0 : 104.0);
+    final iconSize = compact ? 32.0 : (featured ? 38.0 : 42.0);
 
     return Container(
-      width: featured ? 92 : 104,
-      height: featured ? 92 : 104,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: featured ? Colors.white : const Color(0xFF4CB7B6),
         shape: featured ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: featured ? null : BorderRadius.circular(18),
         boxShadow: featured ? AppShadows.soft : null,
       ),
-      child: Icon(icon, size: featured ? 38 : 42, color: iconColor),
+      child: Icon(icon, size: iconSize, color: iconColor),
     );
   }
 }
@@ -610,19 +629,40 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
+    final textColor = selected
+        ? const Color(0xFFC2410C)
+        : AppColors.secondary500;
+
+    return Semantics(
+      button: true,
       selected: selected,
-      onSelected: (_) => onSelected(),
-      showCheckmark: false,
-      selectedColor: const Color(0xFFFFEDD5),
-      backgroundColor: AppColors.surface,
-      labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-        color: selected ? const Color(0xFFC2410C) : AppColors.secondary500,
-      ),
-      side: BorderSide(color: selected ? Colors.transparent : AppColors.border),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          onTap: onSelected,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFFFEDD5) : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: selected ? Colors.transparent : AppColors.border,
+              ),
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -633,11 +673,13 @@ class _Badge extends StatelessWidget {
     required this.label,
     required this.background,
     required this.textColor,
+    this.compact = false,
   });
 
   final String label;
   final Color background;
   final Color textColor;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -649,9 +691,11 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(
           context,
-        ).textTheme.labelLarge?.copyWith(color: textColor),
+        ).textTheme.labelMedium?.copyWith(color: textColor),
       ),
     );
   }

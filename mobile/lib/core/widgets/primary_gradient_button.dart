@@ -22,6 +22,7 @@ class PrimaryGradientButton extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: onPressed != null,
+      label: label,
       child: Material(
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -39,9 +40,14 @@ class PrimaryGradientButton extends StatelessWidget {
               boxShadow: AppShadows.soft,
             ),
             child: Container(
-              height: 56,
+              constraints: const BoxConstraints(minHeight: 56),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               alignment: Alignment.center,
-              child: Text(label, style: labelStyle),
+              child: Text(
+                label,
+                style: labelStyle,
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
         ),

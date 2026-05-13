@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/vet_api.dart';
@@ -11,6 +13,12 @@ final vetMapProvider =
     );
 
 class VetMapNotifier extends Notifier<VetMapState> {
+  static const _fallbackCenter = VetMapLocation(
+    latitude: 21.0278,
+    longitude: 105.8342,
+  );
+  static const _locationLookupTimeout = Duration(seconds: 10);
+
   @override
   VetMapState build() {
     return const VetMapState();
@@ -35,28 +43,31 @@ class VetMapNotifier extends Notifier<VetMapState> {
       try {
         center = await ref
             .read(vetLocationServiceProvider)
-            .resolveCurrentLocation();
+            .resolveCurrentLocation()
+            .timeout(_locationLookupTimeout);
+      } on TimeoutException {
+        center = currentCenter ?? _fallbackCenter;
       } on VetLocationException catch (error) {
-        state = state.copyWith(
-          status: switch (error.type) {
-            VetLocationFailureType.permissionDenied =>
-              VetMapStatus.permissionDenied,
-            VetLocationFailureType.serviceDisabled =>
-              VetMapStatus.locationServicesDisabled,
-            VetLocationFailureType.timeout => VetMapStatus.error,
-            VetLocationFailureType.unknown => VetMapStatus.error,
-          },
-          message: error.message,
-          clearItems: true,
-        );
-        return;
+        if (error.type == VetLocationFailureType.timeout ||
+            error.type == VetLocationFailureType.unknown) {
+          center = currentCenter ?? _fallbackCenter;
+        } else {
+          state = state.copyWith(
+            status: switch (error.type) {
+              VetLocationFailureType.permissionDenied =>
+                VetMapStatus.permissionDenied,
+              VetLocationFailureType.serviceDisabled =>
+                VetMapStatus.locationServicesDisabled,
+              VetLocationFailureType.timeout => VetMapStatus.error,
+              VetLocationFailureType.unknown => VetMapStatus.error,
+            },
+            message: error.message,
+            clearItems: true,
+          );
+          return;
+        }
       } catch (_) {
-        state = state.copyWith(
-          status: VetMapStatus.error,
-          message: 'Không lấy được vị trí hiện tại của bạn.',
-          clearItems: true,
-        );
-        return;
+        center = currentCenter ?? _fallbackCenter;
       }
     }
 

@@ -59,14 +59,27 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
         ? null
         : ref.watch(healthRecordListProvider(recordQuery));
     final upcomingRemindersState = ref.watch(upcomingRemindersProvider);
+    final useCompactFab =
+        MediaQuery.sizeOf(context).width < 430 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.15;
 
     return Scaffold(
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/health'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: selectedPet == null ? null : () => _openAddEventSheet(),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm sự kiện'),
-      ),
+      floatingActionButton: useCompactFab
+          ? FloatingActionButton(
+              tooltip: 'Thêm sự kiện',
+              onPressed: selectedPet == null
+                  ? null
+                  : () => _openAddEventSheet(),
+              child: const Icon(Icons.add_rounded),
+            )
+          : FloatingActionButton.extended(
+              onPressed: selectedPet == null
+                  ? null
+                  : () => _openAddEventSheet(),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Thêm sự kiện'),
+            ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 220),
@@ -232,81 +245,85 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                24,
-                24,
-                24,
-                24 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Thêm sự kiện',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<HealthRecordType>(
-                    initialValue: _newEventType,
-                    decoration: const InputDecoration(
-                      labelText: 'Loại sự kiện',
-                    ),
-                    items: HealthRecordType.values
-                        .map(
-                          (type) => DropdownMenuItem(
-                            value: type,
-                            child: Text(type.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setSheetState(() => _newEventType = value);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Ghi chú',
-                      hintText: 'Ví dụ: bé ăn uống bình thường sau tiêm',
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _clinicController,
-                    decoration: const InputDecoration(
-                      labelText: 'Mã phòng khám - tùy chọn',
-                      hintText: 'Ví dụ: petcare-elite',
-                    ),
-                  ),
-                  if (_saveError != null) ...[
-                    const SizedBox(height: 12),
+            return SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  24,
+                  24,
+                  24 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      _saveError!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w700,
+                      'Thêm sự kiện',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<HealthRecordType>(
+                      initialValue: _newEventType,
+                      decoration: const InputDecoration(
+                        labelText: 'Loại sự kiện',
+                      ),
+                      items: HealthRecordType.values
+                          .map(
+                            (type) => DropdownMenuItem(
+                              value: type,
+                              child: Text(type.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setSheetState(() => _newEventType = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Ghi chú',
+                        hintText: 'Ví dụ: bé ăn uống bình thường sau tiêm',
+                      ),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _clinicController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mã phòng khám - tùy chọn',
+                        hintText: 'Ví dụ: petcare-elite',
+                      ),
+                    ),
+                    if (_saveError != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _saveError!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _isSavingEvent
+                            ? null
+                            : () =>
+                                  _saveRemoteEvent(sheetContext, setSheetState),
+                        child: Text(
+                          _isSavingEvent ? 'Đang lưu...' : 'Lưu sự kiện',
+                        ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _isSavingEvent
-                          ? null
-                          : () => _saveRemoteEvent(sheetContext, setSheetState),
-                      child: Text(
-                        _isSavingEvent ? 'Đang lưu...' : 'Lưu sự kiện',
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           },

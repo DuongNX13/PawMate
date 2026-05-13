@@ -77,7 +77,7 @@ class VetDetailScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 18),
                 Text(
                   'PHÒNG KHÁM',
                   style: theme.textTheme.labelLarge?.copyWith(
@@ -88,8 +88,9 @@ class VetDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 Text(
                   vet.name,
-                  style: theme.textTheme.headlineLarge?.copyWith(
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
+                    height: 1.18,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -100,41 +101,52 @@ class VetDetailScreen extends ConsumerWidget {
                     height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 28),
-                _HeroCard(vet: vet),
                 const SizedBox(height: 18),
+                _HeroCard(vet: vet),
+                const SizedBox(height: 12),
                 _QuickFactsCard(vet: vet),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Gọi ngay',
-                        background: AppColors.primary500,
-                        textColor: Colors.white,
-                        onTap: () => launchVetCall(context, vet.phone),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ActionButton(
-                        label: 'Chỉ đường',
-                        background: AppColors.secondarySoft,
-                        textColor: AppColors.secondary500,
-                        onTap: () => launchVetDirections(context, vet),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _ActionButton(
-                        key: const Key('vet-detail-write-review-button'),
-                        label: 'Đánh giá',
-                        background: AppColors.tertiarySoft,
-                        textColor: const Color(0xFF7A6420),
-                        onTap: () => _openWriteReview(context, ref, vet),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 16),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final itemWidth = constraints.maxWidth < 440
+                        ? (constraints.maxWidth - 12) / 2
+                        : (constraints.maxWidth - 24) / 3;
+
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        SizedBox(
+                          width: itemWidth,
+                          child: _ActionButton(
+                            label: 'Gọi ngay',
+                            background: AppColors.primary500,
+                            textColor: Colors.white,
+                            onTap: () => launchVetCall(context, vet.phone),
+                          ),
+                        ),
+                        SizedBox(
+                          width: itemWidth,
+                          child: _ActionButton(
+                            label: 'Chỉ đường',
+                            background: AppColors.secondarySoft,
+                            textColor: AppColors.secondary500,
+                            onTap: () => launchVetDirections(context, vet),
+                          ),
+                        ),
+                        SizedBox(
+                          width: itemWidth,
+                          child: _ActionButton(
+                            key: const Key('vet-detail-write-review-button'),
+                            label: 'Đánh giá',
+                            background: AppColors.tertiarySoft,
+                            textColor: const Color(0xFF7A6420),
+                            onTap: () => _openWriteReview(context, ref, vet),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 Wrap(
@@ -364,124 +376,130 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final media = MediaQuery.of(context);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'Viết đánh giá',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  widget.vet.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: List.generate(5, (index) {
-                    final value = index + 1;
-                    return IconButton(
-                      key: Key('write-review-star-$value'),
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => setState(() {
-                              _rating = value;
-                              _errorMessage = null;
-                            }),
-                      icon: Icon(
-                        value <= _rating
-                            ? Icons.star_rounded
-                            : Icons.star_border_rounded,
-                        color: const Color(0xFFFFB547),
-                        size: 34,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: media.size.height * 0.92),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  key: const Key('write-review-title-field'),
-                  controller: _titleController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Tiêu đề',
-                    hintText: 'Ví dụ: Chăm sóc rất kỹ',
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  key: const Key('write-review-body-field'),
-                  controller: _bodyController,
-                  minLines: 4,
-                  maxLines: 6,
-                  validator: _validateBody,
-                  decoration: const InputDecoration(
-                    labelText: 'Nội dung',
-                    hintText: 'Chia sẻ trải nghiệm sau khi sử dụng dịch vụ.',
-                  ),
-                ),
-                const SizedBox(height: 14),
-                _ReviewPhotoPicker(
-                  photos: _selectedPhotos,
-                  isSubmitting: _isSubmitting,
-                  onPickPhoto: _pickPhoto,
-                  onRemovePhoto: (index) {
-                    if (_isSubmitting) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedPhotos.removeAt(index);
-                    });
-                  },
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _errorMessage!,
-                    key: const Key('write-review-error'),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w700,
                     ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                PrimaryGradientButton(
-                  key: const Key('write-review-submit'),
-                  label: _isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá',
-                  onPressed: _isSubmitting ? null : _submit,
+                    const SizedBox(height: 18),
+                    Text(
+                      'Viết đánh giá',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.vet.name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: List.generate(5, (index) {
+                        final value = index + 1;
+                        return IconButton(
+                          key: Key('write-review-star-$value'),
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => setState(() {
+                                  _rating = value;
+                                  _errorMessage = null;
+                                }),
+                          icon: Icon(
+                            value <= _rating
+                                ? Icons.star_rounded
+                                : Icons.star_border_rounded,
+                            color: const Color(0xFFFFB547),
+                            size: 34,
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      key: const Key('write-review-title-field'),
+                      controller: _titleController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Tiêu đề',
+                        hintText: 'Ví dụ: Chăm sóc rất kỹ',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      key: const Key('write-review-body-field'),
+                      controller: _bodyController,
+                      minLines: 4,
+                      maxLines: 6,
+                      validator: _validateBody,
+                      decoration: const InputDecoration(
+                        labelText: 'Nội dung',
+                        hintText:
+                            'Chia sẻ trải nghiệm sau khi sử dụng dịch vụ.',
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _ReviewPhotoPicker(
+                      photos: _selectedPhotos,
+                      isSubmitting: _isSubmitting,
+                      onPickPhoto: _pickPhoto,
+                      onRemovePhoto: (index) {
+                        if (_isSubmitting) {
+                          return;
+                        }
+                        setState(() {
+                          _selectedPhotos.removeAt(index);
+                        });
+                      },
+                    ),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _errorMessage!,
+                        key: const Key('write-review-error'),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    PrimaryGradientButton(
+                      key: const Key('write-review-submit'),
+                      label: _isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá',
+                      onPressed: _isSubmitting ? null : _submit,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -534,23 +552,36 @@ class _ReviewPhotoPicker extends StatelessWidget {
                     ),
                   ),
                   Positioned(
-                    right: 4,
-                    top: 4,
-                    child: InkWell(
-                      key: Key('write-review-remove-photo-${entry.key}'),
-                      onTap: () => onRemovePhoto(entry.key),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      child: Container(
-                        width: 24,
-                        height: 24,
-                        decoration: const BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          color: Colors.white,
-                          size: 16,
+                    right: -8,
+                    top: -8,
+                    child: Semantics(
+                      button: true,
+                      label: 'Xóa ảnh đánh giá',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          key: Key('write-review-remove-photo-${entry.key}'),
+                          onTap: () => onRemovePhoto(entry.key),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.error,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -604,76 +635,85 @@ class _HeroCard extends StatelessWidget {
       vet.district,
     ].where((value) => value.trim().isNotEmpty).join(' • ');
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-      decoration: BoxDecoration(
-        color: AppColors.secondarySoft,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 16,
-            top: 0,
-            child: Container(
-              width: 148,
-              height: 148,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFCE1D4),
-                shape: BoxShape.circle,
-              ),
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact =
+            constraints.maxWidth < 390 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.15;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+          decoration: BoxDecoration(
+            color: AppColors.secondarySoft,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            boxShadow: AppShadows.soft,
           ),
-          Positioned(
-            right: 40,
-            top: 40,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: const BoxDecoration(
-                color: Color(0xFFA8C5F1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.grid_view_rounded,
-                color: Colors.white,
-                size: 34,
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              _HeroBadge(
-                label: vet.averageRating != null
-                    ? '★ ${vet.averageRating!.toStringAsFixed(1)}'
-                    : 'Top #${vet.seedRank}',
-              ),
-              const SizedBox(height: 42),
-              SizedBox(
-                width: 220,
-                child: Text(
-                  vet.name,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+              if (!compact) ...[
+                Positioned(
+                  right: 10,
+                  top: -6,
+                  child: Container(
+                    width: 128,
+                    height: 128,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFCE1D4),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: 240,
-                child: Text(
-                  meta,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
+                Positioned(
+                  right: 34,
+                  top: 34,
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFA8C5F1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.grid_view_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ),
+              ],
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _HeroBadge(
+                    label: vet.averageRating != null
+                        ? '★ ${vet.averageRating!.toStringAsFixed(1)}'
+                        : 'Top #${vet.seedRank}',
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    vet.name,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.18,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    meta,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -694,7 +734,7 @@ class _QuickFactsCard extends StatelessWidget {
     ].join(' • ');
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
@@ -705,17 +745,19 @@ class _QuickFactsCard extends StatelessWidget {
         children: [
           Text(
             '${vet.address} • ${_openingSummary(vet)}',
-            style: theme.textTheme.headlineSmall?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
             ),
           ),
           const SizedBox(height: 10),
           Text(
             utilityLine,
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
+              height: 1.35,
             ),
           ),
         ],
@@ -766,16 +808,18 @@ class _ActionButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       onTap: onTap,
       child: Ink(
-        height: 78,
+        height: 54,
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Center(
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: textColor,
               fontWeight: FontWeight.w800,
             ),
@@ -800,14 +844,16 @@ class _ServiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
           color: textColor,
           fontWeight: FontWeight.w700,
         ),
@@ -1357,6 +1403,7 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final media = MediaQuery.of(context);
     const reasons = {
       'spam': 'Spam / quảng cáo',
       'false_information': 'Sai sự thật',
@@ -1365,79 +1412,85 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
       'other': 'Lý do khác',
     };
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Báo cáo đánh giá',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: media.size.height * 0.86),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: reasons.entries
-                  .map(
-                    (entry) => ChoiceChip(
-                      key: Key('report-reason-${entry.key}'),
-                      label: Text(entry.value),
-                      selected: _reason == entry.key,
-                      onSelected: _isSubmitting
-                          ? null
-                          : (selected) {
-                              if (!selected) {
-                                return;
-                              }
-                              setState(() {
-                                _reason = entry.key;
-                              });
-                            },
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Báo cáo đánh giá',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              key: const Key('report-description-field'),
-              controller: _descriptionController,
-              minLines: 2,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Mô tả thêm',
-                hintText: 'Bổ sung chi tiết nếu cần.',
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: reasons.entries
+                        .map(
+                          (entry) => ChoiceChip(
+                            key: Key('report-reason-${entry.key}'),
+                            label: Text(entry.value),
+                            selected: _reason == entry.key,
+                            onSelected: _isSubmitting
+                                ? null
+                                : (selected) {
+                                    if (!selected) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      _reason = entry.key;
+                                    });
+                                  },
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    key: const Key('report-description-field'),
+                    controller: _descriptionController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Mô tả thêm',
+                      hintText: 'Bổ sung chi tiết nếu cần.',
+                    ),
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _errorMessage!,
+                      key: const Key('report-review-error'),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  PrimaryGradientButton(
+                    key: const Key('report-review-submit'),
+                    label: _isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo',
+                    onPressed: _isSubmitting ? null : _submitReport,
+                  ),
+                ],
               ),
             ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _errorMessage!,
-                key: const Key('report-review-error'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-            const SizedBox(height: 18),
-            PrimaryGradientButton(
-              key: const Key('report-review-submit'),
-              label: _isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo',
-              onPressed: _isSubmitting ? null : _submitReport,
-            ),
-          ],
+          ),
         ),
       ),
     );

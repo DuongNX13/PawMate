@@ -316,23 +316,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
                 TextButton(
-                  onPressed: () => context.go('/auth/register'),
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Chưa có tài khoản? ',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: AppColors.label,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Đăng ký ngay',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: AppColors.primary700,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                  key: const Key('login-register-cta'),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
                     ),
+                  ),
+                  onPressed: () => context.go('/auth/register'),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 4,
+                    runSpacing: 2,
+                    children: [
+                      Text(
+                        'Chưa có tài khoản?',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: AppColors.label,
+                        ),
+                      ),
+                      Text(
+                        'Đăng ký ngay',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: AppColors.primary700,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 56),
@@ -461,16 +473,19 @@ class _PetFooterIllustration extends StatelessWidget {
           ],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: const [
-          _PetShadowIcon(icon: Icons.pets_outlined, size: 56),
-          SizedBox(width: 24),
-          _PetShadowIcon(icon: Icons.pets_rounded, size: 110),
-          SizedBox(width: 24),
-          _PetShadowIcon(icon: Icons.pets_outlined, size: 48),
-        ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: const [
+            _PetShadowIcon(icon: Icons.pets_outlined, size: 56),
+            SizedBox(width: 24),
+            _PetShadowIcon(icon: Icons.pets_rounded, size: 110),
+            SizedBox(width: 24),
+            _PetShadowIcon(icon: Icons.pets_outlined, size: 48),
+          ],
+        ),
       ),
     );
   }

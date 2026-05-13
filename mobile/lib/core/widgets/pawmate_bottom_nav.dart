@@ -46,49 +46,60 @@ class PawMateBottomNav extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: items.map((item) {
             final isActive = currentRoute == item.route;
+
             return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  if (!isActive) {
-                    context.go(item.route);
-                  }
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? const Color(0xFFFFEDD5)
-                        : Colors.transparent,
+              child: Semantics(
+                button: true,
+                selected: isActive,
+                label: item.label,
+                child: ExcludeSemantics(
+                  child: Material(
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        item.icon,
-                        size: 22,
-                        color: isActive
-                            ? const Color(0xFFC2410C)
-                            : AppColors.icon,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontFamily: 'Be Vietnam Pro',
-                          fontWeight: FontWeight.w600,
+                    child: InkWell(
+                      onTap: isActive ? null : () => context.go(item.route),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        constraints: const BoxConstraints(minHeight: 52),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
                           color: isActive
-                              ? const Color(0xFFC2410C)
-                              : AppColors.icon,
+                              ? const Color(0xFFFFEDD5)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              item.icon,
+                              size: 22,
+                              color: isActive
+                                  ? AppColors.primary700
+                                  : AppColors.icon,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    fontFamily: 'Be Vietnam Pro',
+                                    fontWeight: FontWeight.w600,
+                                    color: isActive
+                                        ? AppColors.primary700
+                                        : AppColors.icon,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

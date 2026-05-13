@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/pawmate_bottom_nav.dart';
 import '../application/pet_list_provider.dart';
 import '../domain/pet_profile.dart';
 
@@ -28,6 +29,7 @@ class PetListScreen extends ConsumerWidget {
           ),
         ],
       ),
+      bottomNavigationBar: const PawMateBottomNav(currentRoute: '/pets'),
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (pets.isEmpty && backendPetsState.isLoading) {
@@ -113,7 +115,7 @@ class PetListScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 132),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 12,

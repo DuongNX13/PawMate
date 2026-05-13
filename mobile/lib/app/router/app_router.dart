@@ -101,6 +101,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           title: 'Hồ sơ',
           subtitle:
               'Trung tâm hồ sơ sẽ được dựng tiếp sau khi auth và pet flow ổn định.',
+          bottomNavRoute: '/profile',
         ),
       ),
       GoRoute(

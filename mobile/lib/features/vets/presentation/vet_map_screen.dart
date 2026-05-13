@@ -39,7 +39,7 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/vets/list'),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 220),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 220),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -77,7 +77,7 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
               const SizedBox(height: 10),
               Text(
                 'Phòng khám gần bạn',
-                style: theme.textTheme.displaySmall?.copyWith(
+                style: theme.textTheme.headlineLarge?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.12,
                 ),
@@ -85,7 +85,7 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
               const SizedBox(height: 10),
               Text(
                 'Xem các phòng khám lân cận theo vị trí hiện tại, lọc theo bán kính, giờ mở cửa và đánh giá.',
-                style: theme.textTheme.bodyLarge?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                   height: 1.35,
                 ),
@@ -288,19 +288,10 @@ class _RadiusSelector extends StatelessWidget {
       child: Row(
         children: [
           for (final option in _options) ...[
-            ChoiceChip(
-              label: Text(
-                option >= 1000 ? '${option ~/ 1000} km' : '$option m',
-              ),
+            _MapPillButton(
+              label: option >= 1000 ? '${option ~/ 1000} km' : '$option m',
               selected: option == radiusMeters,
-              onSelected: (_) => onSelected(option),
-              showCheckmark: false,
-              selectedColor: AppColors.primarySoft,
-              side: BorderSide(
-                color: option == radiusMeters
-                    ? Colors.transparent
-                    : AppColors.border,
-              ),
+              onTap: () => onSelected(option),
             ),
             if (option != _options.last) const SizedBox(width: 10),
           ],
@@ -369,13 +360,56 @@ class _MapFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
+    return _MapPillButton(label: label, selected: selected, onTap: onSelected);
+  }
+}
+
+class _MapPillButton extends StatelessWidget {
+  const _MapPillButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = selected ? AppColors.primary700 : AppColors.textSecondary;
+
+    return Semantics(
+      button: true,
       selected: selected,
-      onSelected: (_) => onSelected(),
-      showCheckmark: false,
-      selectedColor: AppColors.primarySoft,
-      side: BorderSide(color: selected ? Colors.transparent : AppColors.border),
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          onTap: onTap,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primarySoft : AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: selected ? Colors.transparent : AppColors.border,
+              ),
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: textColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

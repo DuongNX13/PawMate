@@ -61,14 +61,27 @@ class _ReminderCalendarScreenState
     final remindersState = query == null
         ? null
         : ref.watch(reminderListProvider(query));
+    final useCompactFab =
+        MediaQuery.sizeOf(context).width < 430 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.15;
 
     return Scaffold(
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/health'),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: selectedPet == null ? null : () => _openCreateSheet(query),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Thêm lịch'),
-      ),
+      floatingActionButton: useCompactFab
+          ? FloatingActionButton(
+              tooltip: 'Thêm lịch',
+              onPressed: selectedPet == null
+                  ? null
+                  : () => _openCreateSheet(query),
+              child: const Icon(Icons.add_rounded),
+            )
+          : FloatingActionButton.extended(
+              onPressed: selectedPet == null
+                  ? null
+                  : () => _openCreateSheet(query),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Thêm lịch'),
+            ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 220),
@@ -195,129 +208,134 @@ class _ReminderCalendarScreenState
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                24,
-                24,
-                24,
-                24 + MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Thêm lịch nhắc',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Tiêu đề'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _noteController,
-                    decoration: const InputDecoration(labelText: 'Ghi chú'),
-                    maxLines: 2,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _draftDateTime,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime(2035),
-                            );
-                            if (picked != null) {
-                              setSheetState(() {
-                                _draftDateTime = DateTime(
-                                  picked.year,
-                                  picked.month,
-                                  picked.day,
-                                  _draftDateTime.hour,
-                                  _draftDateTime.minute,
-                                );
-                              });
-                            }
-                          },
-                          child: Text(_formatDate(_draftDateTime)),
+            return SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  24,
+                  24,
+                  24 + MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Thêm lịch nhắc',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _titleController,
+                      decoration: const InputDecoration(labelText: 'Tiêu đề'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _noteController,
+                      decoration: const InputDecoration(labelText: 'Ghi chú'),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _draftDateTime,
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime(2035),
+                              );
+                              if (picked != null) {
+                                setSheetState(() {
+                                  _draftDateTime = DateTime(
+                                    picked.year,
+                                    picked.month,
+                                    picked.day,
+                                    _draftDateTime.hour,
+                                    _draftDateTime.minute,
+                                  );
+                                });
+                              }
+                            },
+                            child: Text(_formatDate(_draftDateTime)),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () async {
-                            final picked = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(
-                                _draftDateTime,
-                              ),
-                            );
-                            if (picked != null) {
-                              setSheetState(() {
-                                _draftDateTime = DateTime(
-                                  _draftDateTime.year,
-                                  _draftDateTime.month,
-                                  _draftDateTime.day,
-                                  picked.hour,
-                                  picked.minute,
-                                );
-                              });
-                            }
-                          },
-                          child: Text(_formatTime(_draftDateTime)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () async {
+                              final picked = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  _draftDateTime,
+                                ),
+                              );
+                              if (picked != null) {
+                                setSheetState(() {
+                                  _draftDateTime = DateTime(
+                                    _draftDateTime.year,
+                                    _draftDateTime.month,
+                                    _draftDateTime.day,
+                                    picked.hour,
+                                    picked.minute,
+                                  );
+                                });
+                              }
+                            },
+                            child: Text(_formatTime(_draftDateTime)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<ReminderRepeatRule>(
+                      initialValue: _draftRepeatRule,
+                      decoration: const InputDecoration(labelText: 'Lặp lại'),
+                      items: ReminderRepeatRule.values
+                          .map(
+                            (rule) => DropdownMenuItem(
+                              value: rule,
+                              child: Text(rule.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setSheetState(() => _draftRepeatRule = value);
+                        }
+                      },
+                    ),
+                    if (_saveError != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _saveError!,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<ReminderRepeatRule>(
-                    initialValue: _draftRepeatRule,
-                    decoration: const InputDecoration(labelText: 'Lặp lại'),
-                    items: ReminderRepeatRule.values
-                        .map(
-                          (rule) => DropdownMenuItem(
-                            value: rule,
-                            child: Text(rule.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        setSheetState(() => _draftRepeatRule = value);
-                      }
-                    },
-                  ),
-                  if (_saveError != null) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      _saveError!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () => _createReminder(
+                                sheetContext,
+                                setSheetState,
+                                activeQuery,
+                              ),
+                        child: Text(
+                          _isSaving ? 'Đang lưu...' : 'Lưu lịch nhắc',
+                        ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _isSaving
-                          ? null
-                          : () => _createReminder(
-                              sheetContext,
-                              setSheetState,
-                              activeQuery,
-                            ),
-                      child: Text(_isSaving ? 'Đang lưu...' : 'Lưu lịch nhắc'),
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           },

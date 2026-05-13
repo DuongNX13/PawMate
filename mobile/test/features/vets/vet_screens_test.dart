@@ -2,11 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pawmate_mobile/app/theme/app_theme.dart';
 import 'package:pawmate_mobile/features/vets/application/vet_providers.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
 import 'package:pawmate_mobile/features/vets/domain/vet_models.dart';
 import 'package:pawmate_mobile/features/vets/presentation/vet_detail_screen.dart';
 import 'package:pawmate_mobile/features/vets/presentation/vet_list_screen.dart';
+
+import '../../test_support/ui_test_helpers.dart';
 
 void main() {
   testWidgets('renders backend-backed vet list result', (tester) async {
@@ -58,6 +61,58 @@ void main() {
     expect(find.text('Tiêm phòng'), findsOneWidget);
     expect(find.text('(124 đánh giá)'), findsOneWidget);
     expect(find.text('Hà Nội • Quận 1'), findsOneWidget);
+  });
+
+  testWidgets('vet list is overflow-free on compact large text', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(360, 800));
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async => const VetSearchResult(
+        items: [
+          VetSummary(
+            id: 'long-clinic',
+            name:
+                'Longkhanhpets.com Specialist Hospital And Vaccination Center',
+            city: 'Ha Noi',
+            district: 'Tay Ho',
+            address: '83 Nghi Tam',
+            phone: '02471069906',
+            summary: 'General care, vaccination, and pet wellness counseling.',
+            services: [
+              'General consultation',
+              'Vaccination',
+              'Pet wellness counseling',
+            ],
+            seedRank: 1,
+            averageRating: 4.6,
+            reviewCount: 42,
+            is24h: false,
+            isOpen: true,
+            readyForMap: false,
+          ),
+        ],
+        total: 1,
+        limit: 20,
+      ),
+      detailHandler: (_) async => throw UnimplementedError(),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(1.3),
+          home: const VetListScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(VetListScreen), findsOneWidget);
+    expect(find.textContaining('Longkhanhpets'), findsOneWidget);
+    expectNoFlutterOverflow(tester);
   });
 
   testWidgets('renders empty state when search has no results', (tester) async {
@@ -141,6 +196,53 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.textContaining('Danh sách kiểm duyệt PawMate'), findsOneWidget);
+  });
+
+  testWidgets('vet detail is overflow-free on compact large text', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(360, 800));
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async =>
+          const VetSearchResult(items: [], total: 0, limit: 20),
+      detailHandler: (_) async => _sampleVetDetail(
+        name: 'Longkhanhpets.com Specialist Hospital And Vaccination Center',
+        address: '83 Nghi Tam, Tay Ho, Ha Noi, second floor reception',
+        services: const [
+          'General consultation',
+          'Vaccination',
+          'Pet wellness counseling',
+          'Open until 20:00',
+        ],
+        reviewCount: 42,
+        averageRating: 4.6,
+      ),
+      reviewHandler: (_) async =>
+          _reviewResult(items: [_sampleReview(helpfulCount: 2)]),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(1.3),
+          home: const VetDetailScreen(vetId: 'long-clinic'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('vet-detail-write-review-button')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.byKey(const Key('vet-detail-write-review-button')),
+      findsOneWidget,
+    );
+    expectNoFlutterOverflow(tester);
   });
 
   testWidgets('submits write review with auth token after rating validation', (
@@ -289,6 +391,74 @@ void main() {
     expect(find.text('Bạn đã đánh giá phòng khám này rồi.'), findsOneWidget);
   });
 
+  testWidgets('write review sheet remains usable with keyboard open', (
+    tester,
+  ) async {
+    CreateVetReviewInput? submittedInput;
+    String? submittedAccessToken;
+    await setTestViewport(tester, size: const Size(390, 844));
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async =>
+          const VetSearchResult(items: [], total: 0, limit: 20),
+      detailHandler: (_) async => _sampleVetDetail(),
+      reviewHandler: (_) async => _reviewResult(),
+      createReviewHandler: (_, input, accessToken) async {
+        submittedInput = input;
+        submittedAccessToken = accessToken;
+        return _sampleReview(id: 'keyboard-review', rating: input.rating);
+      },
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetReviewAccessTokenProvider.overrideWith(
+            (ref) async => 'review-token',
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(1.3),
+          home: const VetDetailScreen(vetId: 'mochi-vet'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('vet-detail-write-review-button')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('vet-detail-write-review-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('vet-detail-write-review-button')));
+    await tester.pumpAndSettle();
+    await setKeyboardInset(tester, bottom: 300);
+
+    await tester.ensureVisible(find.byKey(const Key('write-review-star-5')));
+    await tester.tap(find.byKey(const Key('write-review-star-5')));
+    await tester.enterText(
+      find.byKey(const Key('write-review-body-field')),
+      'Keyboard open review body remains scrollable.',
+    );
+    await tester.ensureVisible(find.byKey(const Key('write-review-submit')));
+    expectNoFlutterOverflow(tester);
+
+    await tester.tap(find.byKey(const Key('write-review-submit')));
+    await tester.pumpAndSettle();
+
+    expect(submittedAccessToken, 'review-token');
+    expect(submittedInput?.rating, 5);
+    expect(
+      submittedInput?.body,
+      'Keyboard open review body remains scrollable.',
+    );
+  });
+
   testWidgets('toggles helpful and reports latest review with auth token', (
     tester,
   ) async {
@@ -374,6 +544,73 @@ void main() {
     );
     expect(reportAccessToken, 'review-token');
     expect(find.text('Báo cáo đã được gửi.'), findsOneWidget);
+  });
+
+  testWidgets('report review sheet remains usable with keyboard open', (
+    tester,
+  ) async {
+    String? reportReason;
+    String? reportDescription;
+    await setTestViewport(tester, size: const Size(390, 844));
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async =>
+          const VetSearchResult(items: [], total: 0, limit: 20),
+      detailHandler: (_) async => _sampleVetDetail(reviewCount: 1),
+      reviewHandler: (_) async =>
+          _reviewResult(items: [_sampleReview(helpfulCount: 2)]),
+      reportHandler: (_, reason, description, _) async {
+        reportReason = reason;
+        reportDescription = description;
+        return const VetReviewReportResult(
+          reportId: 'report-1',
+          reviewId: 'review-1',
+          reportCount: 1,
+          reviewStatus: 'visible',
+        );
+      },
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetReviewAccessTokenProvider.overrideWith(
+            (ref) async => 'review-token',
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(1.3),
+          home: const VetDetailScreen(vetId: 'mochi-vet'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('review-report-button')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.byKey(const Key('review-report-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('review-report-button')));
+    await tester.pumpAndSettle();
+    await setKeyboardInset(tester, bottom: 300);
+
+    await tester.tap(find.byKey(const Key('report-reason-false_information')));
+    await tester.enterText(
+      find.byKey(const Key('report-description-field')),
+      'Keyboard open report remains scrollable.',
+    );
+    await tester.ensureVisible(find.byKey(const Key('report-review-submit')));
+    expectNoFlutterOverflow(tester);
+
+    await tester.tap(find.byKey(const Key('report-review-submit')));
+    await tester.pumpAndSettle();
+
+    expect(reportReason, 'false_information');
+    expect(reportDescription, 'Keyboard open report remains scrollable.');
   });
 
   testWidgets('opens review list sheet and loads next cursor page', (
@@ -578,18 +815,21 @@ class _FakeVetApi extends VetApi {
 
 VetDetail _sampleVetDetail({
   String id = 'mochi-vet',
+  String name = 'Mochi Vet',
+  String address = '22 Bạch Đằng',
+  List<String> services = const [],
   int reviewCount = 0,
   double? averageRating,
 }) {
   return VetDetail(
     id: id,
-    name: 'Mochi Vet',
+    name: name,
     city: 'Đà Nẵng',
     district: 'Hải Châu',
-    address: '22 Bạch Đằng',
+    address: address,
     phone: '0912 333 444',
     summary: 'Khám tổng quát và theo dõi hồ sơ sức khỏe.',
-    services: const [],
+    services: services,
     seedRank: 4,
     averageRating: averageRating,
     reviewCount: reviewCount,

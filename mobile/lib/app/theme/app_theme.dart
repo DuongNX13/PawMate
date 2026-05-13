@@ -186,26 +186,32 @@ class AppTheme {
         : AppColors.darkTextSecondary;
 
     return GoogleFonts.beVietnamProTextTheme(base).copyWith(
+      displaySmall: GoogleFonts.beVietnamPro(
+        fontSize: 30,
+        height: 1.16,
+        fontWeight: FontWeight.w800,
+        color: bodyColor,
+      ),
       headlineLarge: GoogleFonts.beVietnamPro(
-        fontSize: 32,
+        fontSize: 30,
         height: 1.18,
         fontWeight: FontWeight.w700,
         color: bodyColor,
       ),
       headlineMedium: GoogleFonts.beVietnamPro(
-        fontSize: 28,
+        fontSize: 26,
         height: 1.25,
         fontWeight: FontWeight.w700,
         color: bodyColor,
       ),
       headlineSmall: GoogleFonts.beVietnamPro(
-        fontSize: 24,
+        fontSize: 22,
         height: 1.25,
         fontWeight: FontWeight.w700,
         color: bodyColor,
       ),
       titleLarge: GoogleFonts.beVietnamPro(
-        fontSize: 20,
+        fontSize: 19,
         height: 1.35,
         fontWeight: FontWeight.w700,
         color: bodyColor,
@@ -244,7 +250,7 @@ class AppTheme {
         fontSize: 12,
         height: 1.3,
         fontWeight: FontWeight.w600,
-        letterSpacing: 0.6,
+        letterSpacing: 0,
         color: brightness == Brightness.light
             ? AppColors.label
             : AppColors.darkTextSecondary,

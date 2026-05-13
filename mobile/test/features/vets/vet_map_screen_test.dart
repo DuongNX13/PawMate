@@ -170,6 +170,61 @@ void main() {
     expect(find.text('Nearby failed'), findsOneWidget);
   });
 
+  testWidgets('falls back to Hanoi when location lookup times out', (
+    tester,
+  ) async {
+    final fakeApi = _FakeVetApi(
+      nearbyItems: const [
+        VetSummary(
+          id: 'vet-1',
+          name: 'PetCare Elite',
+          city: 'Hà Nội',
+          district: 'Tây Hồ',
+          address: '83 Nghi Tàm',
+          phone: '02471069906',
+          services: ['Khám tổng quát'],
+          seedRank: 1,
+          averageRating: 4.6,
+          reviewCount: 42,
+          is24h: false,
+          isOpen: true,
+          readyForMap: true,
+          latitude: 21.05,
+          longitude: 105.83,
+          distanceMeters: 900,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetLocationServiceProvider.overrideWith(
+            (ref) => _FakeLocationService.timeout(),
+          ),
+          vetMapCanvasBuilderProvider.overrideWith(
+            (ref) =>
+                (
+                  VetMapLocation center,
+                  List<VetSummary> vets,
+                  VetMapStyle mapStyle,
+                  ValueChanged<String> onMarkerTap,
+                ) => Text(
+                  'fake-map:${center.latitude},${center.longitude}:${vets.length}',
+                ),
+          ),
+        ],
+        child: const MaterialApp(home: VetMapScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('fake-map:21.0278,105.8342:1'), findsOneWidget);
+    expect(fakeApi.nearbyRequests.single.latitude, 21.0278);
+    expect(fakeApi.nearbyRequests.single.longitude, 105.8342);
+  });
+
   testWidgets('updates radius and forwards map type to map canvas', (
     tester,
   ) async {
@@ -391,6 +446,16 @@ class _FakeLocationService implements VetLocationService {
       error: const VetLocationException(
         VetLocationFailureType.serviceDisabled,
         'Thiết bị đang tắt dịch vụ vị trí.',
+      ),
+    );
+  }
+
+  factory _FakeLocationService.timeout() {
+    return _FakeLocationService._(
+      location: null,
+      error: const VetLocationException(
+        VetLocationFailureType.timeout,
+        'Location timed out.',
       ),
     );
   }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const primary500 = Color(0xFFFF8A5B);
-  static const primary700 = Color(0xFFC55A28);
+  static const primary500 = Color(0xFFB54D1D);
+  static const primary700 = Color(0xFF8A3512);
   static const primarySoft = Color(0xFFFCE7DD);
   static const secondary500 = Color(0xFF2D5A88);
   static const secondarySoft = Color(0xFFEAF3FF);
@@ -14,7 +14,7 @@ class AppColors {
   static const border = Color(0xFFE1E3E4);
   static const textPrimary = Color(0xFF191C1D);
   static const textSecondary = Color(0xFF6B7280);
-  static const label = Color(0xFF8A726A);
+  static const label = Color(0xFF705952);
   static const icon = Color(0xFF64748B);
   static const success = Color(0xFF22C55E);
   static const error = Color(0xFFE11D48);

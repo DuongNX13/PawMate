@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'pawmate_bottom_nav.dart';
+
 class PlaceholderScreen extends StatelessWidget {
   const PlaceholderScreen({
     super.key,
@@ -7,17 +9,22 @@ class PlaceholderScreen extends StatelessWidget {
     required this.subtitle,
     this.primaryActionLabel,
     this.onPrimaryAction,
+    this.bottomNavRoute,
   });
 
   final String title;
   final String subtitle;
   final String? primaryActionLabel;
   final VoidCallback? onPrimaryAction;
+  final String? bottomNavRoute;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
+      bottomNavigationBar: bottomNavRoute == null
+          ? null
+          : PawMateBottomNav(currentRoute: bottomNavRoute!),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
