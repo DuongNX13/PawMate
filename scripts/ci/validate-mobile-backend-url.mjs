@@ -99,6 +99,7 @@ if (isLocalOrPlaceholderHost(baseUrl.hostname) && !allowLocal) {
 const healthUrl = new URL('/health', baseUrl);
 const startedAt = Date.now();
 let lastFailure = 'no request attempted';
+let healthCheckPassed = false;
 
 const sleep = (ms) =>
   new Promise((resolve) => {
@@ -119,16 +120,20 @@ while (Date.now() - startedAt < timeoutMs) {
       console.log(
         `[pawmate-backend-url] Backend health check passed: ${displayUrl(healthUrl)}`,
       );
-      process.exit(0);
+      healthCheckPassed = true;
+    } else {
+      lastFailure = `HTTP ${response.status}`;
     }
-
-    lastFailure = `HTTP ${response.status}`;
   } catch (error) {
     const reason =
       error instanceof Error ? `${error.name}: ${error.message}` : String(error);
     lastFailure = reason;
   } finally {
     clearTimeout(timeout);
+  }
+
+  if (healthCheckPassed) {
+    break;
   }
 
   const elapsedMs = Date.now() - startedAt;
@@ -138,7 +143,9 @@ while (Date.now() - startedAt < timeoutMs) {
   }
 }
 
-if (lastFailure.startsWith('HTTP ')) {
+if (healthCheckPassed) {
+  process.exitCode = 0;
+} else if (lastFailure.startsWith('HTTP ')) {
   const status = lastFailure.replace('HTTP ', '');
   fail(
     `Backend health check failed: GET ${displayUrl(healthUrl)} returned HTTP ${status} within ${timeoutMs}ms.`,

@@ -26,11 +26,16 @@ Expected safe output:
 
 Use a current `--now` or omit `--now` only when you intentionally want to process real due reminders in the configured database.
 
-### GitHub Actions scheduler
+### GitHub Actions manual worker
 
 Workflow: `.github/workflows/reminder-worker.yml`
 
-Schedule: every 15 minutes, plus manual `workflow_dispatch`.
+Current Day 11 state: manual `workflow_dispatch` only.
+
+The old 15-minute schedule is intentionally disabled. Do not add a `schedule`
+or `cron` trigger back until production reminder scheduling is explicitly
+re-approved. This prevents repeated Reminder Worker failure emails while still
+allowing manual worker proof runs.
 
 Required secret:
 
@@ -92,7 +97,8 @@ npm run db:day6:cloud-proof -- --verify-only
 
 The script redacts DB passwords in output, verifies Day 6 columns/indexes/enum, creates a temporary user/pet/reminder/notification smoke record, marks reminder done, dismisses notification, then cleans up.
 
-## Current Blockers
+## Current State
 
-- Supabase cloud proof cannot be completed until a direct or session-pooler Postgres connection string is configured. The preferred no-admin path is Supabase Session Pooler on port `5432`.
-- iOS real-device smoke is still pending because the current host is Windows.
+- Supabase cloud proof was completed during Day 7/8 hardening.
+- Reminder Worker manual dispatch remains available, but production schedule is disabled by design.
+- iOS real-device/TestFlight parity remains blocked on Apple Developer/App Store Connect signing assets, not on the scheduler path.

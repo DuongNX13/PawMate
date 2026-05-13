@@ -559,6 +559,27 @@ Execution order:
 6. Produce Day 10 RC board, QA matrix, known-issues list, and go/no-go recommendation.
 7. Keep Apple Developer/App Store Connect signing as final-day release-parity dependency until PawMate Apple team/payment is ready.
 
+### Day 11 - Release Parity Prep
+
+Goal:
+- move from `RC-ready` to final-day release parity prep without reopening broad feature work
+- lock the signing/Appetize/Codemagic handoff so TestFlight work can start immediately when Apple team/payment/signing assets are ready
+- remove stale ops guidance that could re-enable Reminder Worker email spam
+
+Scope:
+- refresh live Render and GitHub Actions state after Day 10
+- document Day 11 blocker disposition and final-day handoff
+- keep Appetize as optional iOS simulator parity to preserve quota
+- keep signed IPA/TestFlight blocked only on Apple Developer/App Store Connect signing assets
+- confirm Reminder Worker remains manual-only until scheduling is explicitly re-approved
+
+Exit gate:
+- Day 11 board and QA/readiness report exist
+- stale scheduler runbook no longer claims a 15-minute cron is active
+- Render public backend still responds for health and representative vet endpoints
+- GitHub CI and Compose Smoke remain green on latest `main`
+- no new repo-owned P0/P1 blocker is found
+
 ## Day 3 Immediate Execution Spec
 
 ### What gets built first
