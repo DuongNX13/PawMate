@@ -104,11 +104,23 @@ workflows:
           set -euo pipefail
           cd mobile
           flutter analyze
-      - name: Unit and widget tests
+      - name: Platform-neutral unit and widget tests
         script: |
           set -euo pipefail
           cd mobile
-          flutter test
+          # Runtime golden masters are verified on the pinned Windows host.
+          # macOS renders text and icons differently, so this iOS proof lane
+          # runs every non-visual suite and verifies rendering on Simulator
+          # in the dedicated step below.
+          flutter test \
+            test/accessibility \
+            test/app \
+            test/core \
+            test/features \
+            test/test_support \
+            test/visual/phase1_auth_screenshot_proof_test.dart \
+            test/visual/visual_diff_helpers_test.dart \
+            test/widget_test.dart
       - name: Build iOS simulator app
         script: |
           set -euo pipefail
