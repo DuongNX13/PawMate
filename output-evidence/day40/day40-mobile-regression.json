@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "commit": "4c89e2f",
+  "command": "..\\scripts\\dev\\pawmate-flutter.ps1 test --no-pub --reporter compact",
+  "passed": 439,
+  "intentionalSkipped": 1,
+  "failed": 0,
+  "scope": "mobile/**",
+  "deterministicRescueLiveGoldens": {
+    "status": "PASS",
+    "tests": 3,
+    "viewports": ["360x844", "390x844", "430x932"],
+    "clockSource": "rescueClockProvider"
+  }
+}

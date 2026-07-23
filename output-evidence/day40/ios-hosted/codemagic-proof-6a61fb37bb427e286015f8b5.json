@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "buildId": "6a61fb37bb427e286015f8b5",
+  "buildUrl": "https://codemagic.io/app/69fb006fcb6fc5b8a49301e3/build/6a61fb37bb427e286015f8b5",
+  "workflow": "PawMate iOS Hosted Compile and Render",
+  "branch": "feature/day40-rescue-create-20260723",
+  "commit": "4c89e2f",
+  "runner": "Codemagic mac_mini_m2",
+  "toolchain": {
+    "flutter": "3.44.7",
+    "xcode": "26.4",
+    "cocoapods": "1.16.2",
+    "java": "17"
+  },
+  "gates": {
+    "platformNeutralTests": "PASS",
+    "day40StagingProfileTest": "PASS",
+    "iosSimulatorCompile": "PASS",
+    "simulatorLaunch": "PASS",
+    "screenshotCapture": "PASS",
+    "runnerFatalFingerprintScan": "PASS",
+    "appetizePackage": "PASS"
+  },
+  "simulator": {
+    "runtime": "iOS 26.4",
+    "device": "iPhone Air",
+    "screenshot": {
+      "path": "artifacts/output-evidence/ios-post-change/pawmate-ios-post-change.png",
+      "width": 1260,
+      "height": 2736,
+      "bytes": 605139,
+      "sha256": "B3CDF58FD29713A874ADBDEE7A71A1699D8282C228FE7640202DAAD869AF3F86"
+    },
+    "runnerFatalFingerprints": 0,
+    "launchLog": "com.pawmate.pawmateMobile: 3445"
+  },
+  "artifacts": {
+    "simulatorZip": {
+      "path": "PawMate-appetize-simulator-6a61fb37bb427e286015f8b5.zip",
+      "bytes": 60597581,
+      "sha256": "24975882334129ACF4567865A30F0AC4ECB5332EB5044279BB1EC68B5B72C299"
+    },
+    "proofBundleZip": {
+      "path": "PawMate-15-artifacts-6a61fb37bb427e286015f8b5.zip",
+      "bytes": 577210,
+      "sha256": "3FA9B888DEFFE123D1F855F8E5E71CD0524180B4EB3EA3697C650C63A2957317"
+    }
+  }
+}

@@ -1,0 +1,313 @@
+{
+  "schemaVersion": 1,
+  "kind": "pawmate-protected-path-owner-delta",
+  "policyId": "ui-v031-day37-day38-protected-v1",
+  "baselineId": "170B536B40DC73DC269515ABE335DA1CFC7B088F7A4D68ACA2D2D5F355BE8E4B",
+  "owner": "Codex lead / Day 40 closure lane",
+  "approvedBy": "Product Owner (explicit Day 40-43 blocker-closure instruction, 2026-07-23)",
+  "reason": "Preserve the exact previously approved Day 37-38 protected path set while approving only the execution-ledger updates required to close Day 39-40 gates. W0 remains immutable and no protected path is added, removed, or rebaselined.",
+  "approvedAtUtc": "2026-07-23T11:26:07Z",
+  "expiresAtUtc": "2026-07-30T11:26:07Z",
+  "changes": [
+    {
+      "path": "backend/package.json",
+      "changeType": "modified",
+      "beforeSha256": "6D2B4AB59A3431E0CA12D79476BE5275E769C7665D2668DEF09FC5D4AC903388",
+      "afterSha256": "C6030B7D39E44E4C1CE19F035B3D42B5DD6B33E642AAFF5474110054B72BB733"
+    },
+    {
+      "path": "backend/package-lock.json",
+      "changeType": "modified",
+      "beforeSha256": "6A30E18707A635B1CD932033E78C8C19542E1DDF79DED4DEF92F3748CDA62C0D",
+      "afterSha256": "A028F54EF9652695A305B20DBADAB9097C265C79E5E234BACF2B88CE1CAC8DEE"
+    },
+    {
+      "path": "backend/scripts/day37-rescue-clean-chain-proof.cjs",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "720B9A599FE4B775D9A7CB22362B0C12694C54E59C20734B549D431629F06877"
+    },
+    {
+      "path": "backend/scripts/day38-changed-source-coverage.cjs",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "87D28FDC9BA96CE5C6FF6FDEE82BBD53A867F91CE78A1DDEE0885BC1E5CBBC5F"
+    },
+    {
+      "path": "backend/scripts/day38-g5a-evidence.cjs",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "9692FA1787A66FDB9220448AF1D7DDB5A1D1696A6CCC0F737B436E040D74EECD"
+    },
+    {
+      "path": "backend/src/features/rescue/persistence/prisma-rescue-repository.ts",
+      "changeType": "modified",
+      "beforeSha256": "19463A9C79CE459D8E88FBF0D13C823713E50AD520A6416917D5CEE968E7DBCE",
+      "afterSha256": "8EC444EFA4422C7AB607F188F4557A8583CA70055A0D85235EC80D0BB98C77EA"
+    },
+    {
+      "path": "backend/src/services/rescue/rescue-location-privacy.ts",
+      "changeType": "modified",
+      "beforeSha256": "4FDC04B72FFF43D5E87A0774A878F1C8F14F3B63393CFE9BB6B5AF8B9DF74B05",
+      "afterSha256": "2B1291E6CBD67B94488B93D380339520B6B403DC45E012FC7C667FC5C4154A0D"
+    },
+    {
+      "path": "backend/tests/day38.rescue.contract.test.ts",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "4AEBD48E930A2B4A7C992361024EB75F98BCC09B4F4FE7AD3EF1A257A5CCD8E8"
+    },
+    {
+      "path": "backend/tests/phase2.contract.test.ts",
+      "changeType": "modified",
+      "beforeSha256": "7E26AF84201877B1A26ACCD93191D9A421056D5849C205BD1897884404599A46",
+      "afterSha256": "AFF01E91F0568F658AD7A3390C170C0C38A43BE2F27820D6A5B6B2787E0097AF"
+    },
+    {
+      "path": "backend/tests/rescue.location-privacy.test.ts",
+      "changeType": "modified",
+      "beforeSha256": "5B05B3A331A07ED29B1D42C183D12FCBDFD6AE858B757CA6DFFE882F17E6022A",
+      "afterSha256": "669D40FA0B5EE852421DA82C2BC035EBA70DDA6B8F5310E38148E79C250106C3"
+    },
+    {
+      "path": "backend/tests/rescue.persistence.integration.test.ts",
+      "changeType": "modified",
+      "beforeSha256": "97F8F6EB0944BE9B26CA0C9AB057E09B986116041631AF53CC3CBFBDBA20C312",
+      "afterSha256": "7A9622E4AC6BE50EFC46A31CEE444AE52F5EDC12A47594D6B6E19385C09D8BFB"
+    },
+    {
+      "path": "backend/tests/rescue.repository.test.ts",
+      "changeType": "modified",
+      "beforeSha256": "8C7D7297EE6AB867CB2A27B320CBF1E3D248D09CB38A04AF83260AB0C904BF4D",
+      "afterSha256": "D815DE18DB35EFD23E1B8F9D360FD7095028663FDA7FC3769AD42AA47DD94F7B"
+    },
+    {
+      "path": "docs/architecture/pawmate_api_contract_v1.json",
+      "changeType": "modified",
+      "beforeSha256": "D75467C8B36ABC8EC076EF11DBF00AF1D2B9384C9AD20D9C28D5D4F7591F02D6",
+      "afterSha256": "64DAC28CE320EF8E862E03DD095198104596D1963BC76BB92423DF69512AB868"
+    },
+    {
+      "path": "docs/architecture/pawmate_api_contract_v1.md",
+      "changeType": "modified",
+      "beforeSha256": "EF98FFBC0EF0824DA939282884E5D95A7B9ED3714864F62EE29DE774F215C3DB",
+      "afterSha256": "B7D2ABAF4EB0D97D456C317633961AC010F3446021572FF1E77BB121D7C20B38"
+    },
+    {
+      "path": "docs/engineering/day37_rescue_backend_feature_test_status.md",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "A5B5B76E230C8BE7A4055EA46F6E81145BD5407B623FBF62AC2E685EB344715E"
+    },
+    {
+      "path": "docs/engineering/day38_rescue_backend_fix_verify_g5a_status.md",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "EEE5926AB47C5523B22789ACFEFB22F59EB24AA8D2BA3BE0382D51019D135242"
+    },
+    {
+      "path": "docs/management/pawmate_execution_ledger_v1_1_2026-07-13.md",
+      "changeType": "modified",
+      "beforeSha256": "02A4F805B542C3500D273474E52B174B9ABCA173A30E6081C221E6DFA6B14229",
+      "afterSha256": "A69406886C4D80E23996F9A5C576988B17C5329CCB9C05371B82310656E54C1C"
+    },
+    {
+      "path": "docs/qa/phase2/day36_rescue_write_api_test_matrix.md",
+      "changeType": "modified",
+      "beforeSha256": "A490FB92230F997250140173DD25C2F49C7BBFE566ACEB5E2A8EAA59CF4DBCA5",
+      "afterSha256": "BECDBD4D43B49E31255D8379617FBC439CAD6C55C9B0C271E2FD6B8124306116"
+    },
+    {
+      "path": "output-evidence/day37/20260722t073925z/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "41EE268F59A72C2300C1E3E149CFB24A82A6107FCB442919574915EC8BDFF627"
+    },
+    {
+      "path": "output-evidence/day37/20260722t073925z/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "B3D0FC2914F9FE6CEA695F708295FFC71FB5E31C2015F52C7C4732B09A886CD1"
+    },
+    {
+      "path": "output-evidence/day37/20260722t073925z/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "988C8A8295AC2A0205196447B42F04A7584024727D467EBA45327887F045BC5C"
+    },
+    {
+      "path": "output-evidence/day37/20260722t083048z/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "8A0A55D1F633E86A50FFE01CB34810E4AF1415801ECBE621D803ACE2219007FE"
+    },
+    {
+      "path": "output-evidence/day37/20260722t083048z/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "0F450DD013E99CDC592C7A38CB31073C28AC6835410529C813BC341DBE45BED8"
+    },
+    {
+      "path": "output-evidence/day37/20260722t083048z/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "FE4BA587A39A6B5DAD864D938AB38797CD4F62E0933A19AB58AAAEAC6CC3EC17"
+    },
+    {
+      "path": "output-evidence/day37/20260722t083439z/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "F6BCBAD16E4A0BC7A1C654250962A01B2E135666D1FFDD82212A331444BD2154"
+    },
+    {
+      "path": "output-evidence/day37/20260722t083439z/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "ECC4290AEC74D2C4C3763ABFAA8F310775CC71E1185BD4A0955A7AC4DEAEEB95"
+    },
+    {
+      "path": "output-evidence/day37/20260722t083439z/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "ED97F6D21294C8AF15C77B808B38C9A336E6F0B4285CFFA886793E60C0A87C40"
+    },
+    {
+      "path": "output-evidence/day37/20260722t084846z/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "51C67C12D51210889B4C5B3A553DB0B3A243F75D534B37CC748FECF35AE73951"
+    },
+    {
+      "path": "output-evidence/day37/20260722t084846z/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "4CD817A992DAA0B1A3D0396F76342126D2032AF61A165C65A77074A9266626BA"
+    },
+    {
+      "path": "output-evidence/day37/20260722t084846z/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "AA66AF89D697091FE59F0E8BE9FD795EC10C67D14C32C34DF97BA5D9538D0825"
+    },
+    {
+      "path": "output-evidence/day37/20260722t085001z/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "DB51A6E4D3AE1ACFB1D8092499154A9C3033303DD4888E34D7617AC525A8547F"
+    },
+    {
+      "path": "output-evidence/day37/20260722t085001z/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "20FBCF33FAF771211E2440CD12B4A81BCDE347F5D51E8796CC33FBAEC884E53C"
+    },
+    {
+      "path": "output-evidence/day37/20260722t085001z/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "48C4F6F4888C7224F4E4A52B32243339CFFC4863DF025029BCCE6F1E840B4994"
+    },
+    {
+      "path": "output-evidence/day37/final-20260722-1500/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "682569EE098732902B4AE6565E766D807A1F7364041FAFD8311ED8F44C7CFF34"
+    },
+    {
+      "path": "output-evidence/day37/final-20260722-1500/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "E2B4D048AA3332C9BB8ADB9BDE76BAC40936ABC28E48BB2ED55877E45013D4B0"
+    },
+    {
+      "path": "output-evidence/day37/final-20260722-1500/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "4990FA86AE4B7F8DD6A6BDEA18121C223FA4159F39949F0593255B6597C52E9F"
+    },
+    {
+      "path": "output-evidence/day37/final-20260722-1510/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "C7D539E13080EA3D5F21849414B04B37B0F57C3F2B7216110E775097A06F9832"
+    },
+    {
+      "path": "output-evidence/day37/final-20260722-1510/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "810F388BEDC8AEEFCB5C235A775BA104149C44A98BEC24FA0453EB4459BA0BAC"
+    },
+    {
+      "path": "output-evidence/day37/final-20260722-1510/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "65038D33291146FBAF90628831C7551264B355799739A8A5F88C51B71D7EC333"
+    },
+    {
+      "path": "output-evidence/day37/run-20260722-1445/day37-clean-chain-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "B56A6F5EEFA045DDE05C5BA4D4EA8A7673D117F7C04F65A751725B44C0FC7819"
+    },
+    {
+      "path": "output-evidence/day37/run-20260722-1445/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "B2BF5D2FE1784DA9ABE935277BF05E2054FEA316C24FAA8308DD3333C1141575"
+    },
+    {
+      "path": "output-evidence/day37/run-20260722-1445/source-schema-only.sql",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "02E0436F6DFE99AD784B06D305953C66765F2A292851581B60487CACCA8F2C05"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/baseline-reconstructed/src/features/rescue/persistence/prisma-rescue-repository.ts",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "BC603C4C7CD5E126436FCBBD0AAEA4118819A35F6628DE4F3BFEBAF4E61AB3F8"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/baseline-reconstructed/src/services/rescue/rescue-location-privacy.ts",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "F6D909FA543E8D9F4C7A1736CB5F05930AEE7AD9AA89FC8F0422746A4CA0B971"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/changed-source-coverage.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "A4DA9407368ABFF1009F62EC318DD90515C3CAFFB49078BBA462497DD68648FB"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/day38-cloud-parity-chain.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "CBF6F655C0725D4B7BEFE44C5E7D84CA5E8AA521CDC40C23BE9439CAD802EEAC"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/day38-g5a-result.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "0391376C95A1DB1790179D120C4B38D03296797C3442B9763DB5C51A895CDD16"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/document-validation-summary.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "CA1CA9FBA4F24EBDA510F61B26508F9725823F78C3FF2979EA29C108CCAA1558"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/g5a-product-approval-reconciliation-20260722.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "58F4D77F8D38940A08B0ABEAD13520D64624DBE045C1C086413AF3538F1BED2A"
+    },
+    {
+      "path": "output-evidence/day38/final-20260722-1533/manifest.json",
+      "changeType": "added",
+      "beforeSha256": null,
+      "afterSha256": "25B66518BB423898614582DA177BC581DD03AE704F7CA870CE4F45257ADEB9D6"
+    }
+  ]
+}

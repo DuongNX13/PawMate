@@ -5,7 +5,7 @@
     "P2-02 Create Lost Alert",
     "P2-03 Lost Info Form"
   ],
-  "status": "PARTIAL",
+  "status": "PASS",
   "openedAt": "2026-07-23",
   "baseline": {
     "commit": "f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7",
@@ -40,7 +40,8 @@
     "bottomNavigationOnCreateRoutes": false,
     "exactLocationPolicy": "private-write-only",
     "draftRetention": "in-memory-and-server-draft-on-successful-create",
-    "createActivation": "blocked-until-D40-exit"
+    "createActivation": "staging-only-after-D40-exit",
+    "protectedPathPolicy": "W0 immutable; exact Day40 owner delta required"
   },
   "exitRequired": [
     "P2-02 and P2-03 focused widget/provider tests pass",
@@ -49,6 +50,6 @@
     "responsive checks pass at 360, 390, 412 and 430 logical pixels",
     "flutter analyze passes",
     "Android staging build passes with create=true only after the write gate",
-    "protected paths unchanged"
+    "protected paths verified with exact owner delta; no rebaseline"
   ]
 }

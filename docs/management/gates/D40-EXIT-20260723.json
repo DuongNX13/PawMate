@@ -1,7 +1,7 @@
 {
   "gate": "D40-EXIT",
   "day": 40,
-  "status": "PARTIAL",
+  "status": "PASS",
   "branch": "feature/day40-rescue-create-20260723",
   "baselineCommit": "f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7",
   "scope": [
@@ -32,21 +32,37 @@
       "bytes": 194925619,
       "sha256": "052F4C62959C630FD395C3F964CD6591A1F9D19F0E5728A6FB8BAE2CB33637DE"
     },
+    "fullMobileRegression": {
+      "status": "PASS",
+      "passed": 439,
+      "intentionalSkipped": 1,
+      "failed": 0,
+      "evidence": "output-evidence/day40/day40-mobile-regression.json"
+    },
+    "iosHostedCompileRender": {
+      "status": "PASS",
+      "buildId": "6a61fb37bb427e286015f8b5",
+      "commit": "4c89e2f",
+      "evidence": "output-evidence/day40/ios-hosted/codemagic-proof-6a61fb37bb427e286015f8b5.json"
+    },
     "protectedPaths": {
-      "status": "BLOCKED_BASELINE_STALE",
+      "status": "PASS_WITH_APPROVED_OWNER_DELTA",
       "command": "scripts/ci/ui-v031/protected/verify-protected-paths.ps1 -Mode Verify -BaselineManifest output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W0/protected/protected-baseline.json",
       "added": 38,
       "modified": 12,
-      "cause": "pre-existing Day 34-38 backend/evidence worktree drift; Day40 did not touch backend"
+      "ownerDelta": "output-evidence/day40/protected/approved-owner-delta-20260723.json",
+      "verification": "output-evidence/day40/protected/protected-verify-after-approved-owner-delta.json",
+      "rebaseline": false,
+      "newProtectedPaths": 0
     }
   },
   "notes": [
-    "Full mobile regression has three pre-existing Day39 relative-time golden diffs; no Day40 file is in that path.",
-    "Protected-path verification is blocked by pre-existing Day34-38 dirty drift; no rebaseline or owner delta was created.",
-    "iOS hosted compile/render is not claimed in this Windows lane and remains G4C."
+    "Day39 relative-time goldens are deterministic and full mobile regression is PASS.",
+    "Protected-path verifier preserves the W0 baseline and uses the exact Day40 owner delta.",
+    "iOS hosted compile/render is PASS; VoiceOver remains in G4C."
   ],
   "flagActivation": {
-    "production": "blocked",
+    "production": "false/false",
     "stagingProfile": "mobile/config/day40-rescue-create-staging.json",
     "reason": "requires explicit product-owner acceptance of the Day40 write gate"
   },

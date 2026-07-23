@@ -2,7 +2,8 @@
 
 Ngày thực hiện: 2026-07-23
 Branch: `feature/day40-rescue-create-20260723`
-Baseline: `f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7`
+Implementation baseline: `f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7`
+Close commit: `4c89e2f`
 
 ## Scope đã hoàn thành
 
@@ -26,6 +27,8 @@ Baseline: `f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7`
 | Backend write contract | `npm test -- --runTestsByPath tests/rescue.write.routes.test.ts tests/rescue.write.service.test.ts` | PASS 37/37 |
 | Backend media contract | `npm test -- --runTestsByPath tests/rescue.media.service.test.ts tests/rescue-media-sanitizer.test.ts` | PASS 21/21 |
 | Android staging build | `pawmate-flutter.ps1 build apk --debug --no-pub --dart-define-from-file=config/day40-rescue-create-staging.json` | PASS |
+| Full mobile regression | `pawmate-flutter.ps1 test --no-pub --reporter compact` | PASS 439, 1 intentional skip |
+| iOS hosted compile/render | Codemagic build `6a61fb37bb427e286015f8b5` on commit `4c89e2f` | PASS: compile, launch, screenshot/hash, runner fatal scan, package |
 
 APK evidence: `output-evidence/day40/day40-android-build.json` and
 `output-evidence/day40/pawmate-day40-rescue-create-staging-debug.apk`
@@ -34,17 +37,23 @@ APK evidence: `output-evidence/day40/day40-android-build.json` and
 
 ## Exit decision
 
-**PARTIAL.** Day40 implementation and focused gates pass. The repository-wide
-mobile run remains non-green only because three pre-existing Day39 live Rescue
-goldens compare relative-time text (`1 giờ trước` vs `2 giờ trước`) at 360/390/430;
-the Day40 code does not modify `rescue_home_screen.dart` or those goldens. This is
-tracked as a baseline/date-determinism note and does not activate production flags.
+**PASS.** The three Day40 blockers are closed:
 
-The protected-path verifier is also blocked by the already-dirty Day 34–38
-backend/evidence tree: 38 protected files are added and 12 are modified versus
-the W0 baseline. Day40 did not touch those paths; no rebaseline or owner-delta
-approval was invented. The ledger itself is protected and needs the existing
-G5A owner-delta process before this exit can be upgraded to PASS.
+- The three Day39 Rescue live goldens now use the injected deterministic clock;
+  all 360/390/430 goldens and the full mobile regression are green.
+- W0 remains immutable. The protected verifier passes with an explicit Day40
+  owner delta that preserves the prior 50-path approval (38 added, 12 modified)
+  and approves no new protected path or rebaseline.
+- Codemagic hosted iOS compile/render passes on commit `4c89e2f`, including
+  simulator launch, 1260x2736 screenshot/hash, runner fatal scan (0) and
+  Appetize package.
+
+Evidence:
+
+- `output-evidence/day40/day40-mobile-regression.json`
+- `output-evidence/day40/ios-hosted/codemagic-proof-6a61fb37bb427e286015f8b5.json`
+- `output-evidence/day40/protected/approved-owner-delta-20260723.json`
+- `output-evidence/day40/protected/protected-verify-after-approved-owner-delta.json`
 
 Create activation remains staging-only until product owner accepts the Day40 write
 gate. Production/default compile flags are still:
@@ -54,5 +63,5 @@ PAWMATE_RESCUE_BROWSE_ENABLED=false
 PAWMATE_RESCUE_CREATE_ENABLED=false
 ```
 
-No iOS hosted compile/render proof was run in this Windows lane; it remains a
-separate G4C/platform gate and is not claimed here.
+VoiceOver remains in G4C as previously approved; this Day40 iOS hosted proof is
+limited to compile/render and does not claim VoiceOver.

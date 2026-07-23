@@ -77,7 +77,7 @@ Test xanh không đồng nghĩa với visual fidelity hoặc Phase 2 implementat
 | 37 | Rescue Backend Feature Test | - | PASS | [Canonical Day 37 status](../engineering/day37_rescue_backend_feature_test_status.md) và [clean-chain checkpoint](../../output-evidence/day37/final-20260722-1510/manifest.json) đã freeze một P1 dependency đúng owner; Day 38 sau đó resolve `fast-uri` và current clean-chain [PASS không defect](../../output-evidence/day37/20260722t085001z/manifest.json). Migration/rollback/idempotency/full regression an toàn; Day 37 đóng, không reopen Day 34-36. |
 | 38 | Rescue Backend Fix, Verify và Integration | G5A | PASS | [Day 38 status](../engineering/day38_rescue_backend_fix_verify_g5a_status.md), [G5A matrix](../qa/rescue-backend/day38_g5a_gate_matrix.md), [machine manifest](../../output-evidence/day38/final-20260722-1533/manifest.json), [approval](./pawmate_product_owner_approval_2026-07-22.md). Technical gate PASS: 32 suite/247 test, changed-source coverage 100%, audit 0, P0/P1 mở 0/0; Product/BA đã approve bốn decision AUTH/PRIVACY/CONTACT/OUTBOX. G4B vẫn chưa PASS nên Day 39 chưa mở. |
 | 39 | P2-01 Rescue Home | - | PASS | [Day 39 status](../qa/phase2/day39_rescue_home_status_2026-07-23.md), [D39 exit manifest](../../output-evidence/day39/D39-EXIT-20260723.json). Real `GET /rescue/cases` source, recent list/filter/refresh/opaque pagination, privacy-safe map preview, loading/empty/error/stale states and bottom nav are wired. Rescue focused 13/13, responsive goldens 6/6, full mobile 427 pass/1 intentional skip, analyze 0, Android debug build PASS, Rescue line coverage 81.66%, exit checks 11/11. No visible `Báo thấy`; browse/create defaults remain `false/false`. |
-| 40 | P2-02 Create Lost Alert và P2-03 Lost Info Form | D40 implementation complete; focused gates PASS, repository/protected baseline notes remain | PARTIAL | [Day 40 status](../engineering/day40_rescue_create_status.md), [D40 exit](./gates/D40-EXIT-20260723.json) |
+| 40 | P2-02 Create Lost Alert và P2-03 Lost Info Form | PASS; deterministic Day39 live goldens, full mobile 439 pass/1 intentional skip, exact protected owner delta, and hosted iOS compile/render proof | PASS | [Day 40 status](../engineering/day40_rescue_create_status.md), [D40 exit](./gates/D40-EXIT-20260723.json), [iOS proof](../../output-evidence/day40/ios-hosted/codemagic-proof-6a61fb37bb427e286015f8b5.json) |
 | 41 | P2-04 Case Detail | - | NOT STARTED | |
 | 42 | Rescue Core Feature Test | - | NOT STARTED | |
 | 43 | Rescue Core Fix, Verify và Integration | G5B | NOT STARTED | |
@@ -294,9 +294,9 @@ Evidence snapshot SHA-256:
 Manifest SHA-256:
 `C049533E44E488A7E54EDAB7064C06358E0282FC347715F42DB4C4E81B6961E8`.
 
-Day 40 đủ dependency nhưng vẫn `NOT STARTED`; không có Day row `IN PROGRESS`.
-Browse/create flags giữ `false/false`, vì Day 39 PASS không tự kích hoạt
-staging/production.
+Day 40 đã đóng `PASS` trên commit `4c89e2f`; Day 41 là Day kế tiếp được phép mở.
+Browse/create flags production giữ `false/false`; profile staging chỉ dùng cho
+evidence Day40 và không tự kích hoạt production.
 
 ## Day 39 staging activation — 2026-07-23
 
@@ -316,5 +316,6 @@ feature flag. Activation áp dụng đúng dependency đã khóa:
 - rollback/kill switch: build lại không dùng profile staging hoặc redeploy với
   hai define `false/false`.
 
-Day 39 vẫn `PASS`; Day 40 vẫn `NOT STARTED`. Việc kích hoạt này không mở bất kỳ
-route create/update/comment/status/discussion nào.
+Day 39 và Day 40 đều `PASS`. Việc kích hoạt staging Day40 chỉ mở create flow
+trong profile `mobile/config/day40-rescue-create-staging.json`; production vẫn
+false/false và không mở route update/comment/status/discussion.
