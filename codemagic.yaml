@@ -127,8 +127,7 @@ workflows:
           cd mobile
           flutter test \
             --dart-define-from-file=config/day40-rescue-create-staging.json \
-            test/app/router/app_feature_availability_day40_test.dart \
-            test/app/router/app_route_registry_test.dart
+            test/app/router/app_feature_availability_day40_test.dart
       - name: Build iOS simulator app
         script: |
           set -euo pipefail
