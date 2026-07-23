@@ -205,7 +205,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     builder: (context, state) => FeatureUnavailableScreen(
                       title: 'Bản đồ cứu hộ',
                       message: availability.rescueBrowse
-                          ? 'Bản đồ đã được bật nhưng màn dữ liệu Day 39 chưa có trong lane UI hiện tại.'
+                          ? 'Bản đồ toàn màn hình sẽ được hoàn thiện ở Day 44. Bạn vẫn có thể xem bản đồ khu vực ước tính trên Rescue Home.'
                           : 'Bản đồ cứu hộ chưa được bật. PawMate không tải dữ liệu hoặc vị trí thật ở trạng thái này.',
                       fallbackLocation: '/rescue',
                       bottomNavRoute: '/rescue',

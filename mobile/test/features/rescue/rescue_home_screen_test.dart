@@ -46,9 +46,7 @@ void main() {
       tester.getSize(find.byKey(const ValueKey('rescue-notifications-button'))),
       const Size(48, 48),
     );
-    await tester.tap(
-      find.byKey(const ValueKey('rescue-notifications-button')),
-    );
+    await tester.tap(find.byKey(const ValueKey('rescue-notifications-button')));
     await tester.pumpAndSettle();
     expect(find.text('Notification target'), findsOneWidget);
     router.go('/rescue');
@@ -94,7 +92,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
-        home: const RescueHomeScreen(browseEnabled: true, createEnabled: true),
+        home: const RescueHomeScreen(browseEnabled: false, createEnabled: true),
       ),
     );
     await tester.pumpAndSettle();
