@@ -18,6 +18,8 @@ import '../../features/pets/presentation/pet_list_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
 import '../../features/reminders/presentation/reminder_calendar_screen.dart';
 import '../../features/rescue/presentation/rescue_home_screen.dart';
+import '../../features/rescue/presentation/rescue_create_screen.dart';
+import '../../features/rescue/presentation/rescue_info_form_screen.dart';
 import '../../features/vets/presentation/vet_detail_screen.dart';
 import '../../features/vets/presentation/vet_list_screen.dart';
 import '../../features/vets/presentation/vet_map_screen.dart';
@@ -327,24 +329,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rescue/create/details',
         name: 'rescue-create-details',
-        pageBuilder: (context, state) => _rescueUnavailablePage(
-          context,
-          state,
-          availability: availability,
-          title: 'Thông tin thú cưng thất lạc',
-          requiresCreate: true,
-        ),
+        pageBuilder: (context, state) => availability.rescueCreate
+            ? PawMateNavigation.adaptivePage(
+                context: context,
+                state: state,
+                child: const RescueInfoFormScreen(),
+              )
+            : _rescueUnavailablePage(
+                context,
+                state,
+                availability: availability,
+                title: 'Thông tin thú cưng thất lạc',
+                requiresCreate: true,
+              ),
       ),
       GoRoute(
         path: '/rescue/create',
         name: 'rescue-create',
-        pageBuilder: (context, state) => _rescueUnavailablePage(
-          context,
-          state,
-          availability: availability,
-          title: 'Tạo tin cứu hộ',
-          requiresCreate: true,
-        ),
+        pageBuilder: (context, state) => availability.rescueCreate
+            ? PawMateNavigation.adaptivePage(
+                context: context,
+                state: state,
+                child: const RescueCreateScreen(),
+              )
+            : _rescueUnavailablePage(
+                context,
+                state,
+                availability: availability,
+                title: 'Tạo tin cứu hộ',
+                requiresCreate: true,
+              ),
       ),
       GoRoute(
         path: '/rescue/:caseId/comment',
@@ -434,7 +448,7 @@ Page<void> _rescueUnavailablePage(
     child: FeatureUnavailableScreen(
       title: title,
       message: enabled
-          ? 'Cờ tính năng đã bật nhưng màn Day 39/40 chưa có trong lane UI hiện tại. PawMate không tạo dữ liệu giả.'
+          ? 'Cờ tính năng đã bật nhưng luồng này chưa sẵn sàng trong lane UI hiện tại. PawMate không tạo dữ liệu giả.'
           : 'Tính năng này chưa được bật. PawMate không gọi API và không hiển thị dữ liệu giả.',
       fallbackLocation: '/rescue',
     ),

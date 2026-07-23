@@ -1,0 +1,57 @@
+{
+  "gate": "D40-EXIT",
+  "day": 40,
+  "status": "PARTIAL",
+  "branch": "feature/day40-rescue-create-20260723",
+  "baselineCommit": "f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7",
+  "scope": [
+    "P2-02 Create Lost Alert",
+    "P2-03 Lost Info Form"
+  ],
+  "checks": {
+    "mobileAnalyze": { "status": "PASS", "issues": 0 },
+    "day40Focused": { "status": "PASS", "tests": 7 },
+    "day40Goldens": { "status": "PASS", "tests": 4 },
+    "rescueRegression": { "status": "PASS", "tests": 21 },
+    "featureFlagsDefault": {
+      "status": "PASS",
+      "browse": false,
+      "create": false
+    },
+    "featureFlagsStaging": {
+      "status": "PASS",
+      "profile": "day40-rescue-create-staging",
+      "browse": true,
+      "create": true
+    },
+    "backendWriteContract": { "status": "PASS", "tests": 37 },
+    "backendMediaContract": { "status": "PASS", "tests": 21 },
+    "androidStagingBuild": {
+      "status": "PASS",
+      "artifact": "output-evidence/day40/pawmate-day40-rescue-create-staging-debug.apk",
+      "bytes": 194925619,
+      "sha256": "052F4C62959C630FD395C3F964CD6591A1F9D19F0E5728A6FB8BAE2CB33637DE"
+    },
+    "protectedPaths": {
+      "status": "BLOCKED_BASELINE_STALE",
+      "command": "scripts/ci/ui-v031/protected/verify-protected-paths.ps1 -Mode Verify -BaselineManifest output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W0/protected/protected-baseline.json",
+      "added": 38,
+      "modified": 12,
+      "cause": "pre-existing Day 34-38 backend/evidence worktree drift; Day40 did not touch backend"
+    }
+  },
+  "notes": [
+    "Full mobile regression has three pre-existing Day39 relative-time golden diffs; no Day40 file is in that path.",
+    "Protected-path verification is blocked by pre-existing Day34-38 dirty drift; no rebaseline or owner delta was created.",
+    "iOS hosted compile/render is not claimed in this Windows lane and remains G4C."
+  ],
+  "flagActivation": {
+    "production": "blocked",
+    "stagingProfile": "mobile/config/day40-rescue-create-staging.json",
+    "reason": "requires explicit product-owner acceptance of the Day40 write gate"
+  },
+  "evidence": [
+    "docs/engineering/day40_rescue_create_status.md",
+    "output-evidence/day40/day40-android-build.json"
+  ]
+}

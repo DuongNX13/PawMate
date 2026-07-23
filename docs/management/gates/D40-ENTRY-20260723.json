@@ -1,0 +1,54 @@
+{
+  "gate": "D40-ENTRY",
+  "day": 40,
+  "scope": [
+    "P2-02 Create Lost Alert",
+    "P2-03 Lost Info Form"
+  ],
+  "status": "PARTIAL",
+  "openedAt": "2026-07-23",
+  "baseline": {
+    "commit": "f67f1a0d77eb64bc1aacd68329fcda78d2cb67f7",
+    "sourceOfTruth": "docs/design/pawmate-v031-platform-ui/contracts/RESCUE_FINAL_CONTRACT.md",
+    "dependency": "Day 39 PASS"
+  },
+  "allowedPaths": [
+    "mobile/lib/app/router/app_router.dart",
+    "mobile/lib/features/rescue/",
+    "mobile/test/features/rescue/",
+    "mobile/test/visual/",
+    "mobile/config/day40-rescue-create-staging.json",
+    "docs/management/gates/D40-ENTRY-20260723.json",
+    "docs/management/gates/D40-EXIT-20260723.json",
+    "docs/engineering/day40_rescue_create_status.md",
+    "docs/management/pawmate_execution_ledger_v1_1_2026-07-13.md"
+  ],
+  "protectedPaths": [
+    "backend/",
+    "mobile/lib/features/rescue/presentation/rescue_home_screen.dart",
+    "mobile/lib/features/rescue/data/rescue_api.dart",
+    "mobile/lib/app/router/app_feature_availability.dart",
+    "docs/design/pawmate-v031-platform-ui/",
+    "docs/architecture/",
+    "docs/product/"
+  ],
+  "entryChecks": {
+    "featureFlags": {
+      "PAWMATE_RESCUE_BROWSE_ENABLED": false,
+      "PAWMATE_RESCUE_CREATE_ENABLED": false
+    },
+    "bottomNavigationOnCreateRoutes": false,
+    "exactLocationPolicy": "private-write-only",
+    "draftRetention": "in-memory-and-server-draft-on-successful-create",
+    "createActivation": "blocked-until-D40-exit"
+  },
+  "exitRequired": [
+    "P2-02 and P2-03 focused widget/provider tests pass",
+    "draft survives back, validation, network and version-conflict failures",
+    "media limits and upload retry semantics are covered without exposing private location",
+    "responsive checks pass at 360, 390, 412 and 430 logical pixels",
+    "flutter analyze passes",
+    "Android staging build passes with create=true only after the write gate",
+    "protected paths unchanged"
+  ]
+}
