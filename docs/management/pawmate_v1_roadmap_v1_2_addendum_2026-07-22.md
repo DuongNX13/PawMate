@@ -764,3 +764,20 @@ G4B joint-signoff contract:
 `docs/qa/ui-v031/G4B_JOINT_SIGNOFF.md`. Portable W8 manifest hiện hành:
 `output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/evidence-manifest.json`.
 Không dùng Codemagic build trước rework để thay thế proof iOS post-change.
+
+## 20. G4B approval closure — 2026-07-23 15:47 ICT
+
+Product Owner đã xác nhận `G4B=APPROVE` cho immutable W8 manifest SHA-256
+`3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1`
+và source snapshot
+`9D1E17293EF7532DAC0FC1ED286FDBCDF1027B200A00826C8AEEB6F836D52245`.
+W7, W8, W9 và G4B chuyển `PASS`; VoiceOver giữ nguyên ở G4C.
+
+Approval record:
+`docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md`.
+
+`D39-ENTRY` chuyển từ `CLOSED` sang `READY_FOR_MACHINE_EVALUATION`, chưa tự
+chuyển `PASS`. Day 39 chỉ được đổi thành `IN PROGRESS` sau khi manifest theo
+mục 10 xác minh đồng thời SRS v1.1 adoption, G5A, G4B, protected baseline/owner
+delta, feature flag defaults `false/false`, commit/source snapshot và
+reviewer/approver.

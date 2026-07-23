@@ -2,11 +2,10 @@
 
 Baseline: `UI-CC-2026-07-21-G4B`
 Execution date: `2026-07-21`; latest audit: `2026-07-22`
-Verdict: `PRODUCT_OWNER_SIGNOFF_PENDING / FAIL_CLOSED`
+Verdict: `PASS / HANDOFF_APPROVED`
 
-W9 was evaluated but not signed. Its Definition of Ready requires W8 PASS;
-current W8 evidence is complete, but the joint Product Owner sign-off is still
-pending.
+W9 was evaluated and jointly signed. W8 evidence is complete and Product Owner
+approval is bound to the exact immutable terminal manifest hash.
 
 ## Prepared pre-signoff artifacts
 
@@ -157,3 +156,16 @@ W9 remains fail-closed for one approval condition only:
 Codex has recorded `RECOMMEND_APPROVE_AFTER_MANIFEST` and cannot substitute for
 the Product Owner authority. Day 39 remains closed until that decision is
 recorded.
+
+## Product Owner joint sign-off closure — 2026-07-23 15:47 ICT
+
+The Product Owner explicitly confirmed `G4B=APPROVE` for W8 manifest SHA-256
+`3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1`.
+Codex lead/QA approval and Product Owner approval therefore bind the same
+baseline. W9 and G4B are `PASS`; VoiceOver remains assigned to G4C.
+
+Approval record:
+`docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md`.
+Day 39 may move to `IN PROGRESS` only after a separate `D39-ENTRY` manifest
+proves SRS v1.1 adoption, G5A, G4B, protected-path reconciliation and feature
+flag defaults.

@@ -2,7 +2,7 @@
 
 Baseline: `UI-CC-2026-07-21-G4B`
 Execution date: `2026-07-21`; latest audit: `2026-07-22`
-Verdict: `PASS_PENDING_G4B_SIGNOFF`
+Verdict: `PASS`
 
 ## Outcome
 
@@ -214,5 +214,12 @@ The preceding iOS-pending statement is superseded by Codemagic build
 | Runner fatal scan | `PASS` | `runner-log.raw.txt`; fatal/crash fingerprint count `0` |
 | Evidence manifest | `PASS` | 779 artifacts; redaction PASS; validator errors 0 |
 
-W8 is now evidence-complete and awaits only Product Owner joint approval.
+## G4B approval closure — 2026-07-23 15:47 ICT
+
+Product Owner approval `G4B=APPROVE` is recorded against immutable W8 manifest
+SHA-256
+`3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1`.
+W8 is therefore `PASS`; VoiceOver remains a separate G4C follow-up.
+
+W8 is evidence-complete and Product Owner joint approval is recorded.
 VoiceOver remains G4C and is not part of this denominator.

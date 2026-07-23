@@ -230,3 +230,25 @@ W7/W8/W9/G4B vẫn fail-closed ở hai điều kiện cuối:
 
 Sign-off contract: [G4B joint sign-off](../qa/ui-v031/G4B_JOINT_SIGNOFF.md).
 VoiceOver tiếp tục ở G4C. `D39-ENTRY` và Day 39 vẫn `CLOSED / NOT_STARTED`.
+
+## G4B joint approval closure — 2026-07-23 15:47 ICT
+
+Product Owner đã xác nhận chính xác `G4B=APPROVE` cho immutable W8 manifest
+SHA-256
+`3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1`.
+Post-change iOS proof dùng Codemagic build `6a61c58e95159f0929dd483e`; traceability
+giữ `191/191 PASS`; CTA `82/82`; Android TalkBack `7/7`; redaction và terminal
+manifest validation đều PASS.
+
+| Surface | Current status | Evidence / next transition |
+|---|---|---|
+| W7 iOS | `PASS` | Codemagic post-change compile/render proof |
+| W8 | `PASS` | Immutable terminal manifest approved |
+| W9 / G4B | `PASS` | [Product Owner approval](./pawmate_product_owner_g4b_approval_2026-07-23.md) |
+| G4C | `PENDING / NON_BLOCKING_FOR_G4B` | VoiceOver real-device follow-up |
+| D39-ENTRY | `READY_FOR_MACHINE_EVALUATION` | Must still emit and validate `D39-ENTRY-<run-id>.json` |
+| Day 39 | `NOT_STARTED / CLOSED_PENDING_ENTRY_MANIFEST` | Do not change row 39 until D39 manifest passes |
+
+Không recapture W8 sau approval vì việc đưa successor sign-off metadata trở lại
+source snapshot sẽ thay đổi chính baseline vừa được ký. Mọi Day 39 source change
+phải bắt đầu từ một successor branch sau khi `D39-ENTRY` pass.

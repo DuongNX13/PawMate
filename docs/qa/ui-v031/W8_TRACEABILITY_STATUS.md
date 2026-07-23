@@ -1,7 +1,7 @@
 # W8 Traceability Status
 
 Baseline: `UI-CC-2026-07-21-G4B`
-Current verdict: `EXECUTION_PASS / IOS_GATE_PASS / G4B_SIGNOFF_PENDING`
+Current verdict: `EXECUTION_PASS / IOS_GATE_PASS / G4B_PASS`
 
 Opening checkpoint (superseded): `STRUCTURE_PASS / EXECUTION_STATUS_BLOCKED`
 
@@ -140,3 +140,11 @@ under:
 
 The terminal W8 manifest validator returns `PASS`; the trace contract is
 therefore execution-complete and waits only for Product Owner `G4B=APPROVE`.
+
+## G4B approval closure — 2026-07-23 15:47 ICT
+
+Product Owner confirmed `G4B=APPROVE` for the exact terminal W8 manifest
+SHA-256
+`3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1`.
+The unified matrix remains `191/191 PASS`; G4B is now `PASS`, and VoiceOver
+remains in G4C.
