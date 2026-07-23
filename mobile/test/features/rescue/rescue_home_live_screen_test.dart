@@ -42,6 +42,8 @@ void main() {
     expect(find.text('LuLu'), findsOneWidget);
     expect(find.text('Chưa thấy'), findsWidgets);
     expect(find.text('Đã thấy'), findsOneWidget);
+    expect(find.text('CẬP NHẬT VỪA XONG'), findsOneWidget);
+    expect(find.textContaining('2 giờ trước'), findsNWidgets(3));
     expect(find.text('Báo thấy'), findsNothing);
     expect(find.byKey(const Key('rescue-map-preview')), findsOneWidget);
     expect(find.textContaining('10.8'), findsNothing);

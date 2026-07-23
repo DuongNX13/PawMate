@@ -65,7 +65,7 @@ workflows:
           failure: true
 
   ios-appetize-simulator-smoke:
-    name: Day 7 iOS Appetize Simulator Smoke
+    name: PawMate iOS Hosted Compile and Render
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
@@ -121,19 +121,20 @@ workflows:
             test/visual/phase1_auth_screenshot_proof_test.dart \
             test/visual/visual_diff_helpers_test.dart \
             test/widget_test.dart
-      - name: Verify Day 39 Rescue staging feature profile
+      - name: Verify Day 40 Rescue staging feature profile
         script: |
           set -euo pipefail
           cd mobile
           flutter test \
-            --dart-define-from-file=config/day39-rescue-browse-staging.json \
+            --dart-define-from-file=config/day40-rescue-create-staging.json \
+            test/app/router/app_feature_availability_day40_test.dart \
             test/app/router/app_route_registry_test.dart
       - name: Build iOS simulator app
         script: |
           set -euo pipefail
           cd mobile
           flutter build ios --simulator --debug \
-            --dart-define-from-file=config/day39-rescue-browse-staging.json \
+            --dart-define-from-file=config/day40-rescue-create-staging.json \
             --dart-define=PAWMATE_API_BASE_URL="${PAWMATE_API_BASE_URL}" \
             --dart-define=PAWMATE_ENABLE_SYSTEM_PROXY="${PAWMATE_ENABLE_SYSTEM_PROXY:-false}" \
             --dart-define=PAWMATE_INITIAL_ROUTE="${PAWMATE_INITIAL_ROUTE:-/launch}" \

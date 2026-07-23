@@ -130,6 +130,7 @@ class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(rescueHomeProvider);
+    final now = ref.watch(rescueClockProvider)();
     final notifier = _notifier;
 
     return PawMatePageScaffold(
@@ -203,6 +204,7 @@ class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
             else
               _RescueReadyContent(
                 state: state,
+                now: now,
                 onOpenMap: () => context.go('/rescue/map'),
                 onOpenCase: (item) =>
                     context.go('/rescue/${Uri.encodeComponent(item.caseId)}'),
@@ -299,12 +301,14 @@ class _RescueCreateCard extends StatelessWidget {
 class _RescueReadyContent extends StatelessWidget {
   const _RescueReadyContent({
     required this.state,
+    required this.now,
     required this.onOpenMap,
     required this.onOpenCase,
     required this.onLoadMore,
   });
 
   final RescueHomeState state;
+  final DateTime now;
   final VoidCallback onOpenMap;
   final ValueChanged<RescueCaseSummary> onOpenCase;
   final VoidCallback onLoadMore;
@@ -320,6 +324,7 @@ class _RescueReadyContent extends StatelessWidget {
           _StaleBanner(message: state.message!),
         _RescueListCard(
           state: state,
+          now: now,
           onOpenCase: onOpenCase,
           onLoadMore: onLoadMore,
         ),
@@ -331,11 +336,13 @@ class _RescueReadyContent extends StatelessWidget {
 class _RescueListCard extends StatelessWidget {
   const _RescueListCard({
     required this.state,
+    required this.now,
     required this.onOpenCase,
     required this.onLoadMore,
   });
 
   final RescueHomeState state;
+  final DateTime now;
   final ValueChanged<RescueCaseSummary> onOpenCase;
   final VoidCallback onLoadMore;
 
@@ -343,7 +350,7 @@ class _RescueListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final updatedLabel = state.lastUpdatedAt == null
         ? 'ĐANG CẬP NHẬT'
-        : 'CẬP NHẬT ${_relativeTime(state.lastUpdatedAt!)}';
+        : 'CẬP NHẬT ${_relativeTime(state.lastUpdatedAt!, now)}';
     return PawMateCard(
       key: const Key('rescue-nearby-list'),
       padding: EdgeInsets.zero,
@@ -377,7 +384,7 @@ class _RescueListCard extends StatelessWidget {
             ),
           ),
           for (final item in state.items)
-            _RescueCaseRow(item: item, onTap: () => onOpenCase(item)),
+            _RescueCaseRow(item: item, now: now, onTap: () => onOpenCase(item)),
           if (state.hasMore)
             Padding(
               padding: const EdgeInsets.all(AppSpacing.s12),
@@ -400,9 +407,14 @@ class _RescueListCard extends StatelessWidget {
 }
 
 class _RescueCaseRow extends StatelessWidget {
-  const _RescueCaseRow({required this.item, required this.onTap});
+  const _RescueCaseRow({
+    required this.item,
+    required this.now,
+    required this.onTap,
+  });
 
   final RescueCaseSummary item;
+  final DateTime now;
   final VoidCallback onTap;
 
   @override
@@ -444,7 +456,7 @@ class _RescueCaseRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${item.publicLocation.areaLabel} · ${_caseTime(item.lostAt)}',
+                      '${item.publicLocation.areaLabel} · ${_caseTime(item.lostAt, now)}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.caption(),
@@ -683,16 +695,17 @@ class _RescueSafetyCard extends StatelessWidget {
   }
 }
 
-String _relativeTime(DateTime value) {
-  final delta = DateTime.now().toUtc().difference(value.toUtc());
+String _relativeTime(DateTime value, DateTime now) {
+  final delta = now.toUtc().difference(value.toUtc());
+  if (delta.isNegative) return 'VỪA XONG';
   if (delta.inSeconds < 60) return 'VỪA XONG';
   if (delta.inMinutes < 60) return '${delta.inMinutes} PHÚT TRƯỚC';
   if (delta.inHours < 24) return '${delta.inHours} GIỜ TRƯỚC';
   return '${delta.inDays} NGÀY TRƯỚC';
 }
 
-String _caseTime(DateTime value) {
-  final delta = DateTime.now().toUtc().difference(value.toUtc());
+String _caseTime(DateTime value, DateTime now) {
+  final delta = now.toUtc().difference(value.toUtc());
   if (delta.isNegative || delta.inMinutes < 1) return 'vừa xong';
   if (delta.inHours < 1) return '${delta.inMinutes} phút trước';
   if (delta.inHours < 24) return '${delta.inHours} giờ trước';
