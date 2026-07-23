@@ -1,0 +1,48 @@
+{
+  "schema": "pawmate.w3.approval-hash-reconciliation.v1",
+  "baselineId": "UI-CC-2026-07-21-G4B",
+  "verdict": "PASS",
+  "approvedMatrix": {
+    "approvalRecord": "docs/qa/ui-v031/W3_MATRIX_APPROVAL_2026-07-22.json",
+    "snapshotPath": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W3/pre-write-approved-matrix/W3_RESPONSIVE_PROOF_MATRIX_APPROVED_INPUT.csv",
+    "bytes": 19935,
+    "encoding": "UTF-8_NO_BOM",
+    "lineEndings": "LF",
+    "finalLineFeed": true,
+    "rows": 77,
+    "sha256": "044FBF20B404AF84866FC62B1D08227177196638CD81CD363EB6001E136EB62F"
+  },
+  "executedMatrix": {
+    "path": "docs/qa/ui-v031/W3_RESPONSIVE_PROOF_MATRIX_PROPOSAL.csv",
+    "bytes": 20590,
+    "rows": 77,
+    "sha256": "D9F295525E261D797823F06E872472C0CAB2C2F599F57AB8A74126F1B8D3468A"
+  },
+  "deterministicReverseProjection": {
+    "createdTargetRows": 62,
+    "inheritedTargetRows": 15,
+    "approvalTransitions": 77,
+    "stableHeaders": [
+      "proof_id",
+      "kind",
+      "screen_id",
+      "state",
+      "proof_viewport",
+      "runtime_reference_viewport",
+      "source_v031_frame_id",
+      "target_v032_section_id",
+      "safe_area_policy",
+      "expected_evidence"
+    ],
+    "stableCellDifferences": 0,
+    "unexpectedTargetStatusTransitions": 0
+  },
+  "independentRecoveryProvenance": {
+    "kind": "CODEX_SESSION_PATCH_APPLY_END",
+    "sessionPath": "C:/Users/duongnx/.codex/sessions/2026/07/22/rollout-2026-07-22T14-28-46-019f88ba-0a59-7091-8c8e-51587058bef4.jsonl",
+    "sessionLine": 15795,
+    "sessionSha256": "8FE8A7FE7D328805BC9D63AD6E050F1FA207CFABC9584165217E57F37CD097B7",
+    "independentByteComparison": "IDENTICAL"
+  },
+  "claimBoundary": "This artifact restores the exact approved pre-write bytes and proves the allowlisted deterministic transition to the executed matrix; it does not replace Figma post-write or protected-history evidence."
+}

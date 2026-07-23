@@ -6,12 +6,13 @@ import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:pawmate_mobile/core/network/app_dio.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
+import 'package:pawmate_mobile/features/auth/data/authenticated_dio.dart';
 import 'package:pawmate_mobile/features/health/application/health_record_providers.dart';
+import 'package:pawmate_mobile/features/health/presentation/add_health_event_screen.dart';
 import 'package:pawmate_mobile/features/health/presentation/health_timeline_screen.dart';
 import 'package:pawmate_mobile/features/pets/application/pet_list_provider.dart';
 import 'package:pawmate_mobile/features/pets/data/pet_api.dart';
 import 'package:pawmate_mobile/features/pets/domain/pet_profile.dart';
-import 'package:pawmate_mobile/features/reminders/application/reminder_providers.dart';
 
 const _apiBaseUrl = String.fromEnvironment(
   'PAWMATE_API_BASE_URL',
@@ -49,6 +50,7 @@ void main() {
           name: 'Bap E2E $runId',
           species: 'dog',
           breed: 'Golden Retriever',
+          color: 'Vàng kem',
           gender: 'male',
           dateOfBirth: DateTime(2022, 4, 12),
           weightKg: 12.4,
@@ -57,6 +59,9 @@ void main() {
         ),
         accessToken: session.accessToken,
       );
+      addTearDown(() async {
+        await petApi.deletePet(pet.id, accessToken: session.accessToken);
+      });
       final note = 'E2E persistence note $runId';
 
       await _pumpHealthScreen(
@@ -70,7 +75,13 @@ void main() {
 
       await tester.tap(find.text('Thêm sự kiện').last);
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, note);
+      final noteInput = find.byKey(const Key('add-health-note-input'));
+      await tester.scrollUntilVisible(
+        noteInput,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(noteInput, note);
       await tester.tap(find.text('Lưu sự kiện'));
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
@@ -100,6 +111,12 @@ Future<void> _pumpHealthScreen(
         path: '/health',
         builder: (context, state) => const HealthTimelineScreen(),
       ),
+      GoRoute(
+        path: '/health/events/new',
+        builder: (context, state) => AddHealthEventScreen(
+          initialPetId: state.uri.queryParameters['petId'],
+        ),
+      ),
     ],
   );
 
@@ -107,11 +124,11 @@ Future<void> _pumpHealthScreen(
     ProviderScope(
       overrides: [
         dioProvider.overrideWith((ref) => dio),
+        authenticatedDioProvider.overrideWith((ref) => dio),
         petAccessTokenProvider.overrideWith((ref) async => accessToken),
         healthRecordAccessTokenProvider.overrideWith(
           (ref) async => accessToken,
         ),
-        reminderAccessTokenProvider.overrideWith((ref) async => accessToken),
       ],
       child: MaterialApp.router(theme: _testTheme(), routerConfig: router),
     ),

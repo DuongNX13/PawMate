@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0",
+  "evidence_id": "ui-v031-w0-toolchain-preflight-20260721-161352",
+  "wave": "W0",
+  "baseline_id": "ui-v031-20260721-4910aa0e",
+  "commit_sha": "4910aa0e9b811b05361650c8d3ea193ca70a0b7d",
+  "dirty_snapshot_sha256": "059225F05EB048EB5654309BD6813329FE6DEBB10E32C30643D52374A32D017F",
+  "platform": "windows",
+  "device_runtime": null,
+  "command": {
+    "working_directory": "D:/My Playground/PawMate",
+    "argv": [
+      "powershell",
+      "-NoProfile",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      "scripts/ci/ui-v031/toolchain/verify-toolchain-preflight.ps1"
+    ],
+    "environment_keys": [],
+    "started_at": "2026-07-21T16:13:49+07:00",
+    "finished_at": "2026-07-21T16:13:52+07:00",
+    "exit_code": 0
+  },
+  "status": "PASS_WITH_KNOWN_GAPS",
+  "attempts": [
+    {
+      "attempt": 1,
+      "exit_code": 0,
+      "status": "PASS_WITH_KNOWN_GAPS",
+      "inputs_changed": false,
+      "failure_class": null,
+      "evidence_path": "output-evidence/ui-v031/ui-v031-20260721-4910aa0e/W0/toolchain/preflight-result.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "output-evidence/ui-v031/ui-v031-20260721-4910aa0e/W0/toolchain/preflight-result.json",
+      "sha256": "82AA93E72789EE2A79AA139D6E1925D3C5D952CAD41302B0A03C82449AB925F2",
+      "bytes": 1823,
+      "media_type": "application/json",
+      "storage_tier": "repo-relative",
+      "retention_days": null
+    }
+  ],
+  "executor": "Codex W0 toolchain lane",
+  "reviewer": null,
+  "contains_test_data_only": true,
+  "redaction_status": "PASS",
+  "known_exceptions": [
+    {
+      "id": "TC-GAP-001",
+      "description": "Cloud toolchain selectors are not pinned yet.",
+      "owner": "UI v0.31 change control owner",
+      "reconsideration_trigger": "Before any native iOS wave or G4B sign-off."
+    }
+  ]
+}

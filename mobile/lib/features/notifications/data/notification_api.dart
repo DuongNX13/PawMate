@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/app_dio.dart';
+import '../../auth/data/authenticated_dio.dart';
 import '../domain/pawmate_notification.dart';
 
 final notificationApiProvider = Provider<NotificationApi>((ref) {
-  return NotificationApi(ref.watch(dioProvider));
+  return NotificationApi(ref.watch(authenticatedDioProvider));
 });
 
 class NotificationApiException implements Exception {

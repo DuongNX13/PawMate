@@ -1,0 +1,45 @@
+matrix_id,status,test_or_evidence,verified_contract
+RT-001,PASS,app_router_contract_test.dart + onboarding tests,Launch remains a public root route
+RT-002,PASS,app_router_contract_test.dart + onboarding tests,Onboarding remains a public root route and draft flow is retained
+RT-003,PASS,app_router_contract_test.dart + auth_return_route_test.dart,Login query and safe returnTo are retained
+RT-004,PASS,app_router_contract_test.dart + auth tests,Register query and safe returnTo are retained
+RT-005,PASS,app_router_contract_test.dart,OTP timestamps and safe returnTo are retained
+RT-006,PASS,stateful_shell_navigation_test.dart,Home is branch 0 and retains state
+RT-007,PASS,stateful_shell_navigation_test.dart,Home child restores and reselects to root
+RT-008,PASS,app_router_contract_test.dart + app_route_registry_test.dart,Pet create is a root pushed route with allowlisted returnTo
+RT-009,PASS,app_router_contract_test.dart + app_route_registry_test.dart,Pet edit is a root pushed route with allowlisted returnTo
+RT-010,PASS,app_router_contract_test.dart + pet navigation tests,Pet detail is a root pushed route
+RT-011,PASS,stateful_shell_navigation_test.dart + vet_map_screen_test.dart,Vet map is branch 1 root
+RT-012,PASS,app_router_contract_test.dart + vet navigation tests,Vet list is retained inside branch 1
+RT-013,PASS,app_router_contract_test.dart + vet_detail_navigation_test.dart,Vet detail uses a safe caller return
+RT-014,PASS,stateful_shell_navigation_test.dart + health tests,Health is branch 2 root
+RT-015,PASS,app_router_contract_test.dart + health tests,Health create is a root pushed route
+RT-016,PASS,app_router_contract_test.dart + reminder tests,Reminder calendar remains a Health child
+RT-017,PASS,app_router_contract_test.dart + notification tests,Notifications belong to Profile and validate returnTo
+RT-018,PASS,app_router_contract_test.dart,Community resolves to an honest unavailable screen
+RT-019,PASS,app_router_contract_test.dart,Adoption resolves to an honest unavailable screen in Home
+RT-020,PASS,app_router_contract_test.dart,Profile controls resolves to an honest unavailable child
+RT-021,PASS,app_router_contract_test.dart,Privacy resolves to an honest unavailable child
+RT-022,PASS,stateful_shell_navigation_test.dart,Profile is branch 4 root
+RT-023,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue root is branch 3 and fails closed by default
+RT-024,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue create has a handler and fails closed while disabled
+RT-025,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue details has a handler and fails closed while disabled
+RT-026,PASS,app_router_contract_test.dart + app_route_registry_test.dart,Rescue map has a handler and fails closed while disabled
+RT-027,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue case has a handler and fails closed while disabled
+RT-028,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue comment has a handler and fails closed while disabled
+RT-029,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue status has a handler and fails closed while disabled
+RT-030,PASS,auth_route_guard_test.dart + app_route_registry_test.dart,Rescue discussion has a handler and fails closed while disabled
+RT-031,PASS,app_route_registry_test.dart + auth_route_guard_test.dart,Unapproved adoption pet route is rejected and falls back safely
+RT-032,PASS,app_route_registry_test.dart + auth_route_guard_test.dart,Unapproved adoption request route is rejected and falls back safely
+RT-033,PASS,app_route_registry_test.dart + auth_route_guard_test.dart,Unapproved adoption chat route is rejected and falls back safely
+RT-034,PASS,app_route_registry_test.dart + auth_route_guard_test.dart,Unapproved adoption requests route is rejected and falls back safely
+RT-035,PASS,app_route_registry_test.dart + auth_route_guard_test.dart,Unapproved notification preferences route is rejected and falls back safely
+RT-036,PASS,day25_vet_feature_test.dart + vet_screens_test.dart,Vet review opens as a modal and refreshes on success
+RB-001,PASS,auth_route_guard_test.dart,Every protected route family redirects guests with encoded returnTo
+RB-002,PASS,auth_return_route_test.dart + app_route_registry_test.dart,External malformed and unknown returnTo values are rejected
+RB-003,PASS,stateful_shell_navigation_test.dart,Five indexed branches retain child navigation state
+RB-004,PASS,stateful_shell_navigation_test.dart,Active child reselect pops only that branch to root
+RB-005,PASS,stateful_shell_navigation_test.dart,Visible root reselect scrolls its primary controller to zero
+RB-006,PASS,stateful_shell_navigation_test.dart,Android root back is unhandled by the router and delegates to system exit
+RB-007,PASS,stateful_shell_navigation_test.dart,iOS pushed route uses CupertinoPage and enables pop gesture
+RB-008,PASS,auth_route_guard_test.dart,Authenticated unknown route renders a safe in-app fallback

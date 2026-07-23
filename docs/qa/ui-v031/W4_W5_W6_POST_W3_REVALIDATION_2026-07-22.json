@@ -1,0 +1,80 @@
+{
+  "schema": "pawmate.ui.v031.post_w3_revalidation.v1",
+  "timestamp": "2026-07-22T17:18:30+07:00",
+  "baseline": "UI-CC-2026-07-21-G4B",
+  "upstream": {
+    "w3": "PASS",
+    "w3_matrix_rows": 77,
+    "w3_geometry_violations": 0,
+    "w3_unsupported_text_families": 0
+  },
+  "toolchain": {
+    "flutter": "3.41.6",
+    "dart": "3.11.4",
+    "launcher": "D:/flutter/bin/flutter.bat",
+    "working_directory": "D:/My Playground/PawMate/mobile"
+  },
+  "gates": {
+    "W4": {
+      "status": "PASS",
+      "focused_tests": {
+        "count": 57,
+        "exit_code": 0,
+        "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W4/post-w3-revalidation-20260722/codex-rtk-safe-20260722-171808-642ef453.raw.txt",
+        "evidence_sha256": "66525adf76ab4a536e5cef8fc77c4bef9c7ae08116b18eb3a75b775b14fed9ba"
+      },
+      "analyze": {
+        "command": "flutter analyze --no-pub",
+        "exit_code": 0,
+        "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W4/post-w3-revalidation-20260722/codex-rtk-safe-20260722-171630-e4b423d9.raw.txt",
+        "evidence_sha256": "a6597c566d0b4eabb6b23d5116558b82c1888573c9392694960097018620c7d3"
+      },
+      "bundle": {
+        "command": "flutter build bundle --no-pub",
+        "exit_code": 0,
+        "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W4/post-w3-revalidation-20260722/codex-rtk-safe-20260722-171649-0bd728b1.raw.txt",
+        "evidence_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "W5": {
+      "status": "PASS",
+      "focused_router_auth_nav_tests": {
+        "count": 82,
+        "exit_code": 0,
+        "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W5/post-w3-revalidation-20260722/codex-rtk-safe-20260722-171546-b6889937.raw.txt",
+        "evidence_sha256": "6729bcb607573a98c6726c5442f5776915537820d5225cb1c6c10f61051ff6dd"
+      },
+      "historical_golden_blocker": "cleared_by_W6_post_rebaseline_full_suite"
+    },
+    "W6": {
+      "status": "PASS",
+      "full_flutter_test": {
+        "passed": 411,
+        "intentional_skips": 1,
+        "exit_code": 0,
+        "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/post-w3-revalidation-20260722/codex-rtk-safe-20260722-171602-e7e94923.raw.txt",
+        "evidence_sha256": "854f73ae282d10ae76e27ca1dc557aa584f02bd1beb0b1e4ebee435a8735a7b5"
+      },
+      "visual_subset": {
+        "passed": 85,
+        "exit_code": 0,
+        "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/post-w3-revalidation-20260722/codex-rtk-safe-20260722-171822-63e49faf.raw.txt",
+        "evidence_sha256": "248441b0f58f491b71d749d21408c263c2c9ce4ed90280483081cb4bbb9c6a96"
+      }
+    }
+  },
+  "scope_boundary": {
+    "figma_mutation": false,
+    "historical_sections_mutated": false,
+    "protected_path_fresh_verify": {
+      "status": "FAIL_CLOSED_STALE_BASELINE",
+      "exit_code": 2,
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W4/post-w3-revalidation-20260722/codex-rtk-safe-20260722-172110-47323d4e.raw.txt",
+      "reason": "W0 baseline predates approved Day38/G5A artifacts; no current owner-delta manifest was found. This is not attributed to W4-W6 UI changes."
+    },
+    "native_ios_or_codemagic_proof": false,
+    "voiceover": "deferred_to_G4C_per_product_owner_approval"
+  },
+  "result": "W4_W5_W6_POST_W3_REVALIDATION_PASS",
+  "next_gate": "W7_cross_platform_native_ios_and_accessibility_evidence"
+}

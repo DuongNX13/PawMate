@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pawmate_icon_background">#2D6A4F</color>
+    <color name="pawmate_splash_background">#E9F5DB</color>
+    <color name="pawmate_surface">#FFFFFF</color>
+</resources>

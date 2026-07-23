@@ -1,19 +1,22 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/app_dio.dart';
+import '../../auth/data/authenticated_dio.dart';
 import '../domain/pet_profile.dart';
 
 final petApiProvider = Provider<PetApi>((ref) {
-  return PetApi(ref.watch(dioProvider));
+  return PetApi(ref.watch(authenticatedDioProvider));
 });
 
 class PetApiException implements Exception {
-  const PetApiException(this.message, {this.code, this.statusCode});
+  const PetApiException(this.message, {this.code, this.statusCode, this.field});
 
   final String message;
   final String? code;
   final int? statusCode;
+  final String? field;
 
   @override
   String toString() => message;
@@ -45,6 +48,64 @@ class PetApi {
     );
   }
 
+  Future<PetProfile> getPet(String petId, {required String accessToken}) async {
+    return _perform(
+      call: () => _dio.get(
+        '/pets/${Uri.encodeComponent(petId)}',
+        options: _authOptions(accessToken),
+      ),
+      parser: (json) => PetProfile.fromJson(_readMap(json['data'])),
+    );
+  }
+
+  Future<PetProfile> updatePet(
+    String petId,
+    UpdatePetProfileInput input, {
+    required String accessToken,
+  }) async {
+    return _perform(
+      call: () => _dio.put(
+        '/pets/${Uri.encodeComponent(petId)}',
+        data: input.toJson(),
+        options: _authOptions(accessToken),
+      ),
+      parser: (json) => PetProfile.fromJson(_readMap(json['data'])),
+    );
+  }
+
+  Future<void> deletePet(String petId, {required String accessToken}) async {
+    try {
+      await _dio.delete<void>(
+        '/pets/${Uri.encodeComponent(petId)}',
+        options: _authOptions(accessToken),
+      );
+    } on DioException catch (error) {
+      throw _toException(error);
+    }
+  }
+
+  Future<PetProfile> uploadPetPhoto(
+    String petId,
+    PetPhotoInput photo, {
+    required String accessToken,
+  }) async {
+    return _perform(
+      call: () => _dio.post(
+        '/pets/${Uri.encodeComponent(petId)}/photo',
+        data: {
+          'fileName': photo.fileName,
+          'contentType': photo.contentType,
+          'base64Data': base64Encode(photo.bytes),
+        },
+        options: _authOptions(accessToken),
+      ),
+      parser: (json) {
+        final data = _readMap(json['data']);
+        return PetProfile.fromJson(_readMap(data['pet']));
+      },
+    );
+  }
+
   Options _authOptions(String accessToken) {
     return Options(headers: {'Authorization': 'Bearer $accessToken'});
   }
@@ -70,6 +131,7 @@ class PetApi {
           errorMap['message']?.toString() ?? _fallbackMessage(error),
           code: errorMap['code']?.toString(),
           statusCode: error.response?.statusCode,
+          field: errorMap['field']?.toString(),
         );
       }
     }

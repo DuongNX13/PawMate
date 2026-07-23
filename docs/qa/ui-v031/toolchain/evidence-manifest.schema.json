@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pawmate.local/schemas/ui-v031-evidence-manifest.schema.json",
+  "title": "PawMate UI v0.31 evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "wave",
+    "baseline_id",
+    "commit_sha",
+    "dirty_snapshot_sha256",
+    "platform",
+    "device_runtime",
+    "command",
+    "status",
+    "attempts",
+    "artifacts",
+    "executor",
+    "reviewer",
+    "contains_test_data_only",
+    "redaction_status",
+    "known_exceptions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "evidence_id": { "type": "string", "minLength": 8 },
+    "wave": { "type": "string", "pattern": "^W[0-9]+$" },
+    "baseline_id": { "type": "string", "minLength": 8 },
+    "commit_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "dirty_snapshot_sha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" },
+    "platform": {
+      "type": "string",
+      "enum": ["repository", "windows", "android", "ios", "multi"]
+    },
+    "device_runtime": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "id": { "type": "string" },
+        "os": { "type": "string" },
+        "api_or_runtime": { "type": "string" },
+        "simulator": { "type": "boolean" }
+      }
+    },
+    "command": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["working_directory", "argv", "environment_keys", "started_at", "finished_at", "exit_code"],
+      "properties": {
+        "working_directory": { "type": "string" },
+        "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "environment_keys": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "started_at": { "type": "string", "format": "date-time" },
+        "finished_at": { "type": "string", "format": "date-time" },
+        "exit_code": { "type": "integer" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["PASS", "PASS_WITH_KNOWN_GAPS", "PASS_WITH_FLAKE", "FAIL", "BLOCKED", "BLOCKED_EXTERNAL", "NOT_RUN"]
+    },
+    "attempts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["attempt", "exit_code", "status", "inputs_changed", "failure_class", "evidence_path"],
+        "properties": {
+          "attempt": { "type": "integer", "minimum": 1, "maximum": 2 },
+          "exit_code": { "type": "integer" },
+          "status": { "type": "string" },
+          "inputs_changed": { "type": "boolean" },
+          "failure_class": {
+            "type": ["string", "null"],
+            "enum": ["PRODUCT", "TEST_HARNESS", "DEVICE_TRANSPORT", "EXTERNAL_SERVICE", "TOOLCHAIN_DRIFT", null]
+          },
+          "evidence_path": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "bytes", "media_type", "storage_tier", "retention_days"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" },
+          "bytes": { "type": "integer", "minimum": 1 },
+          "media_type": { "type": "string" },
+          "storage_tier": { "type": "string", "enum": ["repo-relative", "ci-artifact", "release-attachment", "internal-object-storage"] },
+          "retention_days": { "type": ["integer", "null"], "minimum": 1 }
+        }
+      }
+    },
+    "executor": { "type": "string", "minLength": 1 },
+    "reviewer": { "type": ["string", "null"] },
+    "contains_test_data_only": { "type": "boolean" },
+    "redaction_status": { "type": "string", "enum": ["PASS", "FAIL", "NOT_REQUIRED", "PENDING"] },
+    "known_exceptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "owner", "reconsideration_trigger"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "owner": { "type": "string" },
+          "reconsideration_trigger": { "type": "string" }
+        }
+      }
+    }
+  }
+}

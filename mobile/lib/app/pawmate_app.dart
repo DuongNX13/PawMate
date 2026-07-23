@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'router/app_router.dart';
@@ -14,8 +15,16 @@ class PawMateApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'PawMate',
       debugShowCheckedModeBanner: false,
+      restorationScopeId: 'pawmate-app',
       theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.light,
+      locale: const Locale('vi', 'VN'),
+      supportedLocales: const [Locale('vi', 'VN')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      builder: (context, child) => AnnotatedRegion(
+        value: AppTheme.systemUiOverlayStyle,
+        child: child ?? const SizedBox.shrink(),
+      ),
       routerConfig: router,
     );
   }

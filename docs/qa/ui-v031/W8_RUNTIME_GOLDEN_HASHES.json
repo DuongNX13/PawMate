@@ -1,0 +1,531 @@
+{
+  "schema_version": "1.3",
+  "baseline_id": "UI-CC-2026-07-21-G4B-W8-RESCUE-NOTIFICATION-01",
+  "parent_baseline_id": "UI-CC-2026-07-21-G4B-W8-P1-07-A11Y-01",
+  "change_control_id": "UI031-CHANGE-W8-RESCUE-NOTIFICATION-01",
+  "parent_manifest": {
+    "path": "docs/qa/ui-v031/W8_RUNTIME_GOLDEN_HASHES_P1-07_A11Y_01.json",
+    "sha256": "A55D94DA7AE791C4550797D5DD879B741531009EFAE5B90F82B154C458F2A6E8"
+  },
+  "wave": "W8",
+  "artifact_type": "runtime-responsive-goldens",
+  "contract_count": 71,
+  "tier_a_count": 50,
+  "tier_b_count": 18,
+  "rescue_staged_count": 3,
+  "captured_at": "2026-07-23T03:12:54.494Z",
+  "comparison_command": "D:\\flutter\\bin\\flutter.bat test test/visual/ui_v031_rescue_staged_golden_test.dart --update-goldens",
+  "comparison_exit_code": 0,
+  "comparison_evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/cta-row-proof-20260723/flutter-full-coverage.raw.txt",
+  "approved_delta": {
+    "change_control_id": "UI031-CHANGE-W8-RESCUE-NOTIFICATION-01",
+    "reason": "Restore the target-enabled Rescue notification CTA required by the frozen 84-row CTA contract.",
+    "affected_artifacts": [
+      "mobile/test/visual/goldens/ui-v031-rescue/rescue-staged-360x844.png",
+      "mobile/test/visual/goldens/ui-v031-rescue/rescue-staged-390x844.png",
+      "mobile/test/visual/goldens/ui-v031-rescue/rescue-staged-430x932.png"
+    ],
+    "runtime_source": "mobile/lib/features/rescue/presentation/rescue_home_screen.dart",
+    "regression_test": "mobile/test/features/rescue/rescue_home_screen_test.dart; mobile/test/visual/ui_v031_rescue_staged_golden_test.dart",
+    "first_failure_evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/cta-row-proof-20260723/flutter-full-coverage-first-failure.raw.txt"
+  },
+  "artifacts": [
+    {
+      "requirement_id": "UI031-VIS-P1-01-320x568",
+      "path": "mobile/test/visual/goldens/day13/p1-01-onboarding-320x568.png",
+      "sha256": "E77D0728CCCC112299D42E3F9F15D4DDF20688CB80DB683A4A2DDE34100817A5",
+      "status": "PASS",
+      "bytes": 173172
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-01-360x844",
+      "path": "mobile/test/visual/goldens/day13/p1-01-onboarding-360x844.png",
+      "sha256": "E4C1EBF2364246C9C83CEC3BA93177B7B99BF30AC7915854EA460B479C8581C4",
+      "status": "PASS",
+      "bytes": 199424
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-01-390x844",
+      "path": "mobile/test/visual/goldens/day13/p1-01-onboarding-390x844.png",
+      "sha256": "6FE6F051380F41128DA537F2E46D8BFCB3CEE9390540DDAC2CB95BA5E445C818",
+      "status": "PASS",
+      "bytes": 210596
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-01-412x915",
+      "path": "mobile/test/visual/goldens/day13/p1-01-onboarding-412x915.png",
+      "sha256": "B32218ABA887CEA4A7779B1ED1938E26727841D57AA67CF57ACAFF516631BE67",
+      "status": "PASS",
+      "bytes": 203511
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-01-430x932",
+      "path": "mobile/test/visual/goldens/day13/p1-01-onboarding-430x932.png",
+      "sha256": "F5E42BE20FA7FFAF6C6EA4621238EC237D2FF11DD8FC3708233789881FE3D0FA",
+      "status": "PASS",
+      "bytes": 209447
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-02-320x568",
+      "path": "mobile/test/visual/goldens/day13/p1-02-login-error-320x568.png",
+      "sha256": "8D042E4FAEF0627BA859F6453702773AD8E409F36D4FEEE78F901BF3EB0CA98A",
+      "status": "PASS",
+      "bytes": 178078
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-02-360x844",
+      "path": "mobile/test/visual/goldens/day13/p1-02-login-error-360x844.png",
+      "sha256": "9CAB6419F73FCFC5F5D1C8285CFE512F9BE03C8730716E6733BC1B4FF5A6E828",
+      "status": "PASS",
+      "bytes": 207359
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-02-390x844",
+      "path": "mobile/test/visual/goldens/day13/p1-02-login-error-390x844.png",
+      "sha256": "B81781881D33B2EF5A2779F130A61357AA2B7C39081309A1FFD28193507AF596",
+      "status": "PASS",
+      "bytes": 216202
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-02-412x915",
+      "path": "mobile/test/visual/goldens/day13/p1-02-login-error-412x915.png",
+      "sha256": "72D504F7A68F54D07B49869DC6FA522A872E30D819A81E55A1DDD5776E5CAC98",
+      "status": "PASS",
+      "bytes": 210658
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-02-430x932",
+      "path": "mobile/test/visual/goldens/day13/p1-02-login-error-430x932.png",
+      "sha256": "D90537188098F8576940E132359AD3C469541428A5B2D500E90EA55AFB2F627E",
+      "status": "PASS",
+      "bytes": 216680
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-03-320x568",
+      "path": "mobile/test/visual/goldens/day14/p1-03-register-320x568.png",
+      "sha256": "377C5855C8A7854FCDAABD8AF82FE10E60755C880992665BE52A32C22A284586",
+      "status": "PASS",
+      "bytes": 143633
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-03-360x844",
+      "path": "mobile/test/visual/goldens/day14/p1-03-register-360x844.png",
+      "sha256": "EE5383F7716C299847F0DD353FD74E3BDA254618C35773CC0E561AE2E428402B",
+      "status": "PASS",
+      "bytes": 163999
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-03-390x844",
+      "path": "mobile/test/visual/goldens/day14/p1-03-register-390x844.png",
+      "sha256": "74419A0CA30A0AEF4CAA25B9922EDA3DDE0DE10F0FA33EBE4C138133383A6AC9",
+      "status": "PASS",
+      "bytes": 173647
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-03-412x915",
+      "path": "mobile/test/visual/goldens/day14/p1-03-register-412x915.png",
+      "sha256": "DCDA920A8DB27A7DE614F25A2439C7426C7A3E056CAB9E5FC5CE2D978665CBCE",
+      "status": "PASS",
+      "bytes": 181402
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-03-430x932",
+      "path": "mobile/test/visual/goldens/day14/p1-03-register-430x932.png",
+      "sha256": "F13F807264CB87CA0BF66A2BA4F8FFAA0CFB217F9F40F46890BF889A9ACB4A48",
+      "status": "PASS",
+      "bytes": 189162
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-06-320x568",
+      "path": "mobile/test/visual/goldens/day18/p1-06-pet-form-320x568.png",
+      "sha256": "A6A8656CB268A87BB9CF52CFF2168685ECD25D0FE7F894871DBE9BE1221EF388",
+      "status": "PASS",
+      "bytes": 21791
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-06-360x844",
+      "path": "mobile/test/visual/goldens/day18/p1-06-pet-form-360x844.png",
+      "sha256": "088442992DECA61DA0EFE65EB2D4346EF6720254A05043108D574939D63592B2",
+      "status": "PASS",
+      "bytes": 34621
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-06-390x844",
+      "path": "mobile/test/visual/goldens/day18/p1-06-pet-form-390x844.png",
+      "sha256": "93529733B7C1AC343A278A57EB2399CAAD8499A9A4B2D8F7CDADC67FCB6FF548",
+      "status": "PASS",
+      "bytes": 41450
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-06-412x915",
+      "path": "mobile/test/visual/goldens/day18/p1-06-pet-form-412x915.png",
+      "sha256": "433BB69091F616FD23C1C277DA1AE43B7A9401518812E8A9FFBDAC3D74BCF61A",
+      "status": "PASS",
+      "bytes": 42489
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-06-430x932",
+      "path": "mobile/test/visual/goldens/day18/p1-06-pet-form-430x932.png",
+      "sha256": "232FF93942964EDC8C3101109FE911E8CC55CA17E2FE48476E6AF263A4C8DF66",
+      "status": "PASS",
+      "bytes": 42682
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-07-320x568",
+      "path": "mobile/test/visual/goldens/day19/p1-07-home-320x568.png",
+      "sha256": "8150D86466A076813D9AE069AC66A7E90DC892D7644685DED900E9F0617F9F2A",
+      "status": "PASS",
+      "bytes": 75206
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-07-360x844",
+      "path": "mobile/test/visual/goldens/day19/p1-07-home-360x844.png",
+      "sha256": "702B12FA41CC7921548FAB28BD1B5F5C78A7EB778BDC05462F781B013C7115CA",
+      "status": "PASS",
+      "bytes": 118588
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-07-390x844",
+      "path": "mobile/test/visual/goldens/day19/p1-07-home-390x844.png",
+      "sha256": "34ADFB8F065CC9F2A54EE4014C9D413E7666CEF52D5920396EA351D9C2A22597",
+      "status": "PASS",
+      "bytes": 122544
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-07-412x915",
+      "path": "mobile/test/visual/goldens/day19/p1-07-home-412x915.png",
+      "sha256": "326AC1135F47F82FEF70078FF98BCFBEC2A8918B134DA1F95DBB8421533686BC",
+      "status": "PASS",
+      "bytes": 125966
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-07-430x932",
+      "path": "mobile/test/visual/goldens/day19/p1-07-home-430x932.png",
+      "sha256": "4FCC5D5CC61227A67BAE7D843C90193F69246A0D16C1B05AEBF20DF62792A814",
+      "status": "PASS",
+      "bytes": 127551
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-08-320x568",
+      "path": "mobile/test/visual/goldens/day23/p1-08-vet-map-bottom-sheet-320x568.png",
+      "sha256": "4E6B488CCF58FB915A2A55CA34392D250EF610438A742BF6CABB494CED519862",
+      "status": "PASS",
+      "bytes": 51887
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-08-360x844",
+      "path": "mobile/test/visual/goldens/day23/p1-08-vet-map-bottom-sheet-360x844.png",
+      "sha256": "6232D58B911381A8574EC96FDA80B997C08986CECD6758CBA0552DEFE8D54651",
+      "status": "PASS",
+      "bytes": 65163
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-08-390x844",
+      "path": "mobile/test/visual/goldens/day23/p1-08-vet-map-390x844.png",
+      "sha256": "32E63A41EB1A8EFCA60DD5D681298078F40A274D96FEEC0704C797C80B26D1B3",
+      "status": "PASS",
+      "bytes": 57708
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-08-412x915",
+      "path": "mobile/test/visual/goldens/day23/p1-08-vet-map-bottom-sheet-412x915.png",
+      "sha256": "543D906EAA3FD942A4D052099613CAD3A66697C430F4342EDEB33D895079B53E",
+      "status": "PASS",
+      "bytes": 68139
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-08-430x932",
+      "path": "mobile/test/visual/goldens/day23/p1-08-vet-map-bottom-sheet-430x932.png",
+      "sha256": "987E30383A868BA2C45D677676C8619FEB18671D1EE463CB80CC8651C555B0FF",
+      "status": "PASS",
+      "bytes": 70680
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-10-320x568",
+      "path": "mobile/test/visual/goldens/day24/p1-10-vet-detail-320x568.png",
+      "sha256": "D1FC2EFDED8D331B2B57465BD0ABA88D61C7CE8D09D2517F1212FE83F4696304",
+      "status": "PASS",
+      "bytes": 30296
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-10-360x844",
+      "path": "mobile/test/visual/goldens/day24/p1-10-vet-detail-360x844.png",
+      "sha256": "B75FFE05CBCDD5F0749361B5F1549D45996E020667CC8733948B0DBE95863E3F",
+      "status": "PASS",
+      "bytes": 50927
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-10-390x844",
+      "path": "mobile/test/visual/goldens/day24/p1-10-vet-detail-390x844.png",
+      "sha256": "825AEB6CCD4AF1749C58F4C99D9569B98AC893FEDC180B7C3724B36323F200C7",
+      "status": "PASS",
+      "bytes": 51483
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-10-412x915",
+      "path": "mobile/test/visual/goldens/day24/p1-10-vet-detail-412x915.png",
+      "sha256": "59DAC32B5B82E3B63FB693AFE3924E37EC97E014856AC25CED4DA7D1B624EB66",
+      "status": "PASS",
+      "bytes": 54892
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-10-430x932",
+      "path": "mobile/test/visual/goldens/day24/p1-10-vet-detail-430x932.png",
+      "sha256": "90FC11C811A7044487EA058FD7AC2E99B5FFF04D715BE27C79F354A05D18718F",
+      "status": "PASS",
+      "bytes": 55966
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-12-320x568",
+      "path": "mobile/test/visual/goldens/day27/p1-12-health-timeline-320x568.png",
+      "sha256": "D7D72CE0A84B927CBE8C4011D6A1996DE1D4B32D4B508474000629613D6BBE58",
+      "status": "PASS",
+      "bytes": 38715
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-12-360x844",
+      "path": "mobile/test/visual/goldens/day27/p1-12-health-timeline-360x844.png",
+      "sha256": "8DBF355117E712A6EBD73592EBA6EFE1F9250D8CE425035BE351ED6F91CC086E",
+      "status": "PASS",
+      "bytes": 60062
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-12-390x844",
+      "path": "mobile/test/visual/goldens/day27/p1-12-health-timeline-390x844.png",
+      "sha256": "91BC203D4FD82D7688C3FF22016F3F70B1A6BE79E0A25CA1DC97A4D2F6B1EFD0",
+      "status": "PASS",
+      "bytes": 65314
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-12-412x915",
+      "path": "mobile/test/visual/goldens/day27/p1-12-health-timeline-412x915.png",
+      "sha256": "ECA5831AE9C95DFE632C66423061DEA140E936FED6600505A7BC4641C2FC6FC3",
+      "status": "PASS",
+      "bytes": 69044
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-12-430x932",
+      "path": "mobile/test/visual/goldens/day27/p1-12-health-timeline-430x932.png",
+      "sha256": "69AE3C64A2140F786AA506C31F1DD9227D4BE1C94770FA8C340715000AA6CB6A",
+      "status": "PASS",
+      "bytes": 70905
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-13-320x568",
+      "path": "mobile/test/visual/goldens/day27/p1-13-add-health-event-320x568.png",
+      "sha256": "291CEA32E1CD1E880EF1E7F04B29815C1369E6B2C929F4D21C0DF8D888A0B133",
+      "status": "PASS",
+      "bytes": 31861
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-13-360x844",
+      "path": "mobile/test/visual/goldens/day27/p1-13-add-health-event-360x844.png",
+      "sha256": "6B05F312F3C4C1B4398A72DB45EF60D0C86E4140D273990D8618CACCE6BABC97",
+      "status": "PASS",
+      "bytes": 41946
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-13-390x844",
+      "path": "mobile/test/visual/goldens/day27/p1-13-add-health-event-390x844.png",
+      "sha256": "DBC2C5BC6E850706AEC9117469BC1CA56F185E3024E284EF887182A3D0AF873A",
+      "status": "PASS",
+      "bytes": 47337
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-13-412x915",
+      "path": "mobile/test/visual/goldens/day27/p1-13-add-health-event-412x915.png",
+      "sha256": "A79A0FD379CF4D135D9601F1E5D1DC910BFE3E2EFC85E9F1F0352E257CE9B3E3",
+      "status": "PASS",
+      "bytes": 54359
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-13-430x932",
+      "path": "mobile/test/visual/goldens/day27/p1-13-add-health-event-430x932.png",
+      "sha256": "C6D34B922C33E9313F2E97E3AB87CD60D76748C259BD8A96F65CBE604ECEE24D",
+      "status": "PASS",
+      "bytes": 55654
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-14-320x568",
+      "path": "mobile/test/visual/goldens/day28/p1-14-reminder-calendar-320x568.png",
+      "sha256": "D66C439AC0B503163A751948B2B955BAAB60887E37720A4A2F6418780B046701",
+      "status": "PASS",
+      "bytes": 32286
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-14-360x844",
+      "path": "mobile/test/visual/goldens/day28/p1-14-reminder-calendar-360x844.png",
+      "sha256": "AD27C8D65846BFE813BD6BEAAE3454B39DDA2C7FB59C3E82A9D2A10E2F446F6F",
+      "status": "PASS",
+      "bytes": 48000
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-14-390x844",
+      "path": "mobile/test/visual/goldens/day28/p1-14-reminder-calendar-390x844.png",
+      "sha256": "277C7E58412268C14BF7478E357BBC845B638A22FC853D1BC3EDFEB129949FE2",
+      "status": "PASS",
+      "bytes": 43945
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-14-412x915",
+      "path": "mobile/test/visual/goldens/day28/p1-14-reminder-calendar-412x915.png",
+      "sha256": "8854A147B37DBA604E07539ACECC415ECDC7738052F10AAD1B4FC3865FEECF2C",
+      "status": "PASS",
+      "bytes": 53878
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-14-430x932",
+      "path": "mobile/test/visual/goldens/day28/p1-14-reminder-calendar-430x932.png",
+      "sha256": "5716CD51B7B07113FEC4AAC15666D9A5189E62E923521F99CB05DB1D57789D8B",
+      "status": "PASS",
+      "bytes": 57033
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-04-360x844",
+      "path": "mobile/test/visual/goldens/day14/p1-04-otp-360x844.png",
+      "sha256": "7D80C75942654020E9F519F2B5BAF095EFD24142C7A2871C1B0EDCBB0318155A",
+      "status": "PASS",
+      "bytes": 56550
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-04-390x844",
+      "path": "mobile/test/visual/goldens/day14/p1-04-otp-390x844.png",
+      "sha256": "DDF6D234BD1156F91BBA9A5C9684F0A4D9198F04C83054B3E2D29903C8B50691",
+      "status": "PASS",
+      "bytes": 56598
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-04-430x932",
+      "path": "mobile/test/visual/goldens/day14/p1-04-otp-430x932.png",
+      "sha256": "5BD5559221BA760E21C0B1570A9B7AD37D4653B333966E7AADA04C182F64D1E4",
+      "status": "PASS",
+      "bytes": 58002
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-05-360x844",
+      "path": "mobile/test/visual/goldens/day18/p1-05-pet-list-360x844.png",
+      "sha256": "7DB044C5F6E0B6E0C2EB83F01C8363DFFF02FDF829ADFC06B466F5B56420BFBA",
+      "status": "PASS",
+      "bytes": 180175
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-05-390x844",
+      "path": "mobile/test/visual/goldens/day18/p1-05-pet-list-390x844.png",
+      "sha256": "1DFA979A7CDA76071FD83CABEE2337DFE995CC251A90A083D3D6B29A73D30E47",
+      "status": "PASS",
+      "bytes": 190578
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-05-430x932",
+      "path": "mobile/test/visual/goldens/day18/p1-05-pet-list-430x932.png",
+      "sha256": "CBF3A0CAA366C97F6117D760650611224734B1C68867C546011DAAE842F9F592",
+      "status": "PASS",
+      "bytes": 170200
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-09-360x844",
+      "path": "mobile/test/visual/goldens/day23/p1-09-vet-list-360x844.png",
+      "sha256": "70A9D91FEA52114E0A88B11EA8DB198E58E2CF4A854FBB6071DD1CAE6AAF8A0C",
+      "status": "PASS",
+      "bytes": 102400
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-09-390x844",
+      "path": "mobile/test/visual/goldens/day23/p1-09-vet-list-390x844.png",
+      "sha256": "018A77B74531B00A6674840157A04E1119F1052DA466686B644EA42488D74ADC",
+      "status": "PASS",
+      "bytes": 106702
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-09-430x932",
+      "path": "mobile/test/visual/goldens/day23/p1-09-vet-list-430x932.png",
+      "sha256": "444F6D88DA9CD4209529793E964FAC7244C2A8645A3A52184C597364B97BA501",
+      "status": "PASS",
+      "bytes": 114091
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-11-360x844",
+      "path": "mobile/test/visual/goldens/day24/p1-11-write-review-360x844.png",
+      "sha256": "026358394EBED0979D1C90669E38CEBBAAE1CBFBD4338E4890BA2949AEB1ED43",
+      "status": "PASS",
+      "bytes": 34170
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-11-390x844",
+      "path": "mobile/test/visual/goldens/day24/p1-11-write-review-390x844.png",
+      "sha256": "A01A5BD0FC084AEDC3C8C07EE4337E19A885EACCDCB3C08C335E204BAD23D2EB",
+      "status": "PASS",
+      "bytes": 35504
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-11-430x932",
+      "path": "mobile/test/visual/goldens/day24/p1-11-write-review-430x932.png",
+      "sha256": "B7FFE1005315BE6D8E3E775ABB8C652F88152039975A290643F4F2C89DE029F0",
+      "status": "PASS",
+      "bytes": 38693
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-15-360x844",
+      "path": "mobile/test/visual/goldens/day28/p1-15-notification-center-360x844.png",
+      "sha256": "3E633918BF907834872480613A3199FCBE5A9D2BD4D9C7E54289EFC9A26451B1",
+      "status": "PASS",
+      "bytes": 60797
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-15-390x844",
+      "path": "mobile/test/visual/goldens/day28/p1-15-notification-center-390x844.png",
+      "sha256": "01619868FB4302E3EDDE0F6273105B9FB1261F07EA53CEE11CF4756AAE8365E5",
+      "status": "PASS",
+      "bytes": 61929
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-15-430x932",
+      "path": "mobile/test/visual/goldens/day28/p1-15-notification-center-430x932.png",
+      "sha256": "DB57D17F2E57DBC1C605F095FF3C6D0B1EC7EC95A9F476CC9CE1745C4811073B",
+      "status": "PASS",
+      "bytes": 65101
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-16-360x844",
+      "path": "mobile/test/visual/goldens/day19/p1-16-profile-360x844.png",
+      "sha256": "568A437B135F2BF9DBE8D73BEBCEFCE1C897D87FEAEF1B1D14775837C3687060",
+      "status": "PASS",
+      "bytes": 66447
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-16-390x844",
+      "path": "mobile/test/visual/goldens/day19/p1-16-profile-390x844.png",
+      "sha256": "2823C2B3644EFFDA2881AF54606C9FD32A001F1FE3AEB5AEABD99DE6F358CC31",
+      "status": "PASS",
+      "bytes": 67016
+    },
+    {
+      "requirement_id": "UI031-VIS-P1-16-430x932",
+      "path": "mobile/test/visual/goldens/day19/p1-16-profile-430x932.png",
+      "sha256": "B3419F17A00C4F1170E8C8F50899F7911C7335020A6E5FBEE820B59493159448",
+      "status": "PASS",
+      "bytes": 74530
+    },
+    {
+      "requirement_id": "UI031-VIS-P2-01-360x844",
+      "path": "mobile/test/visual/goldens/ui-v031-rescue/rescue-staged-360x844.png",
+      "sha256": "72AEBFD569690EB628B450DEC69516AB91E1E57A6F6B7C0FD8494D1771A0A01E",
+      "status": "PASS",
+      "bytes": 45482
+    },
+    {
+      "requirement_id": "UI031-VIS-P2-01-390x844",
+      "path": "mobile/test/visual/goldens/ui-v031-rescue/rescue-staged-390x844.png",
+      "sha256": "9FEC9128DB8C95B049720BA217C03F6F4451E48AABF4ED9FA492B680418E6DF6",
+      "status": "PASS",
+      "bytes": 45530
+    },
+    {
+      "requirement_id": "UI031-VIS-P2-01-430x932",
+      "path": "mobile/test/visual/goldens/ui-v031-rescue/rescue-staged-430x932.png",
+      "sha256": "D392F7CF72A0663D5E8A7D6E80866161CC251913F84BFD78466E175288E4B835",
+      "status": "PASS",
+      "bytes": 48494
+    }
+  ]
+}

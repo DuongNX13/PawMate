@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/data/auth_session_store.dart';
+import '../../auth/application/auth_session_coordinator.dart';
 import '../data/vet_api.dart';
 import '../domain/vet_models.dart';
 
@@ -23,7 +23,4 @@ final vetReviewListProvider = FutureProvider.family<VetReviewResult, String>((
   return ref.watch(vetApiProvider).listReviews(vetId);
 });
 
-final vetReviewAccessTokenProvider = FutureProvider<String?>((ref) async {
-  final session = await ref.watch(authSessionStoreProvider).read();
-  return session?.accessToken;
-});
+final vetReviewAccessTokenProvider = authAccessTokenProvider;

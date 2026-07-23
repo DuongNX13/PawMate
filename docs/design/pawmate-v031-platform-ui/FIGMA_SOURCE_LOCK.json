@@ -1,0 +1,29 @@
+{
+  "baseline_id": "UI-CC-2026-07-21-G4B",
+  "captured_at": "2026-07-21T16:17:34.8258468+07:00",
+  "tool": "figma_mcp_go",
+  "tool_version": "not exposed",
+  "file_key": "zPyYIN058igxtbj44G30o8",
+  "file_name_live": "Pawmate Desgin",
+  "source_section": {
+    "id": "442:2",
+    "name": "PawMate v0.29 · Chocomint Compact CTA · Full Flow + States · TRUE EDITABLE",
+    "native_editable_frame_count": 56,
+    "inventory_path": "docs/design/pawmate-v031-platform-ui/SCREEN_INVENTORY.csv",
+    "inventory_sha256": "AA429BA515C1F0C7B7212053B356C745A92247A9C0A9363776D17ADA40693077"
+  },
+  "other_protected_historical_nodes": [
+    {"id": "444:3050", "role": "v0.30 responsive source"},
+    {"id": "447:4266", "role": "v0.29 rollback snapshot"},
+    {"id": "382:87177", "role": "v0.27 historical source"},
+    {"id": "426:8956", "role": "v0.28 historical source"}
+  ],
+  "mutation_policy": "Never rename, move, reparent, delete, lock, unlock, restyle, or change metadata on protected historical nodes. All v0.31 work must use new clone IDs and a separate section.",
+  "verification": {
+    "live_search_query": "NativeEditable/",
+    "live_search_type": "FRAME",
+    "live_search_count": 56,
+    "screen_id_counts": {"P1": 16, "P2": 16, "STATE": 24},
+    "status": "PASS"
+  }
+}

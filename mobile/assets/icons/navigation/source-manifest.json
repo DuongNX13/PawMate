@@ -1,0 +1,92 @@
+﻿[
+    {
+        "name":  "rescue",
+        "source":  "D:\\My Playground\\PawMate\\docs\\design\\artifacts\\native_editable_v027_full\\stitch_pawmate_comprehensive_pet_platform\\rescue_icon_asset\\screen.png",
+        "output":  "D:\\My Playground\\PawMate\\mobile\\assets\\icons\\navigation\\rescue.png",
+        "sourceBox":  {
+                          "y":  470,
+                          "width":  404,
+                          "height":  444,
+                          "x":  182
+                      },
+        "crop":  {
+                     "y":  408,
+                     "width":  528,
+                     "height":  568,
+                     "x":  120
+                 },
+        "bytes":  12778
+    },
+    {
+        "name":  "vet",
+        "source":  "D:\\My Playground\\PawMate\\docs\\design\\artifacts\\native_editable_v027_full\\stitch_pawmate_comprehensive_pet_platform\\vet_icon_asset\\screen.png",
+        "output":  "D:\\My Playground\\PawMate\\mobile\\assets\\icons\\navigation\\vet.png",
+        "sourceBox":  {
+                          "y":  396,
+                          "width":  557,
+                          "height":  522,
+                          "x":  106
+                      },
+        "crop":  {
+                     "y":  318,
+                     "width":  713,
+                     "height":  678,
+                     "x":  28
+                 },
+        "bytes":  8644
+    },
+    {
+        "name":  "health",
+        "source":  "D:\\My Playground\\PawMate\\docs\\design\\artifacts\\native_editable_v027_full\\stitch_pawmate_comprehensive_pet_platform\\health_icon_asset\\screen.png",
+        "output":  "D:\\My Playground\\PawMate\\mobile\\assets\\icons\\navigation\\health.png",
+        "sourceBox":  {
+                          "y":  534,
+                          "width":  388,
+                          "height":  303,
+                          "x":  191
+                      },
+        "crop":  {
+                     "y":  480,
+                     "width":  496,
+                     "height":  411,
+                     "x":  137
+                 },
+        "bytes":  11384
+    },
+    {
+        "name":  "profile",
+        "source":  "D:\\My Playground\\PawMate\\docs\\design\\artifacts\\native_editable_v027_full\\stitch_pawmate_comprehensive_pet_platform\\profile_icon_asset\\screen.png",
+        "output":  "D:\\My Playground\\PawMate\\mobile\\assets\\icons\\navigation\\profile.png",
+        "sourceBox":  {
+                          "y":  477,
+                          "width":  368,
+                          "height":  423,
+                          "x":  200
+                      },
+        "crop":  {
+                     "y":  418,
+                     "width":  486,
+                     "height":  541,
+                     "x":  141
+                 },
+        "bytes":  9747
+    },
+    {
+        "name":  "home",
+        "source":  "D:\\My Playground\\PawMate\\docs\\design\\artifacts\\native_editable_v027_full\\stitch_pawmate_comprehensive_pet_platform\\home_icon_asset\\screen.png",
+        "output":  "D:\\My Playground\\PawMate\\mobile\\assets\\icons\\navigation\\home.png",
+        "sourceBox":  {
+                          "y":  378,
+                          "width":  622,
+                          "height":  578,
+                          "x":  73
+                      },
+        "crop":  {
+                     "y":  291,
+                     "width":  768,
+                     "height":  752,
+                     "x":  0
+                 },
+        "bytes":  7717
+    }
+]

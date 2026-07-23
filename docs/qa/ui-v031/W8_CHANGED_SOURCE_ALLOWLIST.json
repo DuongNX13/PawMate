@@ -1,0 +1,105 @@
+{
+  "baselineId": "UI-CC-2026-07-21-G4B",
+  "coverageKind": "line",
+  "globalMinimumPercent": 80,
+  "changedMinimumPercent": 90,
+  "excludedPatterns": [
+    "(^|/)l10n/",
+    "\\.g\\.dart$",
+    "\\.freezed\\.dart$",
+    "GeneratedPluginRegistrant"
+  ],
+  "groups": [
+    {
+      "wave": "W4",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W0/baseline-scoped-backup",
+      "newPaths": [
+        "mobile/lib/core/widgets/pawmate_adaptive.dart"
+      ],
+      "paths": [
+        "mobile/lib/app/theme/app_theme.dart",
+        "mobile/lib/app/theme/app_tokens.dart",
+        "mobile/lib/core/widgets/pawmate_adaptive.dart",
+        "mobile/lib/core/widgets/pawmate_bottom_nav.dart",
+        "mobile/lib/core/widgets/pawmate_button.dart",
+        "mobile/lib/core/widgets/pawmate_card.dart",
+        "mobile/lib/core/widgets/pawmate_chip.dart",
+        "mobile/lib/core/widgets/pawmate_fixed_cta_bar.dart",
+        "mobile/lib/core/widgets/pawmate_page_scaffold.dart",
+        "mobile/lib/core/widgets/pawmate_skeleton.dart",
+        "mobile/lib/core/widgets/pawmate_state_view.dart",
+        "mobile/lib/core/widgets/pawmate_status.dart",
+        "mobile/lib/core/widgets/pawmate_text_field.dart",
+        "mobile/lib/core/widgets/pawmate_toast.dart",
+        "mobile/lib/core/widgets/pawmate_top_bar.dart",
+        "mobile/lib/core/widgets/pawmate_upload_tile.dart"
+      ]
+    },
+    {
+      "wave": "W5",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W5/pre-snapshot",
+      "newPaths": [
+        "mobile/lib/app/router/app_feature_availability.dart",
+        "mobile/lib/app/router/app_navigation.dart",
+        "mobile/lib/app/router/app_route_registry.dart",
+        "mobile/lib/app/router/feature_unavailable_screen.dart"
+      ],
+      "paths": [
+        "mobile/lib/app/pawmate_app.dart",
+        "mobile/lib/app/router/app_feature_availability.dart",
+        "mobile/lib/app/router/app_navigation.dart",
+        "mobile/lib/app/router/app_route_registry.dart",
+        "mobile/lib/app/router/app_router.dart",
+        "mobile/lib/app/router/feature_unavailable_screen.dart",
+        "mobile/lib/features/auth/presentation/auth_return_route.dart"
+      ]
+    },
+    {
+      "wave": "W6-A",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/A/pre-snapshot",
+      "newPaths": [],
+      "deletionOnlyPaths": [
+        "mobile/lib/features/onboarding/presentation/onboarding_screen.dart"
+      ],
+      "paths": [
+        "mobile/lib/features/auth/presentation/otp_screen.dart",
+        "mobile/lib/features/auth/presentation/register_screen.dart"
+      ]
+    },
+    {
+      "wave": "W6-B",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/B/pre-snapshot",
+      "newPaths": [],
+      "paths": [
+        "mobile/lib/features/pets/presentation/create_pet_screen.dart",
+        "mobile/lib/features/pets/presentation/pet_list_screen.dart"
+      ]
+    },
+    {
+      "wave": "W6-C",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/C/pre-snapshot",
+      "newPaths": [],
+      "paths": [
+        "mobile/lib/features/vets/presentation/vet_detail_screen.dart",
+        "mobile/lib/features/vets/presentation/vet_map_screen.dart"
+      ]
+    },
+    {
+      "wave": "W6-D",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/D/pre-snapshot",
+      "newPaths": [],
+      "paths": [
+        "mobile/lib/features/health/presentation/add_health_event_screen.dart",
+        "mobile/lib/features/reminders/presentation/reminder_calendar_screen.dart"
+      ]
+    },
+    {
+      "wave": "W6-E",
+      "baselineRoot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W6/E/pre-snapshot",
+      "newPaths": [],
+      "paths": [
+        "mobile/lib/features/rescue/presentation/rescue_home_screen.dart"
+      ]
+    }
+  ]
+}

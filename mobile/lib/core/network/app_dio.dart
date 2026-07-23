@@ -3,6 +3,10 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
+  return createAppDio();
+});
+
+Dio createAppDio() {
   return Dio(
     BaseOptions(
       baseUrl: _resolveBaseUrl(),
@@ -11,7 +15,7 @@ final dioProvider = Provider<Dio>((ref) {
       headers: const {'Accept': 'application/json'},
     ),
   );
-});
+}
 
 String _resolveBaseUrl() {
   const override = String.fromEnvironment('PAWMATE_API_BASE_URL');

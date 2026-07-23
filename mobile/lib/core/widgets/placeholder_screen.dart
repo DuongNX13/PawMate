@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'pawmate_bottom_nav.dart';
+import 'pawmate_page_scaffold.dart';
+import 'pawmate_state_view.dart';
+import 'pawmate_top_bar.dart';
 
 class PlaceholderScreen extends StatelessWidget {
   const PlaceholderScreen({
@@ -20,47 +22,15 @@ class PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      bottomNavigationBar: bottomNavRoute == null
-          ? null
-          : PawMateBottomNav(currentRoute: bottomNavRoute!),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.pets_outlined,
-                  size: 56,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                if (primaryActionLabel != null && onPrimaryAction != null) ...[
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: onPrimaryAction,
-                    child: Text(primaryActionLabel!),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+    return PawMatePageScaffold(
+      topBar: PawMateTopBar(title: title),
+      bottomNavCurrentRoute: bottomNavRoute,
+      body: PawMateStateView(
+        type: PawMateStateType.empty,
+        title: title,
+        message: subtitle,
+        primaryActionLabel: primaryActionLabel,
+        onPrimaryAction: onPrimaryAction,
       ),
     );
   }

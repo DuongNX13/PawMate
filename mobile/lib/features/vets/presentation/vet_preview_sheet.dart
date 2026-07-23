@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_chip.dart';
 import '../domain/vet_models.dart';
 
 class VetPreviewSheet extends StatelessWidget {
@@ -19,43 +22,40 @@ class VetPreviewSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Container(
-              width: 56,
-              height: 6,
+              width: 48,
+              height: 4,
               decoration: BoxDecoration(
                 color: AppColors.border,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.s16),
           Text(
             vet.name,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.h3(),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.s8),
           Text(
             vet.address,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.35,
-            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.bodyCompact(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.s12),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: AppSpacing.s8,
+            runSpacing: AppSpacing.s8,
             children: [
               _MetaPill(
                 label: vet.averageRating != null
@@ -66,39 +66,39 @@ class VetPreviewSheet extends StatelessWidget {
               _MetaPill(label: '${vet.reviewCount} đánh giá'),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.s8),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: AppSpacing.s8,
+            runSpacing: AppSpacing.s8,
             children: vet.displayServices
                 .take(3)
                 .map((service) => _MetaPill(label: service, soft: true))
                 .toList(),
           ),
-          const SizedBox(height: 22),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: onViewDetail,
-              child: const Text('Xem chi tiết'),
-            ),
+          const SizedBox(height: AppSpacing.s16),
+          PawMateButton(
+            label: 'Xem chi tiết',
+            onPressed: onViewDetail,
+            leadingIcon: Icons.info_outline_rounded,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.s8),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: PawMateButton(
+                  label: 'Chỉ đường',
                   onPressed: onGetDirections,
-                  icon: const Icon(Icons.directions_outlined),
-                  label: const Text('Chỉ đường'),
+                  leadingIcon: Icons.directions_outlined,
+                  variant: PawMateButtonVariant.secondary,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.s8),
               Expanded(
-                child: OutlinedButton.icon(
+                child: PawMateButton(
+                  label: 'Gọi ngay',
                   onPressed: onCallNow,
-                  icon: const Icon(Icons.call_outlined),
-                  label: const Text('Gọi ngay'),
+                  leadingIcon: Icons.call_outlined,
+                  variant: PawMateButtonVariant.secondary,
                 ),
               ),
             ],
@@ -117,19 +117,10 @@ class _MetaPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: soft ? AppColors.secondarySoft : AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: soft ? Colors.transparent : AppColors.border),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: soft ? AppColors.secondary500 : AppColors.textSecondary,
-        ),
-      ),
+    return PawMateChip(
+      label: label,
+      variant: soft ? PawMateChipVariant.status : PawMateChipVariant.filter,
+      enabled: true,
     );
   }
 }

@@ -25,10 +25,54 @@ class AuthApiException implements Exception {
 }
 
 class RegisterResponse {
-  const RegisterResponse({required this.userId, required this.message});
+  const RegisterResponse({
+    required this.userId,
+    required this.message,
+    this.verificationStatus = 'pending',
+    this.verificationExpiresAt,
+    this.resendAvailableAt,
+  });
 
   final String userId;
   final String message;
+  final String verificationStatus;
+  final DateTime? verificationExpiresAt;
+  final DateTime? resendAvailableAt;
+
+  bool get requiresVerification => verificationStatus != 'verified';
+
+  factory RegisterResponse.fromJson(Map<String, dynamic> json) {
+    return RegisterResponse(
+      userId: json['userId']?.toString() ?? '',
+      message: json['message']?.toString() ?? 'Hãy kiểm tra email của bạn',
+      verificationStatus: json['verificationStatus']?.toString() ?? 'pending',
+      verificationExpiresAt: _readDateTime(json['verificationExpiresAt']),
+      resendAvailableAt: _readDateTime(json['resendAvailableAt']),
+    );
+  }
+}
+
+class ResendVerificationResponse {
+  const ResendVerificationResponse({
+    required this.message,
+    this.verificationStatus = 'pending',
+    this.verificationExpiresAt,
+    this.resendAvailableAt,
+  });
+
+  final String message;
+  final String verificationStatus;
+  final DateTime? verificationExpiresAt;
+  final DateTime? resendAvailableAt;
+
+  factory ResendVerificationResponse.fromJson(Map<String, dynamic> json) {
+    return ResendVerificationResponse(
+      message: json['message']?.toString() ?? 'Đã gửi lại email xác minh',
+      verificationStatus: json['verificationStatus']?.toString() ?? 'pending',
+      verificationExpiresAt: _readDateTime(json['verificationExpiresAt']),
+      resendAvailableAt: _readDateTime(json['resendAvailableAt']),
+    );
+  }
 }
 
 class VerifyEmailResponse {
@@ -36,11 +80,30 @@ class VerifyEmailResponse {
     required this.userId,
     required this.email,
     required this.message,
+    this.session,
   });
 
   final String userId;
   final String email;
   final String message;
+  final AuthSession? session;
+
+  factory VerifyEmailResponse.fromJson(
+    Map<String, dynamic> json, {
+    String fallbackEmail = '',
+  }) {
+    final hasSession =
+        json['accessToken'] != null &&
+        json['refreshToken'] != null &&
+        json['user'] != null;
+
+    return VerifyEmailResponse(
+      userId: json['userId']?.toString() ?? '',
+      email: json['email']?.toString() ?? fallbackEmail,
+      message: json['message']?.toString() ?? 'Email đã được xác minh',
+      session: hasSession ? AuthSession.fromJson(json) : null,
+    );
+  }
 }
 
 class AuthUser {
@@ -127,7 +190,7 @@ class AuthApi {
   Future<RegisterResponse> register({
     required String email,
     required String password,
-    String? phone,
+    required String phone,
     String? displayName,
   }) async {
     return _perform(
@@ -136,15 +199,12 @@ class AuthApi {
         data: {
           'email': email,
           'password': password,
-          if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+          'phone': phone.trim(),
           if (displayName != null && displayName.trim().isNotEmpty)
             'displayName': displayName.trim(),
         },
       ),
-      parser: (json) => RegisterResponse(
-        userId: json['userId']?.toString() ?? '',
-        message: json['message']?.toString() ?? 'Hãy kiểm tra email của bạn',
-      ),
+      parser: RegisterResponse.fromJson,
     );
   }
 
@@ -157,20 +217,18 @@ class AuthApi {
         '/auth/verify-email',
         data: {'email': email, 'token': token},
       ),
-      parser: (json) => VerifyEmailResponse(
-        userId: json['userId']?.toString() ?? '',
-        email: json['email']?.toString() ?? email,
-        message: json['message']?.toString() ?? 'Email đã được xác minh',
-      ),
+      parser: (json) =>
+          VerifyEmailResponse.fromJson(json, fallbackEmail: email),
     );
   }
 
-  Future<String> resendVerification({required String email}) async {
+  Future<ResendVerificationResponse> resendVerification({
+    required String email,
+  }) async {
     return _perform(
       request: () =>
           _dio.post('/auth/resend-verification', data: {'email': email}),
-      parser: (json) =>
-          json['message']?.toString() ?? 'Đã gửi lại email xác minh',
+      parser: ResendVerificationResponse.fromJson,
     );
   }
 
@@ -186,6 +244,22 @@ class AuthApi {
       ),
       parser: AuthSession.fromJson,
     );
+  }
+
+  Future<AuthSession> refresh({required String refreshToken}) async {
+    return _perform(
+      request: () =>
+          _dio.post('/auth/refresh', data: {'refreshToken': refreshToken}),
+      parser: AuthSession.fromJson,
+    );
+  }
+
+  Future<void> logout({required String refreshToken}) async {
+    try {
+      await _dio.post('/auth/logout', data: {'refreshToken': refreshToken});
+    } on DioException catch (error) {
+      throw _toApiException(error);
+    }
   }
 
   Future<T> _perform<T>({
@@ -242,4 +316,12 @@ Map<String, dynamic> _readMap(dynamic value) {
     return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
   }
   throw const AuthApiException('Máy chủ trả về dữ liệu không hợp lệ.');
+}
+
+DateTime? _readDateTime(dynamic value) {
+  final text = value?.toString();
+  if (text == null || text.isEmpty) {
+    return null;
+  }
+  return DateTime.tryParse(text)?.toLocal();
 }

@@ -5,8 +5,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../domain/vet_models.dart';
 
 Future<void> launchVetCall(BuildContext context, String phone) async {
-  final cleanedPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-  final uri = Uri(scheme: 'tel', path: cleanedPhone);
+  final uri = buildVetCallUri(phone);
+  if (uri == null) {
+    _showFailure(context, 'Phòng khám chưa có số điện thoại hợp lệ.');
+    return;
+  }
+
   final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
 
   if (!launched) {
@@ -18,7 +22,7 @@ Future<void> launchVetCall(BuildContext context, String phone) async {
 }
 
 Future<void> launchVetDirections(BuildContext context, VetSummary vet) async {
-  for (final candidate in _buildDirectionCandidates(vet)) {
+  for (final candidate in buildVetDirectionCandidates(vet)) {
     try {
       final launched = await launchUrl(
         candidate,
@@ -38,7 +42,19 @@ Future<void> launchVetDirections(BuildContext context, VetSummary vet) async {
   _showFailure(context, 'Không thể mở chỉ đường từ PawMate.');
 }
 
-List<Uri> _buildDirectionCandidates(VetSummary vet) {
+Uri? buildVetCallUri(String phone) {
+  final cleanedPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+  if (cleanedPhone.isEmpty || !RegExp(r'\d').hasMatch(cleanedPhone)) {
+    return null;
+  }
+
+  return Uri(scheme: 'tel', path: cleanedPhone);
+}
+
+List<Uri> buildVetDirectionCandidates(
+  VetSummary vet, {
+  TargetPlatform? targetPlatform,
+}) {
   final destination = _locationQueryFor(vet);
   final encodedDestination = Uri.encodeComponent(destination);
   final latLng = vet.latitude != null && vet.longitude != null
@@ -49,7 +65,7 @@ List<Uri> _buildDirectionCandidates(VetSummary vet) {
     'https://www.google.com/maps/dir/?api=1&destination=$encodedDestination',
   );
 
-  switch (defaultTargetPlatform) {
+  switch (targetPlatform ?? defaultTargetPlatform) {
     case TargetPlatform.iOS:
     case TargetPlatform.macOS:
       return [

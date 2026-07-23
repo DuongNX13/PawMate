@@ -1,0 +1,229 @@
+{
+  "schema_version": "1.0",
+  "baseline_id": "ui-v031-20260721-4910aa0e",
+  "created_at": "2026-07-21T16:10:25+07:00",
+  "scope": "W0_TOOLCHAIN_AND_EVIDENCE_ONLY",
+  "lock_status": "LOCAL_AND_CODEMAGIC_PINNED_POSTCHANGE_IOS_UNVERIFIED",
+  "refresh_history": [
+    {
+      "refreshed_at": "2026-07-22T09:02:48+07:00",
+      "approver": "Codex lead",
+      "reason": "W7 intentionally changed the iPhone-only Xcode project and pinned Codemagic toolchain; refresh only those two expected source hashes after native validators passed.",
+      "changes": [
+        {
+          "path": "mobile/ios/Runner.xcodeproj/project.pbxproj",
+          "before_sha256": "372F2403A70B22DD7BCA2306244F07531084DFF30BA7EB3E4670717F5FCB264B",
+          "after_sha256": "BA5886148237D94D70A4B78B708EA2B14537EA06C86CEFE3F1FF0EAA611FE503"
+        },
+        {
+          "path": "codemagic.yaml",
+          "before_sha256": "42CA44BCA22C4DC8EED6D09C8A8BD226F1BA3B76B064B07B978155CF2E409C64",
+          "after_sha256": "C9EA8093B62D215E505077990B266FA22594BB846F0E74DB4BD5D35F27568513"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "root": "D:/My Playground/PawMate",
+    "branch": "main",
+    "head": "4910aa0e9b811b05361650c8d3ea193ca70a0b7d",
+    "dirty_snapshot": {
+      "entries": 448,
+      "tracked_changes": 121,
+      "untracked_entries": 327,
+      "informational_only": true
+    }
+  },
+  "local": {
+    "flutter": {
+      "launcher": "D:/flutter/bin/flutter.bat",
+      "launcher_sha256": "F83BFED7ECD10FD1AFD8CE19C0B0119D2C80E24FBF26F4FF4F63C1CC5F75DCD5",
+      "root": "D:/flutter",
+      "channel": "stable",
+      "framework_version": "3.41.6",
+      "framework_revision": "db50e20168db8fee486b9abf32fc912de3bc5b6a",
+      "engine_revision": "425cfb54d01a9472b3e81d9e76fd63a4a44cfbcb",
+      "engine_content_hash": "5cdd32777948fa7a648fac915f8da7120ac7e97a",
+      "devtools_version": "2.54.2",
+      "alternate_same_revision_path": "D:/My Playground/tools/flutter",
+      "alternate_path_is_not_approved_for_w0_commands": true
+    },
+    "dart": {
+      "executable": "D:/flutter/bin/cache/dart-sdk/bin/dart.exe",
+      "executable_sha256": "AF472B154E4C29F0F642CB7F648329B510EF52AFCF0EAA85CE9DE377251CCA6A",
+      "version": "3.11.4"
+    },
+    "java": {
+      "executable": "D:/Java/jdk-17-portable/jdk-17.0.19+10/bin/java.exe",
+      "executable_sha256": "D25FA21D57094CAE096BAB3DA5DAA2CAC09EF3E58E96E8DDC7FC69F1E50A6A28",
+      "vendor": "Eclipse Adoptium Temurin",
+      "version": "17.0.19"
+    },
+    "gradle": {
+      "wrapper_version": "9.1.0",
+      "distribution_url": "https://services.gradle.org/distributions/gradle-9.1.0-all.zip",
+      "embedded_kotlin_version": "2.2.0",
+      "distribution_sha256_pinned": false
+    },
+    "android_plugin": {
+      "agp_version": "8.11.1",
+      "kotlin_android_plugin_version": "2.2.20",
+      "java_source_target": "17"
+    }
+  },
+  "android": {
+    "sdk_root": "C:/Users/duongnx/AppData/Local/Android/Sdk",
+    "compile_sdk": 36,
+    "target_sdk": 36,
+    "min_sdk": 24,
+    "sdk_platform_revision": 2,
+    "sdk_extension_level": 17,
+    "build_tools": "35.0.0",
+    "platform_tools_adb": "37.0.0-14910828",
+    "ndk": "28.2.13676358",
+    "ndk_release": "r28c",
+    "connected_w0_device": {
+      "id": "emulator-5554",
+      "model": "sdk_gphone64_x86_64",
+      "api": 34,
+      "informational_only": true
+    }
+  },
+  "ios": {
+    "deployment_target": "13.0",
+    "swift_version": "5.0",
+    "targeted_device_family_current": "1",
+    "podfile_present": false,
+    "podfile_lock_present": false,
+    "swift_package_manager_enabled": false,
+    "local_xcode_available": false,
+    "cloud_xcode_version": "26.4",
+    "cloud_cocoapods_version": "1.16.2"
+  },
+  "packages": {
+    "flutter_map": "8.3.0",
+    "latlong2": "0.9.1",
+    "geolocator": "14.0.2",
+    "geolocator_android": "5.0.2",
+    "geolocator_apple": "2.3.13",
+    "image_picker": "1.2.1",
+    "image_picker_android": "0.8.13+16",
+    "image_picker_ios": "0.8.13+6",
+    "go_router": "17.2.0",
+    "flutter_riverpod": "3.3.1",
+    "google_fonts_constraint": "^6.3.2",
+    "google_fonts_locked": "6.3.3"
+  },
+  "fonts": [
+    {
+      "path": "mobile/assets/fonts/BeVietnamPro-Regular.ttf",
+      "family": "BeVietnamPro",
+      "weight": 400,
+      "bytes": 72288,
+      "sha256": "E9429918B033A0C12E2DD4091A7D7D11BED161EFA7AE17C1C03C1348D31FCAAA",
+      "approved": true
+    },
+    {
+      "path": "mobile/assets/fonts/BeVietnamPro-Medium.ttf",
+      "family": "BeVietnamPro",
+      "weight": 500,
+      "bytes": 72424,
+      "sha256": "FBB96D46D021840A81FD08A7429EA2CDDEED64329AE11BAB0B635902F262A327",
+      "approved": true
+    },
+    {
+      "path": "mobile/assets/fonts/BeVietnamPro-SemiBold.ttf",
+      "family": "BeVietnamPro",
+      "weight": 600,
+      "bytes": 72268,
+      "sha256": "00D35B55610FB4C5B0DB57C07244806C807DD82DFFB333846F0B970F16D2F8B4",
+      "approved": true
+    },
+    {
+      "path": "mobile/assets/fonts/BeVietnamPro-Bold.ttf",
+      "family": "BeVietnamPro",
+      "weight": 700,
+      "bytes": 72172,
+      "sha256": "BB637E409B7022B7F6A1788CC2AAE91FA93E55017CC13309620F4AE6884F6E2A",
+      "approved": true
+    },
+    {
+      "path": "mobile/assets/fonts/Inter-SemiBold.ttf",
+      "family": "Inter",
+      "weight": 600,
+      "bytes": 876576,
+      "sha256": "29160A80FF49DDCAB2C97711247E08B1FAB27A484A329CE8B813D820DC559031",
+      "approved": false,
+      "bundled": false,
+      "finding": "The file remains in the repository for historical fixtures, but W4 replaced the assets/fonts directory declaration with the four approved Be Vietnam Pro font entries. Build output no longer bundles Inter."
+    }
+  ],
+  "source_file_hashes": {
+    "mobile/.metadata": "593FF6B515EA84B0C300F8CC773C08491834A4655CDA1A04218C494E129DEAA1",
+    "mobile/pubspec.yaml": "05AC668AFD3ED2B6612AE346E4EC1CF27EB3C0A68F53FBA8CC793A0E8BAE922E",
+    "mobile/pubspec.lock": "AF1B2CF5608912CCCE861B6C7C2E900BEC110FF5A0464C3273597952FE90BB6E",
+    "mobile/android/settings.gradle.kts": "4D438E37BD80CCC48DED4892C9026994CABE8CFB9C20D2947A609248495C869B",
+    "mobile/android/app/build.gradle.kts": "5601FD198EB8888FAE8F47916B7AA01B0E1447EEC64AFC442DA24C0659A52689",
+    "mobile/android/gradle/wrapper/gradle-wrapper.properties": "94718EB694844795B8C558A9AED777972E4445A97689EC930AD5905801E1CF30",
+    "mobile/ios/Runner.xcodeproj/project.pbxproj": "BA5886148237D94D70A4B78B708EA2B14537EA06C86CEFE3F1FF0EAA611FE503",
+    "codemagic.yaml": "C9EA8093B62D215E505077990B266FA22594BB846F0E74DB4BD5D35F27568513",
+    ".github/workflows/ci.yml": "A43996FD814FE80246CFB082CA8CCC41DE1FA1D34B0DC79DA30187E2D5643627"
+  },
+  "ci": {
+    "github_mobile": {
+      "workflow": ".github/workflows/ci.yml",
+      "flutter_selector": "stable",
+      "flutter_exact_version_pinned": false,
+      "analyze_command": "dart analyze",
+      "artifact_upload_configured": false
+    },
+    "codemagic": {
+      "app_id": "69fb006fcb6fc5b8a49301e3",
+      "workflows": [
+        "ios-appetize-simulator-smoke",
+        "ios-real-device-smoke"
+      ],
+      "flutter_selector": "3.44.7",
+      "xcode_selector": "26.4",
+      "cocoapods_selector": "1.16.2",
+      "java_selector": "17",
+      "exact_cloud_toolchain_pinned": true
+    }
+  },
+  "generation_tools": {
+    "figma_mcp": {
+      "version_exposed": false,
+      "required_evidence": ["server_name", "file_id", "node_ids", "timestamp", "response_metadata", "output_hashes"]
+    },
+    "stitch_mcp": {
+      "version_exposed": false,
+      "required_evidence": ["server_name", "project_id", "design_system_id", "model_name", "prompt_hash", "timestamp", "result_ids"]
+    },
+    "image_gen": {
+      "version_exposed": false,
+      "required_evidence": ["tool_name", "prompt_hash", "timestamp", "result_id", "output_hash", "synthetic_label"]
+    }
+  },
+  "known_gaps": [
+    {
+      "id": "TC-GAP-001",
+      "severity": "BLOCKS_G4B_NOT_W0",
+      "description": "GitHub Actions still uses the moving Flutter stable channel. Codemagic now pins Flutter 3.44.7, Xcode 26.4, CocoaPods 1.16.2, and Java 17, but the current dirty UI tree has no post-change successful iOS cloud baseline."
+    },
+    {
+      "id": "TC-GAP-002",
+      "severity": "BLOCKS_IOS_NATIVE_WAVE",
+      "description": "No Podfile or Podfile.lock is present while Swift Package Manager is disabled and native iOS plugins exist. Current-code Codemagic baseline is required."
+    },
+    {
+      "id": "TC-GAP-003",
+      "severity": "QUALITY_DEBT",
+      "description": "Gradle distribution URL has no distributionSha256Sum pin."
+    },
+    {
+      "id": "TC-GAP-005",
+      "severity": "EVIDENCE_INFRA",
+      "description": "Figma MCP, Stitch MCP, and Image Gen do not expose a version identifier; evidence must use request/result metadata and hashes."
+    }
+  ]
+}

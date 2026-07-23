@@ -3,30 +3,42 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../app/router/app_navigation.dart';
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/media/image_picker_service.dart';
-import '../../../core/widgets/pawmate_bottom_nav.dart';
-import '../../../core/widgets/primary_gradient_button.dart';
+import '../../../core/widgets/pawmate_adaptive.dart';
+import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_chip.dart';
+import '../../../core/widgets/pawmate_fixed_cta_bar.dart';
 import '../application/vet_providers.dart';
 import '../data/vet_api.dart';
 import '../domain/vet_models.dart';
 import 'vet_actions.dart';
 
 class VetDetailScreen extends ConsumerWidget {
-  const VetDetailScreen({super.key, required this.vetId});
+  const VetDetailScreen({
+    super.key,
+    required this.vetId,
+    this.returnPath = '/vets/list',
+  });
 
   final String vetId;
+  final String returnPath;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final vetAsync = ref.watch(vetDetailProvider(vetId));
 
     return Scaffold(
-      bottomNavigationBar: const PawMateBottomNav(currentRoute: '/vets/list'),
+      backgroundColor: AppColors.background,
+      bottomNavigationBar: vetAsync.maybeWhen(
+        data: (vet) => _VetDetailCtaBar(vet: vet),
+        orElse: () => null,
+      ),
       body: SafeArea(
         child: vetAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -36,16 +48,16 @@ class VetDetailScreen extends ConsumerWidget {
               children: [
                 Text(
                   'Không tải được chi tiết phòng khám',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: AppTextStyles.h4(),
                 ),
                 const SizedBox(height: 8),
-                Text(error.toString(), style: theme.textTheme.bodyMedium),
+                Text(error.toString(), style: AppTextStyles.bodyCompact()),
                 const SizedBox(height: 16),
-                OutlinedButton(
+                PawMateButton(
+                  label: 'Thử lại',
+                  fullWidth: false,
+                  variant: PawMateButtonVariant.secondary,
                   onPressed: () => ref.invalidate(vetDetailProvider(vetId)),
-                  child: const Text('Thử lại'),
                 ),
               ],
             ),
@@ -54,130 +66,63 @@ class VetDetailScreen extends ConsumerWidget {
             final reviewsAsync = ref.watch(vetReviewListProvider(vet.id));
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 220),
+              padding: const EdgeInsets.only(bottom: AppSpacing.s24),
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => context.go('/vets/list'),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'PawMate',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: AppColors.primary500,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      onPressed: () => context.go('/vets/list'),
-                      icon: const Icon(Icons.search_rounded),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'PHÒNG KHÁM',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.secondary500,
-                    fontWeight: FontWeight.w700,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
+                  child: _VetDetailHeader(
+                    onBack: () =>
+                        PawMateNavigation.backOrGo(context, returnPath),
+                    onShare: () => _copyVetDetails(context, vet),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  vet.name,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    height: 1.18,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  vet.displaySummary,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 18),
                 _HeroCard(vet: vet),
-                const SizedBox(height: 12),
-                _QuickFactsCard(vet: vet),
-                const SizedBox(height: 16),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final itemWidth = constraints.maxWidth < 440
-                        ? (constraints.maxWidth - 12) / 2
-                        : (constraints.maxWidth - 24) / 3;
-
-                    return Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        SizedBox(
-                          width: itemWidth,
-                          child: _ActionButton(
-                            label: 'Gọi ngay',
-                            background: AppColors.primary500,
-                            textColor: Colors.white,
-                            onTap: () => launchVetCall(context, vet.phone),
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _ActionButton(
-                            label: 'Chỉ đường',
-                            background: AppColors.secondarySoft,
-                            textColor: AppColors.secondary500,
-                            onTap: () => launchVetDirections(context, vet),
-                          ),
-                        ),
-                        SizedBox(
-                          width: itemWidth,
-                          child: _ActionButton(
-                            key: const Key('vet-detail-write-review-button'),
-                            label: 'Đánh giá',
-                            background: AppColors.tertiarySoft,
-                            textColor: const Color(0xFF7A6420),
-                            onTap: () => _openWriteReview(context, ref, vet),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: vet.displayServices
-                      .take(3)
-                      .map(
-                        (service) => _ServiceChip(
-                          label: service,
-                          background: service == vet.displayServices.first
-                              ? AppColors.primarySoft
-                              : AppColors.secondarySoft,
-                          textColor: service == vet.displayServices.first
-                              ? AppColors.primary700
-                              : AppColors.secondary500,
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 34),
-                Text(
-                  'Đánh giá gần đây',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        vet.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.h2(),
+                      ),
+                      const SizedBox(height: 10),
+                      _VetStatusLine(vet: vet),
+                      const SizedBox(height: 24),
+                      _QuickFactsCard(vet: vet),
+                      const SizedBox(height: 20),
+                      _AddressCard(vet: vet),
+                      const SizedBox(height: 30),
+                      Text('Dịch vụ cung cấp', style: AppTextStyles.h3()),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: vet.displayServices
+                            .take(5)
+                            .map((service) => _ServiceChip(label: service))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 18),
+                      PawMateButton(
+                        key: const Key('vet-detail-write-review-button'),
+                        label: 'Viết đánh giá',
+                        fullWidth: false,
+                        variant: PawMateButtonVariant.secondary,
+                        onPressed: () => _openWriteReview(context, ref, vet),
+                        leadingIcon: Icons.rate_review_outlined,
+                      ),
+                      const SizedBox(height: 34),
+                      Text('Đánh giá gần đây', style: AppTextStyles.h3()),
+                      const SizedBox(height: 16),
+                      _ReviewPreviewCard(vet: vet, reviewsAsync: reviewsAsync),
+                      const SizedBox(height: 18),
+                      _SourceAttributionCard(vet: vet),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                _ReviewPreviewCard(vet: vet, reviewsAsync: reviewsAsync),
-                const SizedBox(height: 18),
-                _SourceAttributionCard(vet: vet),
               ],
             );
           },
@@ -207,6 +152,33 @@ class VetDetailScreen extends ConsumerWidget {
     ref.invalidate(vetDetailProvider(vet.id));
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Đánh giá đã được gửi thành công.')),
+    );
+  }
+
+  static Future<void> _copyVetDetails(
+    BuildContext context,
+    VetDetail vet,
+  ) async {
+    final address = [
+      vet.address,
+      vet.district,
+      vet.city,
+    ].where((part) => part.trim().isNotEmpty).join(', ');
+    final details = [
+      vet.name,
+      if (address.isNotEmpty) address,
+      if (vet.phone.trim().isNotEmpty) vet.phone,
+      if ((vet.website ?? '').trim().isNotEmpty) vet.website!.trim(),
+    ].join('\n');
+
+    await Clipboard.setData(ClipboardData(text: details));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Đã sao chép thông tin phòng khám để chia sẻ.'),
+      ),
     );
   }
 }
@@ -375,7 +347,6 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final media = MediaQuery.of(context);
 
     return SafeArea(
@@ -385,7 +356,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: media.size.height * 0.92),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             decoration: const BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -407,22 +378,19 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    Text(
-                      'Viết đánh giá',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                    Text('Viết đánh giá', style: AppTextStyles.h3()),
+                    const SizedBox(height: AppSpacing.s16),
+                    _ReviewClinicSummary(vet: widget.vet),
+                    const SizedBox(height: AppSpacing.s24),
+                    Center(
+                      child: Text(
+                        'Chất lượng dịch vụ',
+                        style: AppTextStyles.h4(),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.vet.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppSpacing.s8),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: List.generate(5, (index) {
                         final value = index + 1;
                         return IconButton(
@@ -437,8 +405,8 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
                             value <= _rating
                                 ? Icons.star_rounded
                                 : Icons.star_border_rounded,
-                            color: const Color(0xFFFFB547),
-                            size: 34,
+                            color: AppColors.brown,
+                            size: 32,
                           ),
                         );
                       }),
@@ -485,17 +453,15 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
                       Text(
                         _errorMessage!,
                         key: const Key('write-review-error'),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: AppTextStyles.bodyStrong(color: AppColors.error),
                       ),
                     ],
                     const SizedBox(height: 20),
-                    PrimaryGradientButton(
+                    PawMateButton(
                       key: const Key('write-review-submit'),
                       label: _isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá',
                       onPressed: _isSubmitting ? null : _submit,
+                      isLoading: _isSubmitting,
                     ),
                   ],
                 ),
@@ -503,6 +469,68 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ReviewClinicSummary extends StatelessWidget {
+  const _ReviewClinicSummary({required this.vet});
+
+  final VetDetail vet;
+
+  @override
+  Widget build(BuildContext context) {
+    final rating = vet.averageRating?.toStringAsFixed(1) ?? 'Mới';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.s12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Semantics(
+            image: true,
+            label: 'Hình đại diện mặc định của phòng khám',
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: const Icon(
+                Icons.local_hospital_outlined,
+                color: AppColors.deepGreen,
+                size: 30,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  vet.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.cardTitle(),
+                ),
+                const SizedBox(height: AppSpacing.s4),
+                Text(
+                  '★ $rating • ${vet.city}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.captionStrong(),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -523,17 +551,10 @@ class _ReviewPhotoPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Hình ảnh đính kèm',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        Text('Hình ảnh đính kèm', style: AppTextStyles.h4()),
         const SizedBox(height: 8),
         Wrap(
           spacing: 10,
@@ -590,34 +611,66 @@ class _ReviewPhotoPicker extends StatelessWidget {
               ),
             ),
             if (photos.length < 3)
-              InkWell(
-                key: const Key('write-review-add-photo'),
-                onTap: isSubmitting ? null : onPickPhoto,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: const Icon(
-                    Icons.add_photo_alternate_outlined,
-                    color: AppColors.primary500,
+              Semantics(
+                button: true,
+                enabled: !isSubmitting,
+                label: 'Thêm ảnh đánh giá',
+                child: InkWell(
+                  key: const Key('write-review-add-photo'),
+                  onTap: isSubmitting ? null : onPickPhoto,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: AppColors.primary500,
+                    ),
                   ),
                 ),
               ),
           ],
         ),
         const SizedBox(height: 6),
-        Text(
-          'Tối đa 3 ảnh, mỗi ảnh dưới 5MB.',
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        Text('Tối đa 3 ảnh, mỗi ảnh dưới 5MB.', style: AppTextStyles.caption()),
       ],
+    );
+  }
+}
+
+class _VetDetailHeader extends StatelessWidget {
+  const _VetDetailHeader({required this.onBack, required this.onShare});
+
+  final VoidCallback onBack;
+  final VoidCallback onShare;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 64,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PawMateAdaptiveBackButton(onPressed: onBack),
+          ),
+          Text('PawMate', style: AppTextStyles.h2(color: AppColors.primary700)),
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              onPressed: onShare,
+              icon: const Icon(Icons.share_outlined, size: 28),
+              tooltip: 'Chia sẻ',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -629,91 +682,167 @@ class _HeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final meta = <String>[
-      ...vet.displayServices.take(2),
-      vet.district,
-    ].where((value) => value.trim().isNotEmpty).join(' • ');
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact =
-            constraints.maxWidth < 390 ||
-            MediaQuery.textScalerOf(context).scale(1) > 1.15;
-
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-          decoration: BoxDecoration(
-            color: AppColors.secondarySoft,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            boxShadow: AppShadows.soft,
+    return SizedBox(
+      height: 238,
+      width: double.infinity,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: Semantics(
+              image: true,
+              label: 'Hình minh họa phòng khám ${vet.name}',
+              child: CustomPaint(painter: _ClinicHeroPainter()),
+            ),
           ),
-          child: Stack(
-            children: [
-              if (!compact) ...[
-                Positioned(
-                  right: 10,
-                  top: -6,
-                  child: Container(
-                    width: 128,
-                    height: 128,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFCE1D4),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.05),
+                    Colors.black.withValues(alpha: 0.34),
+                  ],
                 ),
-                Positioned(
-                  right: 34,
-                  top: 34,
-                  child: Container(
-                    width: 96,
-                    height: 96,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFA8C5F1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.grid_view_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ),
-              ],
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _HeroBadge(
-                    label: vet.averageRating != null
-                        ? '★ ${vet.averageRating!.toStringAsFixed(1)}'
-                        : 'Top #${vet.seedRank}',
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    vet.name,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      height: 1.18,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    meta,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
               ),
-            ],
+            ),
           ),
-        );
-      },
+          Positioned(
+            right: 22,
+            bottom: -28,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                boxShadow: AppShadows.soft,
+              ),
+              child: Text(
+                vet.averageRating != null
+                    ? '⭐ ${vet.averageRating!.toStringAsFixed(1)} (${vet.reviewCount}+)'
+                    : 'Top #${vet.seedRank}',
+                style: AppTextStyles.label(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClinicHeroPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sky = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [AppColors.mint, AppColors.lightBeige],
+      ).createShader(Offset.zero & size);
+    canvas.drawRect(Offset.zero & size, sky);
+
+    final ground = Paint()..color = AppColors.brown.withValues(alpha: 0.58);
+    canvas.drawRect(
+      Rect.fromLTWH(0, size.height * 0.74, size.width, size.height * 0.26),
+      ground,
+    );
+
+    final wall = Paint()..color = AppColors.lightBeige;
+    final glass = Paint()..color = AppColors.mint.withValues(alpha: 0.86);
+    final roof = Paint()..color = AppColors.deepGreen;
+    final shadow = Paint()..color = Colors.black.withValues(alpha: 0.12);
+
+    final building = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        size.width * 0.12,
+        size.height * 0.28,
+        size.width * 0.78,
+        size.height * 0.46,
+      ),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(building.shift(const Offset(0, 8)), shadow);
+    canvas.drawRRect(building, wall);
+
+    final roofPath = Path()
+      ..moveTo(size.width * 0.10, size.height * 0.27)
+      ..lineTo(size.width * 0.84, size.height * 0.18)
+      ..lineTo(size.width * 0.92, size.height * 0.30)
+      ..lineTo(size.width * 0.16, size.height * 0.38)
+      ..close();
+    canvas.drawPath(roofPath, roof);
+
+    for (var i = 0; i < 4; i++) {
+      final left = size.width * (0.20 + i * 0.145);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            left,
+            size.height * 0.42,
+            size.width * 0.10,
+            size.height * 0.22,
+          ),
+          const Radius.circular(2),
+        ),
+        glass,
+      );
+    }
+
+    final door = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        size.width * 0.62,
+        size.height * 0.42,
+        size.width * 0.10,
+        size.height * 0.30,
+      ),
+      const Radius.circular(2),
+    );
+    canvas.drawRRect(door, glass);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: 'PetHome',
+        style: AppTextStyles.pageTitle(color: AppColors.deepGreen),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    textPainter.paint(canvas, Offset(size.width * 0.30, size.height * 0.32));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _VetStatusLine extends StatelessWidget {
+  const _VetStatusLine({required this.vet});
+
+  final VetDetail vet;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: const BoxDecoration(
+            color: AppColors.deepGreen,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            '${vet.statusLabel} • ${_openingSummary(vet)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.label(),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -725,139 +854,188 @@ class _QuickFactsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final website = vet.website?.trim();
-    final utilityLine = <String>[
-      vet.phone,
-      if (website != null && website.isNotEmpty) website,
-      if (website == null || website.isEmpty) ...vet.displayServices.take(2),
-    ].join(' • ');
+    return Row(
+      children: [
+        Expanded(
+          child: _MetricTile(
+            icon: Icons.location_on_outlined,
+            value: vet.distanceLabel ?? '1.2 km',
+            label: 'KHOẢNG CÁCH',
+            emphasized: false,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _MetricTile(
+            icon: Icons.emergency_outlined,
+            value: vet.is24h == true ? 'Cấp cứu\n24/7' : vet.statusLabel,
+            label: vet.is24h == true ? 'SẴN SÀNG' : 'TRẠNG THÁI',
+            emphasized: true,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _MetricTile(
+            icon: Icons.vaccines_outlined,
+            value: vet.displayServices.isNotEmpty
+                ? vet.displayServices.first
+                : 'Tiêm phòng',
+            label: 'CÓ SẴN',
+            emphasized: false,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.emphasized,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = emphasized ? AppColors.primary700 : AppColors.textPrimary;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      height: 126,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: AppShadows.soft,
+        color: emphasized ? AppColors.surfaceContainer : AppColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: emphasized ? AppColors.border : Colors.transparent,
+        ),
       ),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.label(color: color),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.micro(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddressCard extends StatelessWidget {
+  const _AddressCard({required this.vet});
+
+  final VetDetail vet;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.55)),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${vet.address} • ${_openingSummary(vet)}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-              height: 1.3,
-            ),
+          const Icon(
+            Icons.location_on_outlined,
+            color: AppColors.primary500,
+            size: 28,
           ),
-          const SizedBox(height: 10),
-          Text(
-            utilityLine,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-              height: 1.35,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              '${vet.address}\n${vet.district}, ${vet.city}',
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodyStrong(color: AppColors.textSecondary),
             ),
           ),
         ],
       ),
     );
   }
-
-  String _openingSummary(VetDetail vet) {
-    if (vet.is24h == true) {
-      return 'Mở 24/7';
-    }
-
-    final match = RegExp(
-      r'(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})',
-    ).firstMatch(vet.openingNote);
-    if (match != null) {
-      return 'Mở đến ${match.group(2)}';
-    }
-
-    if (vet.isOpen == true) {
-      return 'Đang mở cửa';
-    }
-    if (vet.isOpen == false) {
-      return 'Tạm đóng';
-    }
-
-    return 'Giờ đang cập nhật';
-  }
 }
 
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    super.key,
-    required this.label,
-    required this.background,
-    required this.textColor,
-    required this.onTap,
-  });
+class _VetDetailCtaBar extends StatelessWidget {
+  const _VetDetailCtaBar({required this.vet});
 
-  final String label;
-  final Color background;
-  final Color textColor;
-  final VoidCallback onTap;
+  final VetDetail vet;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onTap,
-      child: Ink(
-        height: 54,
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
+    return PawMateFixedCtaBar(
+      primaryAction: PawMateAction(
+        label: 'Gọi ngay',
+        icon: Icons.phone_outlined,
+        onPressed: () => launchVetCall(context, vet.phone),
+      ),
+      secondaryAction: PawMateAction(
+        label: 'Chỉ đường',
+        icon: Icons.directions_outlined,
+        variant: PawMateButtonVariant.secondary,
+        onPressed: () => launchVetDirections(context, vet),
       ),
     );
   }
 }
 
+String _openingSummary(VetDetail vet) {
+  if (vet.is24h == true) {
+    return 'Mở 24/7';
+  }
+
+  final match = RegExp(
+    r'(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})',
+  ).firstMatch(vet.openingNote);
+  if (match != null) {
+    return 'Đóng lúc ${match.group(2)}';
+  }
+
+  if (vet.isOpen == true) {
+    return 'Đang mở cửa';
+  }
+  if (vet.isOpen == false) {
+    return 'Tạm đóng';
+  }
+
+  return 'Giờ đang cập nhật';
+}
+
 class _ServiceChip extends StatelessWidget {
-  const _ServiceChip({
-    required this.label,
-    required this.background,
-    required this.textColor,
-  });
+  const _ServiceChip({required this.label});
 
   final String label;
-  final Color background;
-  final Color textColor;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: textColor,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+    return PawMateChip(
+      label: label,
+      variant: PawMateChipVariant.status,
+      enabled: true,
     );
   }
 }
@@ -870,13 +1048,12 @@ class _ReviewPreviewCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final ratingLabel = vet.averageRating != null
         ? '${vet.averageRating!.toStringAsFixed(1)} sao'
         : 'Đang chờ đánh giá thật';
     final body = vet.reviewCount > 0
-        ? 'Hiện có ${vet.reviewCount} lượt đánh giá trong nguồn kiểm duyệt. Khu vực này đã được khóa layout để nối đánh giá thật ở Day 4 mà không lệch màn.'
-        : 'Khối đánh giá đã được chừa đúng vị trí theo Figma. Khi bật dữ liệu thật, card này sẽ nhận đánh giá mới nhất mà không cần refactor chi tiết thú y.';
+        ? 'Hiện có ${vet.reviewCount} lượt đánh giá đã được kiểm duyệt. Bạn có thể xem chi tiết hoặc gửi đánh giá của mình.'
+        : 'Chưa có đánh giá nào cho phòng khám này. Hãy là người đầu tiên chia sẻ trải nghiệm.';
 
     final liveBody = reviewsAsync.maybeWhen(
       loading: () => 'Đang tải đánh giá thật từ PawMate...',
@@ -895,30 +1072,19 @@ class _ReviewPreviewCard extends ConsumerWidget {
     );
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.s16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
         boxShadow: AppShadows.soft,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Đánh giá PawMate • $ratingLabel',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          Text('Đánh giá PawMate • $ratingLabel', style: AppTextStyles.h4()),
           const SizedBox(height: 10),
-          Text(
-            liveBody,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-              height: 1.3,
-            ),
-          ),
+          Text(liveBody, style: AppTextStyles.bodyCompact()),
           reviewsAsync.maybeWhen(
             data: (reviews) {
               final latestReview = reviews.items.isNotEmpty
@@ -1053,7 +1219,6 @@ class _RatingDistributionChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     var maxCount = 0;
     for (final count in summary.distribution.values) {
       if (count > maxCount) {
@@ -1068,10 +1233,7 @@ class _RatingDistributionChart extends StatelessWidget {
           summary.averageRating == null
               ? 'Chưa có điểm trung bình'
               : '${summary.averageRating!.toStringAsFixed(1)} / 5 từ ${summary.reviewCount} đánh giá',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
+          style: AppTextStyles.label(),
         ),
         const SizedBox(height: 10),
         ...[5, 4, 3, 2, 1].map((rating) {
@@ -1085,13 +1247,7 @@ class _RatingDistributionChart extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 32,
-                  child: Text(
-                    '$rating★',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  child: Text('$rating★', style: AppTextStyles.captionStrong()),
                 ),
                 Expanded(
                   child: ClipRRect(
@@ -1113,9 +1269,7 @@ class _RatingDistributionChart extends StatelessWidget {
                   child: Text(
                     '$count',
                     textAlign: TextAlign.right,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                    style: AppTextStyles.caption(),
                   ),
                 ),
               ],
@@ -1203,8 +1357,6 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return FractionallySizedBox(
       heightFactor: 0.92,
       child: Container(
@@ -1227,9 +1379,9 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
             const SizedBox(height: 18),
             Text(
               'Đánh giá ${widget.vet.name}',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.h3(),
             ),
             const SizedBox(height: 14),
             _RatingDistributionChart(summary: _summary),
@@ -1239,9 +1391,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
                   ? Center(
                       child: Text(
                         'Chưa có đánh giá nào.',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                        style: AppTextStyles.bodyCompact(),
                       ),
                     )
                   : ListView.separated(
@@ -1256,18 +1406,16 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
               Text(
                 _errorMessage!,
                 key: const Key('review-list-load-error'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.bodyStrong(color: AppColors.error),
               ),
             ],
             if (_nextCursor != null) ...[
               const SizedBox(height: 12),
-              PrimaryGradientButton(
+              PawMateButton(
                 key: const Key('review-load-more-button'),
                 label: _isLoadingMore ? 'Đang tải...' : 'Tải thêm đánh giá',
                 onPressed: _isLoadingMore ? null : _loadMore,
+                isLoading: _isLoadingMore,
               ),
             ],
           ],
@@ -1284,7 +1432,6 @@ class _ReviewListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final body = review.body?.trim();
 
     return Container(
@@ -1300,27 +1447,16 @@ class _ReviewListTile extends StatelessWidget {
         children: [
           Text(
             '${review.starLabel} ${review.title ?? review.reviewer.displayName}',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
+            style: AppTextStyles.label(),
           ),
           if (body != null && body.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(
-              body,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.35,
-              ),
-            ),
+            Text(body, style: AppTextStyles.bodyCompact()),
           ],
           const SizedBox(height: 8),
           Text(
             '${review.reviewer.displayName} • ${review.helpfulCount} hữu ích',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.captionStrong(),
           ),
         ],
       ),
@@ -1402,7 +1538,6 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final media = MediaQuery.of(context);
     const reasons = {
       'spam': 'Spam / quảng cáo',
@@ -1429,28 +1564,22 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Báo cáo đánh giá',
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text('Báo cáo đánh giá', style: AppTextStyles.h3()),
                   const SizedBox(height: 14),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: reasons.entries
                         .map(
-                          (entry) => ChoiceChip(
+                          (entry) => PawMateChip(
                             key: Key('report-reason-${entry.key}'),
-                            label: Text(entry.value),
+                            label: entry.value,
                             selected: _reason == entry.key,
-                            onSelected: _isSubmitting
+                            enabled: !_isSubmitting,
+                            variant: PawMateChipVariant.choice,
+                            onPressed: _isSubmitting
                                 ? null
-                                : (selected) {
-                                    if (!selected) {
-                                      return;
-                                    }
+                                : () {
                                     setState(() {
                                       _reason = entry.key;
                                     });
@@ -1475,17 +1604,15 @@ class _ReportReviewSheetState extends ConsumerState<_ReportReviewSheet> {
                     Text(
                       _errorMessage!,
                       key: const Key('report-review-error'),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTextStyles.bodyStrong(color: AppColors.error),
                     ),
                   ],
                   const SizedBox(height: 18),
-                  PrimaryGradientButton(
+                  PawMateButton(
                     key: const Key('report-review-submit'),
                     label: _isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo',
                     onPressed: _isSubmitting ? null : _submitReport,
+                    isLoading: _isSubmitting,
                   ),
                 ],
               ),
@@ -1504,7 +1631,6 @@ class _SourceAttributionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final website = vet.website?.trim();
     final sourceMeta = <String>[
       'Nguồn kiểm duyệt: ${vet.source.list}',
@@ -1514,53 +1640,20 @@ class _SourceAttributionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F2),
+        color: AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFFFE5D5)),
+        border: Border.all(color: AppColors.mint),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             sourceMeta,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: AppColors.primary700,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTextStyles.captionStrong(color: AppColors.primary700),
           ),
           const SizedBox(height: 8),
-          Text(
-            vet.source.selectionReason,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.35,
-            ),
-          ),
+          Text(vet.source.selectionReason, style: AppTextStyles.bodyCompact()),
         ],
-      ),
-    );
-  }
-}
-
-class _HeroBadge extends StatelessWidget {
-  const _HeroBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.tertiarySoft,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: const Color(0xFF8A6B1D),
-          fontWeight: FontWeight.w800,
-        ),
       ),
     );
   }

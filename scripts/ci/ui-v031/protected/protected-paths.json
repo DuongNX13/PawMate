@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "policyId": "ui-v031-day37-day38-protected-v1",
+  "description": "Read-only integrity boundary protecting the Day 34-38 Rescue backend lane while PawMate v0.31 UI work proceeds.",
+  "rules": [
+    {
+      "type": "tree",
+      "path": "backend/src"
+    },
+    {
+      "type": "tree",
+      "path": "backend/tests"
+    },
+    {
+      "type": "tree",
+      "path": "backend/prisma"
+    },
+    {
+      "type": "tree",
+      "path": "backend/scripts"
+    },
+    {
+      "type": "file",
+      "path": "backend/package.json"
+    },
+    {
+      "type": "file",
+      "path": "backend/package-lock.json"
+    },
+    {
+      "type": "file",
+      "path": "backend/tsconfig.json"
+    },
+    {
+      "type": "file",
+      "path": "docs/architecture/pawmate_api_contract_v1.json"
+    },
+    {
+      "type": "file",
+      "path": "docs/architecture/pawmate_api_contract_v1.md"
+    },
+    {
+      "type": "file",
+      "path": "docs/engineering/phase2_route_data_contract.json"
+    },
+    {
+      "type": "file",
+      "path": "docs/engineering/day5_phase2_rescue_adoption_contract.md"
+    },
+    {
+      "type": "glob",
+      "path": "docs/engineering",
+      "patterns": [
+        "day34*",
+        "day35*",
+        "day36*",
+        "day37*",
+        "day38*"
+      ],
+      "recursive": false
+    },
+    {
+      "type": "glob",
+      "path": "docs/qa/phase2",
+      "patterns": [
+        "day34*",
+        "**/day34*",
+        "day35*",
+        "**/day35*",
+        "day36*",
+        "**/day36*",
+        "day37*",
+        "**/day37*",
+        "day38*",
+        "**/day38*"
+      ],
+      "recursive": true
+    },
+    {
+      "type": "file",
+      "path": "docs/management/pawmate_v1_day_by_day_roadmap_v1_1_2026-07-13.md"
+    },
+    {
+      "type": "file",
+      "path": "docs/management/pawmate_execution_ledger_v1_1_2026-07-13.md"
+    },
+    {
+      "type": "tree",
+      "path": "output-evidence/day34"
+    },
+    {
+      "type": "tree",
+      "path": "output-evidence/day35"
+    },
+    {
+      "type": "tree",
+      "path": "output-evidence/day36"
+    },
+    {
+      "type": "tree",
+      "path": "output-evidence/day37"
+    },
+    {
+      "type": "tree",
+      "path": "output-evidence/day38"
+    }
+  ],
+  "excludeGlobs": [
+    ".git/**",
+    "**/.git/**",
+    "node_modules/**",
+    "**/node_modules/**",
+    ".dart_tool/**",
+    "**/.dart_tool/**",
+    ".cache/**",
+    "**/.cache/**",
+    "cache/**",
+    "**/cache/**",
+    "tmp/**",
+    "**/tmp/**",
+    "temp/**",
+    "**/temp/**",
+    "build/**",
+    "**/build/**",
+    "dist/**",
+    "**/dist/**",
+    "coverage/**",
+    "**/coverage/**",
+    "*.log",
+    "**/*.log",
+    ".env",
+    ".env.*",
+    "**/.env",
+    "**/.env.*"
+  ],
+  "ownerDeltaRequiredFields": [
+    "schemaVersion",
+    "kind",
+    "policyId",
+    "baselineId",
+    "owner",
+    "approvedBy",
+    "reason",
+    "approvedAtUtc",
+    "expiresAtUtc",
+    "changes"
+  ]
+}

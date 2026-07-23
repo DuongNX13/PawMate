@@ -1,15 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/data/auth_session_store.dart';
+import '../../auth/application/auth_session_coordinator.dart';
 import '../../pets/application/pet_list_provider.dart';
 import '../data/reminder_api.dart';
 import '../domain/reminder.dart';
 
-final reminderAccessTokenProvider = FutureProvider<String?>((ref) async {
-  final session = await ref.watch(authSessionStoreProvider).read();
-  final token = session?.accessToken.trim();
-  return token == null || token.isEmpty ? null : token;
-});
+final reminderAccessTokenProvider = authAccessTokenProvider;
 
 final reminderListProvider =
     FutureProvider.family<ReminderListResult, ReminderListQuery>((

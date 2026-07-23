@@ -4,9 +4,10 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
+      flutter: "3.44.7"
+      xcode: "26.4"
+      cocoapods: "1.16.2"
+      java: "17"
       vars:
         BUNDLE_ID: com.pawmate.pawmateMobile
         PAWMATE_BACKEND_HEALTH_TIMEOUT_MS: "70000"
@@ -68,9 +69,10 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
-      xcode: latest
-      cocoapods: default
+      flutter: "3.44.7"
+      xcode: "26.4"
+      cocoapods: "1.16.2"
+      java: "17"
       vars:
         PAWMATE_API_BASE_URL: https://pawmate-api-yteu.onrender.com
         PAWMATE_BACKEND_HEALTH_TIMEOUT_MS: "70000"
@@ -119,6 +121,68 @@ workflows:
             --dart-define=PAWMATE_QA_PREFILL_AUTH="${PAWMATE_QA_PREFILL_AUTH:-false}" \
             --dart-define=PAWMATE_QA_AUTH_EMAIL="${PAWMATE_QA_AUTH_EMAIL:-}" \
             --dart-define=PAWMATE_QA_AUTH_PASSWORD="${PAWMATE_QA_AUTH_PASSWORD:-}"
+      - name: Capture iOS simulator render proof
+        script: |
+          set -euo pipefail
+          APP_PATH="${CM_BUILD_DIR}/mobile/build/ios/iphonesimulator/Runner.app"
+          PROOF_DIR="${CM_BUILD_DIR}/output-evidence/ios-post-change"
+          BUNDLE_ID="com.pawmate.pawmateMobile"
+          mkdir -p "${PROOF_DIR}"
+
+          DEVICE_INFO="$(
+            python3 - <<'PY'
+          import json
+          import re
+          import subprocess
+
+          payload = json.loads(
+              subprocess.check_output(
+                  ["xcrun", "simctl", "list", "devices", "available", "--json"],
+                  text=True,
+              )
+          )
+          candidates = []
+          for runtime, devices in payload.get("devices", {}).items():
+              match = re.search(r"\.iOS-(\d+)(?:-(\d+))?", runtime)
+              version = tuple(int(part or 0) for part in match.groups()) if match else (0, 0)
+              for device in devices:
+                  if device.get("isAvailable") and str(device.get("name", "")).startswith("iPhone"):
+                      candidates.append((version, device["name"], device["udid"], device.get("state", "")))
+          if not candidates:
+              raise SystemExit("No available iPhone simulator found")
+          version, name, udid, state = sorted(candidates, reverse=True)[0]
+          print(json.dumps({"runtime_version": version, "name": name, "udid": udid, "state": state}))
+          PY
+          )"
+          printf '%s\n' "${DEVICE_INFO}" > "${PROOF_DIR}/simulator-device.json"
+          DEVICE_UDID="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["udid"])' <<<"${DEVICE_INFO}")"
+
+          if ! xcrun simctl boot "${DEVICE_UDID}"; then
+            CURRENT_STATE="$(xcrun simctl list devices --json | python3 -c 'import json,sys; data=json.load(sys.stdin); target=sys.argv[1]; print(next(device["state"] for devices in data["devices"].values() for device in devices if device["udid"] == target))' "${DEVICE_UDID}")"
+            test "${CURRENT_STATE}" = "Booted"
+          fi
+          xcrun simctl bootstatus "${DEVICE_UDID}" -b
+          xcrun simctl install "${DEVICE_UDID}" "${APP_PATH}"
+          xcrun simctl launch --terminate-running-process "${DEVICE_UDID}" "${BUNDLE_ID}" \
+            | tee "${PROOF_DIR}/simulator-launch.raw.txt"
+          sleep 10
+          xcrun simctl io "${DEVICE_UDID}" screenshot "${PROOF_DIR}/pawmate-ios-post-change.png"
+          xcrun simctl spawn "${DEVICE_UDID}" log show \
+            --style compact \
+            --last 3m \
+            --predicate 'process == "Runner"' \
+            > "${PROOF_DIR}/runner-log.raw.txt"
+
+          test -s "${PROOF_DIR}/pawmate-ios-post-change.png"
+          SCREENSHOT_BYTES="$(stat -f%z "${PROOF_DIR}/pawmate-ios-post-change.png")"
+          test "${SCREENSHOT_BYTES}" -gt 10000
+          shasum -a 256 "${PROOF_DIR}/pawmate-ios-post-change.png" \
+            > "${PROOF_DIR}/pawmate-ios-post-change.sha256"
+          if grep -E "Terminating app due to uncaught exception|Fatal error|SIGABRT" \
+            "${PROOF_DIR}/runner-log.raw.txt"; then
+            echo "Fatal iOS runtime fingerprint detected" >&2
+            exit 1
+          fi
       - name: Package Appetize simulator zip
         script: |
           set -euo pipefail
@@ -136,6 +200,7 @@ workflows:
           ls -lh "$ZIP_PATH"
     artifacts:
       - mobile/build/ios/appetize/PawMate-appetize-simulator.zip
+      - output-evidence/ios-post-change/**
     publishing:
       email:
         recipients:

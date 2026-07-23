@@ -6,8 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:pawmate_mobile/core/network/app_dio.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
+import 'package:pawmate_mobile/features/auth/data/authenticated_dio.dart';
 import 'package:pawmate_mobile/features/health/presentation/health_timeline_screen.dart';
-import 'package:pawmate_mobile/features/notifications/application/notification_providers.dart';
 import 'package:pawmate_mobile/features/notifications/presentation/notification_center_screen.dart';
 import 'package:pawmate_mobile/features/pets/application/pet_list_provider.dart';
 import 'package:pawmate_mobile/features/pets/data/pet_api.dart';
@@ -54,6 +54,7 @@ void main() {
           name: 'Day6 Pet $runId',
           species: 'dog',
           breed: 'Golden Retriever',
+          color: 'Vàng kem',
           gender: 'male',
           dateOfBirth: DateTime(2022, 4, 12),
           weightKg: 12.4,
@@ -62,6 +63,9 @@ void main() {
         ),
         accessToken: session.accessToken,
       );
+      addTearDown(() async {
+        await petApi.deletePet(pet.id, accessToken: session.accessToken);
+      });
 
       final calendarTitle = 'Day6 calendar reminder $runId';
       await _pumpReminderScreen(
@@ -71,12 +75,68 @@ void main() {
       );
       expect(find.text(pet.name), findsAtLeastNWidgets(1));
 
-      await tester.tap(find.text('Them lich'));
+      // The QA account can contain pets from earlier runs. Select the pet
+      // created by this journey before creating the reminder so the UI and
+      // the API read-back use the same shared selected-pet state.
+      final petDropdown = find.byType(DropdownButton<String>);
+      expect(petDropdown, findsOneWidget);
+      await tester.tap(petDropdown);
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, calendarTitle);
-      await tester.tap(find.text('Luu lich nhac'));
-      await tester.pumpAndSettle(const Duration(seconds: 5));
-      expect(find.text(calendarTitle), findsOneWidget);
+      final createdPetOption = find.byWidgetPredicate(
+        (widget) =>
+            widget is DropdownMenuItem<String> && widget.value == pet.id,
+      );
+      expect(createdPetOption, findsOneWidget);
+      await tester.tap(createdPetOption);
+      await tester.pumpAndSettle();
+      expect(tester.widget<DropdownButton<String>>(petDropdown).value, pet.id);
+
+      await tester.tap(find.byTooltip('Thêm lịch'));
+      await tester.pumpAndSettle();
+      final titleField = find.byKey(
+        const ValueKey('reminder-create-title-field'),
+      );
+      expect(titleField, findsOneWidget);
+      // Batched Android integration files can retain an IME connection from a
+      // previous APK session. Widget tests cover keyboard entry; this journey
+      // writes through the bound controller so persistence is deterministic.
+      final titleController = tester.widget<TextField>(titleField).controller!;
+      titleController.value = TextEditingValue(
+        text: calendarTitle,
+        selection: TextSelection.collapsed(offset: calendarTitle.length),
+      );
+      await tester.pump();
+      expect(titleController.text, calendarTitle);
+      await tester.tap(
+        find.byKey(const ValueKey('reminder-create-save-button')),
+      );
+      await _waitUntilGone(tester, find.text('Thêm lịch nhắc'));
+      expect(find.byType(ReminderCalendarScreen), findsOneWidget);
+      final reminderQuery = ReminderListQuery(
+        petId: pet.id,
+        from: DateTime.now().subtract(const Duration(days: 1)),
+        to: DateTime.now().add(const Duration(days: 2)),
+        includeDone: true,
+      );
+      late ReminderListResult persistedReminders;
+      for (var attempt = 0; attempt < 5; attempt++) {
+        persistedReminders = await reminderApi.listReminders(
+          reminderQuery,
+          accessToken: session.accessToken,
+        );
+        if (persistedReminders.items.any(
+          (reminder) => reminder.title == calendarTitle,
+        )) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      expect(
+        persistedReminders.items.any(
+          (reminder) => reminder.title == calendarTitle,
+        ),
+        isTrue,
+      );
 
       final dueTitle = 'Day6 due notification $runId';
       await reminderApi.createReminder(
@@ -95,11 +155,16 @@ void main() {
         accessToken: session.accessToken,
       );
       expect(find.text(dueTitle), findsOneWidget);
-      expect(find.textContaining('thong bao chua doc'), findsWidgets);
+      expect(find.textContaining('thông báo chưa đọc'), findsWidgets);
 
-      await tester.tap(find.text('Doc het'));
+      await tester.tap(
+        find.byKey(const ValueKey('notification-mark-all-read-button')),
+      );
       await tester.pumpAndSettle(const Duration(seconds: 5));
-      expect(find.text('Tat ca da doc'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('notification-unread-banner')),
+        findsNothing,
+      );
 
       await _pumpNotificationScreen(
         tester,
@@ -107,9 +172,23 @@ void main() {
         accessToken: session.accessToken,
       );
       expect(find.text(dueTitle), findsOneWidget);
-      expect(find.text('Tat ca da doc'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('notification-unread-banner')),
+        findsNothing,
+      );
     },
   );
+}
+
+Future<void> _waitUntilGone(WidgetTester tester, Finder finder) async {
+  for (var attempt = 0; attempt < 40; attempt++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isEmpty) {
+      return;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 100));
+  }
+  expect(finder, findsNothing);
 }
 
 Future<void> _pumpReminderScreen(
@@ -121,11 +200,9 @@ Future<void> _pumpReminderScreen(
     ProviderScope(
       overrides: [
         dioProvider.overrideWith((ref) => dio),
+        authenticatedDioProvider.overrideWith((ref) => dio),
         petAccessTokenProvider.overrideWith((ref) async => accessToken),
         reminderAccessTokenProvider.overrideWith((ref) async => accessToken),
-        notificationAccessTokenProvider.overrideWith(
-          (ref) async => accessToken,
-        ),
       ],
       child: MaterialApp.router(
         theme: _testTheme(),
@@ -146,11 +223,9 @@ Future<void> _pumpNotificationScreen(
     ProviderScope(
       overrides: [
         dioProvider.overrideWith((ref) => dio),
+        authenticatedDioProvider.overrideWith((ref) => dio),
         petAccessTokenProvider.overrideWith((ref) async => accessToken),
         reminderAccessTokenProvider.overrideWith((ref) async => accessToken),
-        notificationAccessTokenProvider.overrideWith(
-          (ref) async => accessToken,
-        ),
       ],
       child: MaterialApp.router(
         theme: _testTheme(),

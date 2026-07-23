@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/app_dio.dart';
+import '../../auth/data/authenticated_dio.dart';
 import '../domain/reminder.dart';
 
 final reminderApiProvider = Provider<ReminderApi>((ref) {
-  return ReminderApi(ref.watch(dioProvider));
+  return ReminderApi(ref.watch(authenticatedDioProvider));
 });
 
 class ReminderApiException implements Exception {
@@ -61,6 +61,22 @@ class ReminderApi {
     return _perform(
       call: () => _dio.post(
         '/pets/$petId/reminders/$reminderId/mark-done',
+        options: _authOptions(accessToken),
+      ),
+      parser: (json) => Reminder.fromJson(_readMap(json['data'])),
+    );
+  }
+
+  Future<Reminder> snoozeReminder(
+    String petId,
+    String reminderId,
+    DateTime snoozedUntil, {
+    required String accessToken,
+  }) async {
+    return _perform(
+      call: () => _dio.post(
+        '/pets/$petId/reminders/$reminderId/snooze',
+        data: {'snoozedUntil': snoozedUntil.toUtc().toIso8601String()},
         options: _authOptions(accessToken),
       ),
       parser: (json) => Reminder.fromJson(_readMap(json['data'])),

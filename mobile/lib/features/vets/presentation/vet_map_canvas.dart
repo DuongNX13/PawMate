@@ -44,6 +44,7 @@ typedef VetMapCanvasBuilder =
       List<VetSummary> items,
       VetMapStyle mapStyle,
       ValueChanged<String> onMarkerTap,
+      ValueChanged<Object> onMapUnavailable,
     );
 
 final vetMapCanvasBuilderProvider = Provider<VetMapCanvasBuilder>((ref) {
@@ -52,12 +53,14 @@ final vetMapCanvasBuilderProvider = Provider<VetMapCanvasBuilder>((ref) {
     List<VetSummary> items,
     VetMapStyle mapStyle,
     ValueChanged<String> onMarkerTap,
+    ValueChanged<Object> onMapUnavailable,
   ) {
     return VetRasterMapCanvas(
       center: center,
       items: items,
       mapStyle: mapStyle,
       onMarkerTap: onMarkerTap,
+      onMapUnavailable: onMapUnavailable,
     );
   };
 });
@@ -69,12 +72,14 @@ class VetRasterMapCanvas extends StatefulWidget {
     required this.items,
     required this.mapStyle,
     required this.onMarkerTap,
+    required this.onMapUnavailable,
   });
 
   final VetMapLocation center;
   final List<VetSummary> items;
   final VetMapStyle mapStyle;
   final ValueChanged<String> onMarkerTap;
+  final ValueChanged<Object> onMapUnavailable;
 
   @override
   State<VetRasterMapCanvas> createState() => _VetRasterMapCanvasState();
@@ -86,6 +91,8 @@ class _VetRasterMapCanvasState extends State<VetRasterMapCanvas> {
   static const _defaultZoom = 13.6;
 
   final MapController _controller = MapController();
+  int _tileErrorCount = 0;
+  bool _reportedUnavailable = false;
 
   @override
   void didUpdateWidget(covariant VetRasterMapCanvas oldWidget) {
@@ -96,6 +103,8 @@ class _VetRasterMapCanvasState extends State<VetRasterMapCanvas> {
     final mapStyleChanged = oldWidget.mapStyle != widget.mapStyle;
 
     if (centerChanged || mapStyleChanged) {
+      _tileErrorCount = 0;
+      _reportedUnavailable = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
           return;
@@ -123,8 +132,8 @@ class _VetRasterMapCanvasState extends State<VetRasterMapCanvas> {
         .map(
           (item) => Marker(
             point: LatLng(item.latitude!, item.longitude!),
-            width: 46,
-            height: 54,
+            width: 48,
+            height: 58,
             child: Semantics(
               button: true,
               label: 'Mở ${item.name}',
@@ -139,7 +148,7 @@ class _VetRasterMapCanvasState extends State<VetRasterMapCanvas> {
                       decoration: BoxDecoration(
                         color: item.is24h == true
                             ? AppColors.primary500
-                            : const Color(0xFFE85D9B),
+                            : AppColors.brown,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: AppShadows.soft,
@@ -186,6 +195,7 @@ class _VetRasterMapCanvasState extends State<VetRasterMapCanvas> {
                 userAgentPackageName: 'com.pawmate.pawmate_mobile',
                 maxZoom: 19,
                 retinaMode: RetinaMode.isHighDensity(context),
+                errorTileCallback: (_, error, _) => _handleTileError(error),
               ),
               MarkerLayer(markers: markerWidgets),
             ],
@@ -216,6 +226,22 @@ class _VetRasterMapCanvasState extends State<VetRasterMapCanvas> {
         ],
       ),
     );
+  }
+
+  void _handleTileError(Object error) {
+    if (_reportedUnavailable) {
+      return;
+    }
+    _tileErrorCount += 1;
+    if (_tileErrorCount < 3) {
+      return;
+    }
+    _reportedUnavailable = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onMapUnavailable(error);
+      }
+    });
   }
 
   String get _tileUrlTemplate {

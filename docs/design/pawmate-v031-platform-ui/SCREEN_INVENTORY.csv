@@ -1,0 +1,57 @@
+screen_id,phase,screen_name,figma_source_section_id,figma_source_node_id,source_node_name,classification,runtime_route_or_surface,module_owner,bottom_nav,safe_area_policy,status
+P1-01,P1,Onboarding,442:2,442:6,NativeEditable/P1-01 P1-01 Onboarding,RUNTIME_PHASE1,/onboarding,onboarding,no,system-insets,LOCKED
+P1-02,P1,Login Screen,442:2,442:23,NativeEditable/P1-02 P1-02 Login Screen,RUNTIME_PHASE1,/auth/login,auth,no,system-insets,LOCKED
+P1-03,P1,Register,442:2,442:47,NativeEditable/P1-03 P1-03 Register,RUNTIME_PHASE1,/auth/register,auth,no,system-insets,LOCKED
+P1-04,P1,OTP Verification,442:2,442:73,NativeEditable/P1-04 P1-04 OTP Verification,RUNTIME_PHASE1,/auth/otp,auth,no,system-insets,LOCKED
+P1-05,P1,Pet List,442:2,442:102,NativeEditable/P1-05 P1-05 Pet List,RUNTIME_PHASE1,/pets/list,pets,yes,shell-insets,LOCKED
+P1-06,P1,Pet Form,442:2,442:151,NativeEditable/P1-06 P1-06 Pet Form,RUNTIME_PHASE1,/pets/create | /pets/:id/edit,pets,no,system-insets,LOCKED
+P1-07,P1,Home Screen,442:2,442:198,NativeEditable/P1-07 P1-07 Home Screen,RUNTIME_PHASE1,/pets,pets,yes,shell-insets,LOCKED
+P1-08,P1,Vet Finder Map,442:2,442:275,NativeEditable/P1-08 P1-08 Vet Finder Map,RUNTIME_PHASE1,/vets/map,vets,yes,map-edge-to-edge-with-safe-controls,LOCKED
+P1-09,P1,Vet List,442:2,442:357,NativeEditable/P1-09 P1-09 Vet List,RUNTIME_PHASE1,/vets/list,vets,yes,shell-insets,LOCKED
+P1-10,P1,Vet Detail,442:2,442:430,NativeEditable/P1-10 P1-10 Vet Detail,RUNTIME_PHASE1,/vets/:id,vets,no,system-insets,LOCKED
+P1-11,P1,Write Review,442:2,442:473,NativeEditable/P1-11 P1-11 Write Review,RUNTIME_PHASE1,modal:vet-review,vets,no,system-insets,LOCKED
+P1-12,P1,Health Timeline,442:2,442:516,NativeEditable/P1-12 P1-12 Health Timeline,RUNTIME_PHASE1,/health,health,yes,shell-insets,LOCKED
+P1-13,P1,Add Health Event,442:2,442:589,NativeEditable/P1-13 P1-13 Add Health Event,RUNTIME_PHASE1,/health/events/new,health,no,system-insets,LOCKED
+P1-14,P1,Reminder Calendar,442:2,442:639,NativeEditable/P1-14 P1-14 Reminder Calendar,RUNTIME_PHASE1,/health/reminders,reminders,no,system-insets,LOCKED
+P1-15,P1,Notification Center,442:2,442:732,NativeEditable/P1-15 P1-15 Notification Center,RUNTIME_PHASE1,/notifications,notifications,no,system-insets,LOCKED
+P1-16,P1,Profile Screen,442:2,442:792,NativeEditable/P1-16 P1-16 Profile Screen,RUNTIME_PHASE1,/profile,profile,yes,shell-insets,LOCKED
+P2-01,P2,Rescue Home,442:2,442:855,NativeEditable/P2-01 P2-01 Rescue Home,STAGED_PHASE2_FLAG_OFF,/rescue,rescue,yes,shell-insets,LOCKED
+P2-02,P2,Create Lost Alert,442:2,442:908,NativeEditable/P2-02 P2-02 Create Lost Alert,DESIGN_ONLY_PHASE2,/rescue/drafts/new,rescue,no,system-insets,LOCKED
+P2-03,P2,Lost Info Form,442:2,442:949,NativeEditable/P2-03 P2-03 Lost Info Form,DESIGN_ONLY_PHASE2,/rescue/drafts/:draftId/details,rescue,no,system-insets,LOCKED
+P2-04,P2,Case Detail,442:2,442:984,NativeEditable/P2-04 P2-04 Case Detail,DESIGN_ONLY_PHASE2,/rescue/cases/:caseId,rescue,no,system-insets,LOCKED
+P2-05,P2,Rescue Map,442:2,442:1016,NativeEditable/P2-05 P2-05 Rescue Map,DESIGN_ONLY_PHASE2,/rescue/map,rescue,no,map-edge-to-edge-with-safe-controls,LOCKED
+P2-06,P2,Case Comment,442:2,442:1076,NativeEditable/P2-06 P2-06 Case Comment,DESIGN_ONLY_PHASE2,/rescue/cases/:caseId/comment,rescue,no,system-insets-and-ime,LOCKED
+P2-07,P2,Case Status Update,442:2,442:1120,NativeEditable/P2-07 P2-07 Case Status Update,DESIGN_ONLY_PHASE2,/rescue/cases/:caseId/status,rescue,no,system-insets,LOCKED
+P2-08,P2,Case Discussion,442:2,442:1167,NativeEditable/P2-08 P2-08 Case Discussion,DESIGN_ONLY_PHASE2,/rescue/cases/:caseId/discussion,rescue,no,system-insets-and-ime,LOCKED
+P2-09,P2,Adoption Swipe Deck,442:2,442:1235,NativeEditable/P2-09 P2-09 Adoption Swipe Deck,DESIGN_ONLY_PHASE2,/adoption,adoption,no,system-insets,LOCKED
+P2-10,P2,Adoption Profile,442:2,442:1288,NativeEditable/P2-10 P2-10 Adoption Profile,DESIGN_ONLY_PHASE2,proposed:/adoption/pets/:id,adoption,no,system-insets,LOCKED
+P2-11,P2,Adoption Request Form,442:2,442:1330,NativeEditable/P2-11 P2-11 Adoption Request Form,DESIGN_ONLY_PHASE2,proposed:/adoption/requests/new,adoption,no,system-insets-and-ime,LOCKED
+P2-12,P2,Shelter Chat,442:2,442:1368,NativeEditable/P2-12 P2-12 Shelter Chat,DESIGN_ONLY_PHASE2,proposed:/adoption/requests/:id/chat,adoption,no,system-insets-and-ime,LOCKED
+P2-13,P2,Health Hub,442:2,442:1408,NativeEditable/P2-13 P2-13 Health Hub,DESIGN_ONLY_PHASE2,/health,health,yes,shell-insets,LOCKED
+P2-14,P2,Notification Preferences,442:2,442:1486,NativeEditable/P2-14 P2-14 Notification Preferences,DESIGN_ONLY_PHASE2,proposed:/notifications/preferences,notifications,no,system-insets,LOCKED
+P2-15,P2,Privacy Defaults,442:2,442:1527,NativeEditable/P2-15 P2-15 Privacy Defaults,DESIGN_ONLY_PHASE2,/profile/privacy,profile,no,system-insets,LOCKED
+P2-16,P2,Profile Controls,442:2,442:1567,NativeEditable/P2-16 P2-16 Profile Controls,DESIGN_ONLY_PHASE2,/profile/controls,profile,no,system-insets,LOCKED
+ST-01,STATE,Offline Full Screen,442:2,442:1633,NativeEditable/ST-01 ST-01 Offline Full Screen,STATE_REFERENCE,N/A,cross-module,contextual,system-insets,LOCKED
+ST-02,STATE,Network Error Retry,442:2,442:1664,NativeEditable/ST-02 ST-02 Network Error Retry,STATE_REFERENCE,N/A,cross-module,contextual,system-insets,LOCKED
+ST-03,STATE,Loading Skeleton,442:2,442:1707,NativeEditable/ST-03 ST-03 Loading Skeleton,STATE_REFERENCE,N/A,cross-module,contextual,system-insets,LOCKED
+ST-04,STATE,Empty First Pet,442:2,442:1758,NativeEditable/ST-04 ST-04 Empty First Pet,STATE_REFERENCE,/pets/list,pets,yes,shell-insets,LOCKED
+ST-05,STATE,Empty Nearby Rescue,442:2,442:1793,NativeEditable/ST-05 ST-05 Empty Nearby Rescue,STATE_REFERENCE,/rescue,rescue,yes,shell-insets,LOCKED
+ST-06,STATE,Vet Search No Results,442:2,442:1839,NativeEditable/ST-06 ST-06 Vet Search No Results,STATE_REFERENCE,/vets/list,vets,yes,shell-insets,LOCKED
+ST-07,STATE,Login Success,442:2,442:1882,NativeEditable/ST-07 ST-07 Login Success,STATE_REFERENCE,/auth/login,auth,no,system-insets,LOCKED
+ST-08,STATE,Login Failure,442:2,442:1892,NativeEditable/ST-08 ST-08 Login Failure,STATE_REFERENCE,/auth/login,auth,no,system-insets,LOCKED
+ST-09,STATE,Register Success,442:2,442:1918,NativeEditable/ST-09 ST-09 Register Success,STATE_REFERENCE,/auth/register,auth,no,system-insets,LOCKED
+ST-10,STATE,Register Failure,442:2,442:1936,NativeEditable/ST-10 ST-10 Register Failure,STATE_REFERENCE,/auth/register,auth,no,system-insets,LOCKED
+ST-11,STATE,Save Update Success,442:2,442:1969,NativeEditable/ST-11 ST-11 Save Update Success,STATE_REFERENCE,N/A,cross-module,no,system-insets,LOCKED
+ST-12,STATE,Save Update Failure,442:2,442:2015,NativeEditable/ST-12 ST-12 Save Update Failure,STATE_REFERENCE,N/A,cross-module,no,system-insets,LOCKED
+ST-13,STATE,Lost Alert Submit Failure,442:2,442:2054,NativeEditable/ST-13 ST-13 Lost Alert Submit Failure,STATE_REFERENCE,/rescue/drafts/:draftId/details,rescue,no,system-insets-and-ime,LOCKED
+ST-14,STATE,Adoption Request Submitted,442:2,442:2092,NativeEditable/ST-14 ST-14 Adoption Request Submitted,STATE_REFERENCE,proposed:/adoption/requests/new,adoption,no,system-insets,LOCKED
+ST-15,STATE,Location Permission Needed,442:2,442:2117,NativeEditable/ST-15 ST-15 Location Permission Needed,STATE_REFERENCE,/vets/map | /rescue/map,cross-module,contextual,map-edge-to-edge-with-safe-controls,LOCKED
+ST-16,STATE,Media Upload Failure,442:2,442:2150,NativeEditable/ST-16 ST-16 Media Upload Failure,STATE_REFERENCE,N/A,cross-module,no,system-insets,LOCKED
+ST-17,STATE,OTP Expired,442:2,442:2194,NativeEditable/ST-17 ST-17 OTP Expired,STATE_REFERENCE,/auth/otp,auth,no,system-insets,LOCKED
+ST-18,STATE,Comment Send Failure,442:2,442:2223,NativeEditable/ST-18 ST-18 Comment Send Failure,STATE_REFERENCE,/rescue/cases/:caseId/comment,rescue,no,system-insets-and-ime,LOCKED
+ST-19,STATE,Adoption Request Failure,442:2,442:2269,NativeEditable/ST-19 ST-19 Adoption Request Failure,STATE_REFERENCE,proposed:/adoption/requests/new,adoption,no,system-insets-and-ime,LOCKED
+ST-20,STATE,Empty My Adoption Requests,442:2,442:2302,NativeEditable/ST-20 ST-20 Empty My Adoption Requests,STATE_REFERENCE,proposed:/adoption/requests,adoption,no,system-insets,LOCKED
+ST-21,STATE,Chat Send Failure,442:2,442:2334,NativeEditable/ST-21 ST-21 Chat Send Failure,STATE_REFERENCE,proposed:/adoption/requests/:id/chat,adoption,no,system-insets-and-ime,LOCKED
+ST-22,STATE,Status Update Success,442:2,442:2356,NativeEditable/ST-22 ST-22 Status Update Success,STATE_REFERENCE,/rescue/cases/:caseId/status,rescue,no,system-insets,LOCKED
+ST-23,STATE,Map Service Unavailable,442:2,442:2393,NativeEditable/ST-23 ST-23 Map Service Unavailable,STATE_REFERENCE,/vets/map | /rescue/map,cross-module,contextual,map-edge-to-edge-with-safe-controls,LOCKED
+ST-24,STATE,Empty Notifications,442:2,442:2455,NativeEditable/ST-24 ST-24 Empty Notifications,STATE_REFERENCE,/notifications,notifications,no,system-insets,LOCKED

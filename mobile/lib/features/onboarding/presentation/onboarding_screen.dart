@@ -1,167 +1,440 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class OnboardingScreen extends StatefulWidget {
+import '../../../app/theme/app_text_styles.dart';
+import '../../../app/theme/app_tokens.dart';
+import '../../../core/media/image_picker_service.dart';
+import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_text_field.dart';
+import '../../../core/widgets/pawmate_toast.dart';
+
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
-  final PageController _pageController = PageController();
-  int _currentIndex = 0;
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
+  static const _petNameKey = 'onboardingDraftPetName';
+  static const _breedKey = 'onboardingDraftBreed';
+  static const _ageKey = 'onboardingDraftAge';
+  static const _photoPathKey = 'onboardingDraftPhotoPath';
 
-  static const _slides = [
-    (
-      title: 'Tìm phòng khám gần bạn',
-      body: 'Xem nhanh bản đồ và chọn nơi phù hợp nhất cho thú cưng.',
-      icon: Icons.map_outlined,
-      accent: Color(0xFF2A8F7B),
-    ),
-    (
-      title: 'Cộng đồng yêu thú cưng',
-      body: 'Kết nối, chia sẻ và học hỏi từ người nuôi thú cưng khác.',
-      icon: Icons.groups_outlined,
-      accent: Color(0xFF3667D6),
-    ),
-    (
-      title: 'Bảo vệ thú cưng bị lạc',
-      body: 'Lưu thông tin quan trọng để tăng cơ hội tìm lại khi cần.',
-      icon: Icons.shield_outlined,
-      accent: Color(0xFFE17A35),
-    ),
-  ];
+  final _formKey = GlobalKey<FormState>();
+  final _petNameController = TextEditingController();
+  final _breedController = TextEditingController();
+  final _ageController = TextEditingController();
 
-  Future<void> _finishOnboarding({required String nextRoute}) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('hasSeenOnboarding', true);
-    if (!mounted) {
-      return;
+  String? _photoPath;
+  String? _draftError;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_restoreDraft());
+  }
+
+  Future<void> _restoreDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+
+      _petNameController.text = prefs.getString(_petNameKey) ?? '';
+      _breedController.text = prefs.getString(_breedKey) ?? '';
+      _ageController.text = prefs.getString(_ageKey) ?? '';
+      final savedPhotoPath = prefs.getString(_photoPathKey);
+      setState(() {
+        _photoPath = _isReadableFile(savedPhotoPath) ? savedPhotoPath : null;
+        _draftError = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _draftError =
+            'Không thể khôi phục thông tin đã nhập. Bạn vẫn có thể tiếp tục.';
+      });
     }
-    context.go(nextRoute);
+  }
+
+  bool _isReadableFile(String? path) {
+    if (path == null || path.trim().isEmpty) return false;
+    try {
+      return File(path).existsSync();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _pickPhoto() async {
+    try {
+      final photo = await ref
+          .read(imagePickerProvider)
+          .pickImage(
+            source: ImageSource.gallery,
+            imageQuality: 90,
+            maxWidth: 1600,
+          );
+      if (photo == null || !mounted) return;
+
+      setState(() {
+        _photoPath = photo.path;
+        _draftError = null;
+      });
+      await _persistDraft(markOnboardingSeen: false);
+    } catch (_) {
+      if (!mounted) return;
+      PawMateToast.show(
+        context,
+        message: 'Không thể mở ảnh đã chọn. Vui lòng thử lại.',
+        type: PawMateToastType.error,
+      );
+    }
+  }
+
+  String? _validatePetName(String? value) {
+    final name = (value ?? '').trim();
+    if (name.isEmpty) return 'Vui lòng nhập tên thú cưng';
+    if (name.length > 50) return 'Tên thú cưng tối đa 50 ký tự';
+    return null;
+  }
+
+  String? _validateBreed(String? value) {
+    if ((value ?? '').trim().length > 80) return 'Giống tối đa 80 ký tự';
+    return null;
+  }
+
+  String? _validateAge(String? value) {
+    final ageText = (value ?? '').trim();
+    if (ageText.isEmpty) return null;
+    final age = int.tryParse(ageText);
+    if (age == null || age < 0 || age > 50) {
+      return 'Tuổi phải là số từ 0 đến 50';
+    }
+    return null;
+  }
+
+  Future<void> _persistDraft({required bool markOnboardingSeen}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final draftResults = <bool>[
+      await prefs.setString(_petNameKey, _petNameController.text.trim()),
+      await prefs.setString(_breedKey, _breedController.text.trim()),
+      await prefs.setString(_ageKey, _ageController.text.trim()),
+      if (_photoPath == null || _photoPath!.trim().isEmpty)
+        await prefs.remove(_photoPathKey)
+      else
+        await prefs.setString(_photoPathKey, _photoPath!),
+    ];
+    if (draftResults.any((saved) => !saved)) {
+      throw StateError('Unable to persist onboarding draft.');
+    }
+    if (markOnboardingSeen && !await prefs.setBool('hasSeenOnboarding', true)) {
+      throw StateError('Unable to finish onboarding.');
+    }
+  }
+
+  Future<void> _finishOnboarding({
+    required String nextRoute,
+    required bool validate,
+  }) async {
+    if (_isSubmitting) return;
+    if (validate && !(_formKey.currentState?.validate() ?? false)) return;
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSubmitting = true;
+      _draftError = null;
+    });
+
+    try {
+      await _persistDraft(markOnboardingSeen: true);
+      if (mounted) context.go(nextRoute);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _draftError =
+            'Chưa thể lưu thông tin của bạn. Vui lòng thử lại để tránh mất dữ liệu.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _petNameController.dispose();
+    _breedController.dispose();
+    _ageController.dispose();
     super.dispose();
+  }
+
+  Widget _buildHeroImage(File? selectedPhoto) {
+    const semanticLabel = 'Minh họa chó cưng cho bước thiết lập hồ sơ thú cưng';
+    final fallback = Image.asset(
+      'assets/images/auth/onboarding_dog.png',
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => const _AuthImageFallback(
+        icon: Icons.pets_rounded,
+        semanticLabel: semanticLabel,
+      ),
+    );
+    final image = selectedPhoto == null
+        ? fallback
+        : Image.file(
+            selectedPhoto,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => fallback,
+          );
+
+    return Semantics(
+      image: true,
+      label: semanticLabel,
+      child: ExcludeSemantics(child: image),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedPhoto = _photoPath == null ? null : File(_photoPath!);
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        top: false,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             children: [
-              Row(
-                children: [
-                  Text(
-                    'PawMate',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () =>
-                        _finishOnboarding(nextRoute: '/auth/login'),
-                    child: const Text('Bỏ qua'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  onPageChanged: (value) => setState(() {
-                    _currentIndex = value;
-                  }),
-                  itemCount: _slides.length,
-                  itemBuilder: (context, index) {
-                    final slide = _slides[index];
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 220,
-                          height: 220,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                slide.accent.withValues(alpha: 0.16),
-                                slide.accent.withValues(alpha: 0.06),
-                              ],
+              SizedBox(
+                height: 334,
+                child: Stack(
+                  children: [
+                    Positioned.fill(child: _buildHeroImage(selectedPhoto)),
+                    Positioned(
+                      right: 24,
+                      bottom: 28,
+                      child: SizedBox.square(
+                        dimension: 54,
+                        child: Material(
+                          color: AppColors.surface,
+                          shape: const CircleBorder(),
+                          elevation: 8,
+                          shadowColor: AppColors.shadow,
+                          child: IconButton(
+                            key: const Key('onboarding-photo-picker'),
+                            tooltip: 'Thêm ảnh thú cưng',
+                            padding: EdgeInsets.zero,
+                            onPressed: _isSubmitting
+                                ? null
+                                : () => unawaited(_pickPhoto()),
+                            icon: const Icon(
+                              Icons.camera_alt_outlined,
+                              size: 22,
+                              color: AppColors.primary500,
                             ),
-                            borderRadius: BorderRadius.circular(48),
-                          ),
-                          child: Icon(
-                            slide.icon,
-                            size: 88,
-                            color: slide.accent,
                           ),
                         ),
-                        const SizedBox(height: 32),
-                        Text(
-                          slide.title,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          slide.body,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    );
-                  },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_slides.length, (index) {
-                  final isActive = _currentIndex == index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: isActive ? 20 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () =>
-                          _finishOnboarding(nextRoute: '/auth/login'),
-                      child: const Text('Bỏ qua'),
+              Transform.translate(
+                offset: const Offset(0, -12),
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(28),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () =>
-                          _finishOnboarding(nextRoute: '/auth/register'),
-                      child: const Text('Bắt đầu'),
+                  padding: const EdgeInsets.fromLTRB(20, 34, 20, 28),
+                  child: Form(
+                    key: _formKey,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Hãy cùng làm quen với bạn thân của bạn',
+                          style: AppTextStyles.h1(color: AppColors.primary500),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Hãy chia sẻ một chút về bé để chúng tôi có thể chăm sóc bé tốt nhất.',
+                          style: AppTextStyles.bodyStrong(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 48),
+                        PawMateTextField(
+                          key: const Key('onboarding-pet-name-field'),
+                          controller: _petNameController,
+                          label: 'TÊN THÚ CƯNG',
+                          hintText: 'vd: LuLu',
+                          isRequired: true,
+                          showRequiredIndicator: false,
+                          enabled: !_isSubmitting,
+                          fillColor: AppColors.surfaceMuted,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                          textInputAction: TextInputAction.next,
+                          validator: _validatePetName,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(50),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        PawMateTextField(
+                          key: const Key('onboarding-breed-field'),
+                          controller: _breedController,
+                          label: 'GIỐNG',
+                          hintText: 'vd: Golden',
+                          enabled: !_isSubmitting,
+                          fillColor: AppColors.surfaceMuted,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                          textInputAction: TextInputAction.next,
+                          validator: _validateBreed,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(80),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        PawMateTextField(
+                          key: const Key('onboarding-age-field'),
+                          controller: _ageController,
+                          label: 'TUỔI (NĂM)',
+                          hintText: 'vd: 2',
+                          enabled: !_isSubmitting,
+                          fillColor: AppColors.surfaceMuted,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 18,
+                          ),
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          validator: _validateAge,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(2),
+                          ],
+                        ),
+                        if (_draftError != null) ...[
+                          const SizedBox(height: 18),
+                          _OnboardingErrorBanner(message: _draftError!),
+                        ],
+                        const SizedBox(height: 26),
+                        PawMateButton(
+                          key: const ValueKey('onboarding-continue-button'),
+                          label: 'Tiếp tục',
+                          isLoading: _isSubmitting,
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => unawaited(
+                                  _finishOnboarding(
+                                    nextRoute: '/auth/register',
+                                    validate: true,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 10),
+                        PawMateButton(
+                          key: const ValueKey('onboarding-login-button'),
+                          label: 'Bỏ qua và đăng nhập',
+                          variant: PawMateButtonVariant.ghost,
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => unawaited(
+                                  _finishOnboarding(
+                                    nextRoute: '/auth/login',
+                                    validate: false,
+                                  ),
+                                ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OnboardingErrorBanner extends StatelessWidget {
+  const _OnboardingErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      label: message,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.errorSoft,
+          border: Border.all(color: AppColors.error),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppColors.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: AppTextStyles.body(
+                  color: AppColors.error,
+                ).copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthImageFallback extends StatelessWidget {
+  const _AuthImageFallback({required this.icon, required this.semanticLabel});
+
+  final IconData icon;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      image: true,
+      label: semanticLabel,
+      child: ExcludeSemantics(
+        child: ColoredBox(
+          color: AppColors.careGreenSoft,
+          child: Center(
+            child: Icon(icon, size: 64, color: AppColors.primary500),
           ),
         ),
       ),

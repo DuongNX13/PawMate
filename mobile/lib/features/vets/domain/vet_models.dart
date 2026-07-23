@@ -63,9 +63,13 @@ class VetSummary {
   final double? longitude;
   final double? distanceMeters;
 
+  /// Canonical contract name. `id` remains the compatibility alias used by
+  /// existing navigation and presentation callers.
+  String get vetId => id;
+
   factory VetSummary.fromJson(Map<String, dynamic> json) {
     return VetSummary(
-      id: json['id']?.toString() ?? '',
+      id: json['vetId']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       city: json['city']?.toString() ?? '',
       district: json['district']?.toString() ?? '',
@@ -186,7 +190,7 @@ class VetDetail extends VetSummary {
 
   factory VetDetail.fromJson(Map<String, dynamic> json) {
     return VetDetail(
-      id: json['id']?.toString() ?? '',
+      id: json['vetId']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       city: json['city']?.toString() ?? '',
       district: json['district']?.toString() ?? '',
@@ -292,9 +296,11 @@ class VetSearchResult {
   final int total;
   final int limit;
 
+  bool get hasMore => nextCursor != null;
+
   factory VetSearchResult.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
-    final pagination = _readMap(json['pagination']);
+    final pagination = _readPageInfo(json);
 
     return VetSearchResult(
       items: data is List
@@ -342,9 +348,11 @@ class VetNearbyResult {
   final int total;
   final int limit;
 
+  bool get hasMore => nextCursor != null;
+
   factory VetNearbyResult.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
-    final pagination = _readMap(json['pagination']);
+    final pagination = _readPageInfo(json);
 
     return VetNearbyResult(
       items: data is List
@@ -501,9 +509,11 @@ class VetReviewResult {
   final int total;
   final int limit;
 
+  bool get hasMore => nextCursor != null;
+
   factory VetReviewResult.fromJson(Map<String, dynamic> json) {
     final data = json['data'];
-    final pagination = _readMap(json['pagination']);
+    final pagination = _readPageInfo(json);
 
     return VetReviewResult(
       items: data is List
@@ -640,6 +650,14 @@ Map<String, dynamic> _readMap(dynamic value) {
     return value.map((key, mapValue) => MapEntry(key.toString(), mapValue));
   }
   return <String, dynamic>{};
+}
+
+Map<String, dynamic> _readPageInfo(Map<String, dynamic> json) {
+  final pageInfo = json['pageInfo'];
+  if (pageInfo is Map) {
+    return _readMap(pageInfo);
+  }
+  return _readMap(json['pagination']);
 }
 
 List<String> _readStringList(dynamic value) {

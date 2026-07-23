@@ -1,14 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
-import '../../../core/widgets/primary_gradient_button.dart';
+import '../../../core/widgets/pawmate_adaptive.dart';
+import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_text_field.dart';
 import '../data/auth_api.dart';
 import 'auth_qa_defaults.dart';
+import 'auth_return_route.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, this.initialEmail, this.returnTo});
+
+  final String? initialEmail;
+  final String? returnTo;
 
   @override
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
@@ -20,11 +30,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _agreedToTerms = false;
-  bool _showTermsError = false;
+  final _recoveryCtaAnchorKey = GlobalKey();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isSubmitting = false;
+  String? _emailApiError;
+  String? _passwordApiError;
+  String? _generalError;
+
+  bool get _canSubmit {
+    if (_isSubmitting) {
+      return false;
+    }
+    return _validateEmail(_emailController.text) == null &&
+        _validatePhone(_phoneController.text) == null &&
+        _validatePassword(_passwordController.text) == null &&
+        _validateConfirmPassword(_confirmPasswordController.text) == null;
+  }
 
   @override
   void initState() {
@@ -34,7 +57,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _phoneController.text = '0901234567';
       _passwordController.text = pawmateQaAuthPassword;
       _confirmPasswordController.text = pawmateQaAuthPassword;
-      _agreedToTerms = true;
+    } else {
+      _emailController.text = widget.initialEmail?.trim() ?? '';
     }
   }
 
@@ -53,20 +77,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (email.isEmpty) {
       return 'Vui lòng nhập email';
     }
+    if (email.length > 254) {
+      return 'Email tối đa 254 ký tự';
+    }
     if (!regex.hasMatch(email)) {
       return 'Email chưa đúng định dạng';
     }
-    return null;
+    return _emailApiError;
   }
 
   String? _validatePhone(String? value) {
     final phone = (value ?? '').trim();
     if (phone.isEmpty) {
-      return null;
+      return 'Vui lòng nhập số điện thoại';
     }
-    final regex = RegExp(r'^[0-9]{9,11}$');
-    if (!regex.hasMatch(phone)) {
-      return 'Số điện thoại cần 9-11 chữ số';
+    if (!RegExp(r'^0[0-9]{9,10}$').hasMatch(phone)) {
+      return 'Số điện thoại cần 10-11 chữ số và bắt đầu bằng 0';
     }
     return null;
   }
@@ -76,37 +102,91 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (password.length < 8) {
       return 'Mật khẩu tối thiểu 8 ký tự';
     }
+    if (password.length > 64) {
+      return 'Mật khẩu tối đa 64 ký tự';
+    }
     final hasLetter = RegExp(r'[A-Za-z]').hasMatch(password);
     final hasNumber = RegExp(r'[0-9]').hasMatch(password);
     if (!hasLetter || !hasNumber) {
       return 'Mật khẩu cần có chữ và số';
     }
-    return null;
+    return _passwordApiError;
   }
 
   String? _validateConfirmPassword(String? value) {
-    if ((value ?? '') != _passwordController.text) {
+    final password = value ?? '';
+    if (password.isEmpty) {
+      return 'Vui lòng nhập lại mật khẩu';
+    }
+    if (password.length > 64) {
+      return 'Mật khẩu tối đa 64 ký tự';
+    }
+    if (password != _passwordController.text) {
       return 'Mật khẩu xác nhận không khớp';
     }
     return null;
   }
 
+  void _onFieldChanged({bool email = false, bool password = false}) {
+    setState(() {
+      if (email) {
+        _emailApiError = null;
+      }
+      if (password) {
+        _passwordApiError = null;
+      }
+      _generalError = null;
+    });
+  }
+
+  void _openLogin() {
+    final email = _emailController.text.trim();
+    context.go(
+      Uri(
+        path: '/auth/login',
+        queryParameters: authQueryParameters(
+          values: {if (email.isNotEmpty) 'email': email},
+          returnTo: widget.returnTo,
+        ),
+      ).toString(),
+    );
+  }
+
+  void _revealRecoveryCta() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final anchorContext = _recoveryCtaAnchorKey.currentContext;
+      if (anchorContext == null) {
+        return;
+      }
+      unawaited(
+        Scrollable.ensureVisible(
+          anchorContext,
+          alignment: 1,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        ),
+      );
+    });
+  }
+
   Future<void> _submit() async {
-    final isValid = _formKey.currentState?.validate() ?? false;
-    if (!isValid || _isSubmitting) {
+    if (_isSubmitting) {
       return;
     }
-    if (!_agreedToTerms) {
-      setState(() {
-        _showTermsError = true;
-      });
+    setState(() {
+      _emailApiError = null;
+      _passwordApiError = null;
+      _generalError = null;
+    });
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
     FocusScope.of(context).unfocus();
-    setState(() {
-      _isSubmitting = true;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       final email = _emailController.text.trim();
@@ -117,266 +197,309 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _passwordController.text,
             phone: _phoneController.text.trim(),
           );
-
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(response.message)));
-      if (pawmateQaPrefillAuth) {
+      if (!response.requiresVerification) {
         context.go(
-          '/auth/login?email=${Uri.encodeComponent(email)}&verified=1',
+          Uri(
+            path: '/auth/login',
+            queryParameters: authQueryParameters(
+              values: {'email': email, 'verified': '1'},
+              returnTo: widget.returnTo,
+            ),
+          ).toString(),
         );
-      } else {
-        context.go('/auth/otp?email=${Uri.encodeComponent(email)}');
+        return;
       }
+
+      final now = DateTime.now();
+      final expiresAt =
+          response.verificationExpiresAt ?? now.add(const Duration(minutes: 5));
+      final resendAt =
+          response.resendAvailableAt ?? now.add(const Duration(seconds: 60));
+      context.go(
+        Uri(
+          path: '/auth/otp',
+          queryParameters: authQueryParameters(
+            values: {
+              'email': email,
+              'registrationId': response.userId,
+              'expiresAt': expiresAt.millisecondsSinceEpoch.toString(),
+              'resendAt': resendAt.millisecondsSinceEpoch.toString(),
+            },
+            returnTo: widget.returnTo,
+          ),
+        ).toString(),
+      );
     } on AuthApiException catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
+      setState(() {
+        if (error.field == 'email') {
+          _emailApiError = error.message;
+        } else if (error.field == 'password') {
+          _passwordApiError = error.message;
+        } else {
+          _generalError = error.message;
+        }
+      });
+      _formKey.currentState?.validate();
+      _revealRecoveryCta();
     } catch (_) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể tạo tài khoản. Vui lòng thử lại.'),
-        ),
-      );
+      setState(() {
+        _generalError = 'Không thể tạo tài khoản. Vui lòng thử lại.';
+      });
+      _revealRecoveryCta();
     } finally {
       if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
+        setState(() => _isSubmitting = false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.hero),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  onPressed: () => context.go('/auth/login'),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.white.withValues(alpha: 0.7),
-                  ),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Container(
-                    width: 108,
-                    height: 108,
-                    decoration: BoxDecoration(
-                      gradient: AppGradients.primary,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: AppShadows.soft,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                height: 224,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Semantics(
+                        image: true,
+                        label:
+                            'Minh họa chó cưng chào đón người dùng tạo tài khoản',
+                        child: ExcludeSemantics(
+                          child: Image.asset(
+                            'assets/images/auth/register_dog.png',
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const ColoredBox(
+                                  color: AppColors.careGreenSoft,
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.pets_rounded,
+                                      size: 64,
+                                      color: AppColors.primary500,
+                                    ),
+                                  ),
+                                ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.pets_rounded,
-                      color: Colors.white,
-                      size: 52,
+                    Positioned(
+                      left: 16,
+                      top: 16,
+                      child: IconButtonTheme(
+                        data: IconButtonThemeData(
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColors.white.withValues(
+                              alpha: 0.84,
+                            ),
+                            minimumSize: const Size(
+                              AppControlSize.minTouchTarget,
+                              AppControlSize.minTouchTarget,
+                            ),
+                          ),
+                        ),
+                        child: PawMateAdaptiveBackButton(
+                          enabled: !_isSubmitting,
+                          onPressed: _openLogin,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'Tạo tài khoản',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Bắt đầu lưu hồ sơ thú cưng và nhận nhắc lịch tiêm phòng ngay trong MVP hiện tại.',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: AppColors.label,
-                  ),
-                ),
-                const SizedBox(height: 28),
-                Form(
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                child: Form(
                   key: _formKey,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('EMAIL', style: theme.textTheme.labelMedium),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: _validateEmail,
-                        decoration: const InputDecoration(
-                          hintText: 'nam@example.com',
-                          prefixIcon: Icon(Icons.mail_outline_rounded),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'SỐ ĐIỆN THOẠI - TÙY CHỌN',
-                        style: theme.textTheme.labelMedium,
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.next,
-                        validator: _validatePhone,
-                        decoration: const InputDecoration(
-                          hintText: '0901234567',
-                          prefixIcon: Icon(Icons.phone_iphone_rounded),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text('MẬT KHẨU', style: theme.textTheme.labelMedium),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.next,
-                        validator: _validatePassword,
-                        decoration: InputDecoration(
-                          hintText: 'Ít nhất 8 ký tự',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            }),
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                          ),
-                        ),
-                      ),
+                      Text('Tạo tài khoản', style: AppTextStyles.h1()),
                       const SizedBox(height: 8),
                       Text(
-                        'Mật khẩu cần tối thiểu 8 ký tự, bao gồm chữ và số.',
-                        style: theme.textTheme.bodySmall,
+                        'Hãy cùng bắt đầu hành trình chăm sóc thú cưng của bạn',
+                        style: AppTextStyles.bodyStrong(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'NHẬP LẠI MẬT KHẨU',
-                        style: theme.textTheme.labelMedium,
+                      const SizedBox(height: 28),
+                      PawMateTextField(
+                        key: const ValueKey('register-email-field'),
+                        label: 'Email',
+                        isRequired: true,
+                        enabled: !_isSubmitting,
+                        controller: _emailController,
+                        hintText: 'example@gmail.com',
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        maxLength: 254,
+                        validator: _validateEmail,
+                        onChanged: (_) => _onFieldChanged(email: true),
                       ),
-                      const SizedBox(height: 10),
-                      TextFormField(
+                      const SizedBox(height: 16),
+                      PawMateTextField(
+                        key: const ValueKey('register-phone-field'),
+                        label: 'Số điện thoại',
+                        isRequired: true,
+                        enabled: !_isSubmitting,
+                        controller: _phoneController,
+                        hintText: '09xx xxx xxx',
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.next,
+                        maxLength: 11,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        validator: _validatePhone,
+                        onChanged: (_) => _onFieldChanged(),
+                      ),
+                      const SizedBox(height: 16),
+                      PawMateTextField(
+                        key: const ValueKey('register-password-field'),
+                        label: 'Mật khẩu',
+                        isRequired: true,
+                        enabled: !_isSubmitting,
+                        controller: _passwordController,
+                        hintText: '••••••••',
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
+                        maxLength: 64,
+                        validator: _validatePassword,
+                        suffixIcon: IconButton(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => setState(
+                                  () => _obscurePassword = !_obscurePassword,
+                                ),
+                          tooltip: _obscurePassword
+                              ? 'Hiện mật khẩu'
+                              : 'Ẩn mật khẩu',
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                        onChanged: (_) => _onFieldChanged(password: true),
+                      ),
+                      const SizedBox(height: 16),
+                      PawMateTextField(
+                        key: const ValueKey('register-confirm-password-field'),
+                        label: 'Nhập lại mật khẩu',
+                        isRequired: true,
+                        enabled: !_isSubmitting,
                         controller: _confirmPasswordController,
+                        hintText: '••••••••',
                         obscureText: _obscureConfirmPassword,
                         textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submit(),
+                        maxLength: 64,
                         validator: _validateConfirmPassword,
-                        decoration: InputDecoration(
-                          hintText: 'Nhập lại mật khẩu',
-                          prefixIcon: const Icon(Icons.verified_user_outlined),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() {
-                              _obscureConfirmPassword =
-                                  !_obscureConfirmPassword;
-                            }),
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
+                        suffixIcon: IconButton(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => setState(
+                                  () => _obscureConfirmPassword =
+                                      !_obscureConfirmPassword,
+                                ),
+                          tooltip: _obscureConfirmPassword
+                              ? 'Hiện mật khẩu xác nhận'
+                              : 'Ẩn mật khẩu xác nhận',
+                          icon: Icon(
+                            _obscureConfirmPassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                           ),
                         ),
+                        onChanged: (_) => _onFieldChanged(),
+                        onSubmitted: (_) {
+                          if (_canSubmit) {
+                            _submit();
+                          }
+                        },
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _agreedToTerms,
-                            onChanged: (value) => setState(() {
-                              _agreedToTerms = value ?? false;
-                              _showTermsError = false;
-                            }),
-                          ),
-                          Expanded(
-                            child: Text(
-                              'Tôi đồng ý với điều khoản sử dụng và chính sách bảo mật của PawMate.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                      if (_generalError != null) ...[
+                        const SizedBox(height: 16),
+                        Semantics(
+                          liveRegion: true,
+                          label: 'Lỗi đăng ký: $_generalError',
+                          child: Container(
+                            key: const ValueKey('register-general-error'),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorSoft,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(color: AppColors.error),
                             ),
-                          ),
-                        ],
-                      ),
-                      if (_showTermsError)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 12),
                             child: Text(
-                              'Vui lòng đồng ý điều khoản trước khi tiếp tục.',
-                              style: theme.textTheme.bodySmall?.copyWith(
+                              _generalError!,
+                              style: AppTextStyles.body(
                                 color: AppColors.error,
-                              ),
+                              ).copyWith(fontWeight: FontWeight.w600),
                             ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                PrimaryGradientButton(
-                  label: _isSubmitting
-                      ? 'Đang tạo tài khoản...'
-                      : 'Tạo tài khoản',
-                  onPressed: _isSubmitting ? null : _submit,
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.go('/auth/login'),
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Đã có tài khoản? ',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: AppColors.label,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Đăng nhập',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: AppColors.primary700,
-                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
-                    ),
+                      const SizedBox(height: 24),
+                      KeyedSubtree(
+                        key: _recoveryCtaAnchorKey,
+                        child: PawMateButton(
+                          key: const ValueKey('register-submit-button'),
+                          label: 'Tạo tài khoản',
+                          isLoading: _isSubmitting,
+                          onPressed: _canSubmit ? _submit : null,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(
+                            AppControlSize.minTouchTarget,
+                            AppControlSize.minTouchTarget,
+                          ),
+                        ),
+                        onPressed: _isSubmitting ? null : _openLogin,
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Đã có tài khoản? ',
+                            style: AppTextStyles.bodyStrong(
+                              color: AppColors.label,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'Đăng nhập ngay',
+                                style: AppTextStyles.bodyStrong(
+                                  color: AppColors.primary700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

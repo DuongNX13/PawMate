@@ -1,14 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/data/auth_session_store.dart';
+import '../../auth/application/auth_session_coordinator.dart';
 import '../data/notification_api.dart';
 import '../domain/pawmate_notification.dart';
 
-final notificationAccessTokenProvider = FutureProvider<String?>((ref) async {
-  final session = await ref.watch(authSessionStoreProvider).read();
-  final token = session?.accessToken.trim();
-  return token == null || token.isEmpty ? null : token;
+final notificationDueSyncTimeoutProvider = Provider<Duration>((ref) {
+  return const Duration(seconds: 6);
 });
+
+final notificationAccessTokenProvider = authAccessTokenProvider;
 
 final notificationListProvider = FutureProvider<NotificationListResult>((
   ref,
@@ -23,6 +23,19 @@ final notificationListProvider = FutureProvider<NotificationListResult>((
   }
 
   final api = ref.watch(notificationApiProvider);
-  await api.processDueReminders(accessToken: accessToken);
+  final dueSyncTimeout = ref.watch(notificationDueSyncTimeoutProvider);
+  try {
+    await api
+        .processDueReminders(accessToken: accessToken)
+        .timeout(dueSyncTimeout);
+  } on Object {
+    // Keep the notification center usable even if due-reminder sync is slow.
+  }
   return api.listNotifications(accessToken: accessToken);
+});
+
+final notificationUnreadCountProvider = Provider<AsyncValue<int>>((ref) {
+  return ref
+      .watch(notificationListProvider)
+      .whenData((result) => result.unreadCount);
 });

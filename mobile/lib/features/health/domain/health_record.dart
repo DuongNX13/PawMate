@@ -89,12 +89,14 @@ class HealthRecord {
     this.title,
     this.note,
     this.vetId,
+    this.time,
   });
 
   final String id;
   final String petId;
   final HealthRecordType type;
   final String date;
+  final String? time;
   final String? title;
   final String? note;
   final String? vetId;
@@ -102,7 +104,17 @@ class HealthRecord {
   final String createdAt;
   final String updatedAt;
 
-  DateTime get occurredAt => _parseApiDate(date) ?? DateTime.now();
+  DateTime get occurredAt {
+    final parsedDate = _parseApiDate(date) ?? DateTime.now();
+    final parsedTime = _parseApiTime(time);
+    return DateTime(
+      parsedDate.year,
+      parsedDate.month,
+      parsedDate.day,
+      parsedTime?.$1 ?? 0,
+      parsedTime?.$2 ?? 0,
+    );
+  }
 
   String get displayTitle {
     final cleanTitle = title?.trim();
@@ -136,6 +148,7 @@ class HealthRecord {
       date: normalizedDate.isEmpty
           ? _formatApiDate(DateTime.now())
           : normalizedDate,
+      time: _readOptionalString(json['time'] ?? json['eventTime']),
       title: _readOptionalString(json['title']),
       note: _readOptionalString(json['note'] ?? json['notes']),
       vetId: _readOptionalString(json['vetId']),
@@ -208,6 +221,7 @@ class CreateHealthRecordInput {
     required this.type,
     required this.date,
     required this.title,
+    this.time,
     this.note,
     this.vetId,
     this.attachments = const [],
@@ -215,6 +229,7 @@ class CreateHealthRecordInput {
 
   final HealthRecordType type;
   final DateTime date;
+  final String? time;
   final String title;
   final String? note;
   final String? vetId;
@@ -224,6 +239,7 @@ class CreateHealthRecordInput {
     return {
       'type': type.apiValue,
       'date': _formatApiDate(date),
+      if (time != null && time!.trim().isNotEmpty) 'time': time!.trim(),
       'title': title.trim(),
       if (note != null && note!.trim().isNotEmpty) 'note': note!.trim(),
       if (vetId != null && vetId!.trim().isNotEmpty) 'vetId': vetId!.trim(),
@@ -284,6 +300,17 @@ DateTime? _parseApiDate(String value) {
     return null;
   }
   return DateTime(year, month, day);
+}
+
+(int, int)? _parseApiTime(String? value) {
+  if (value == null) {
+    return null;
+  }
+  final match = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)$').firstMatch(value);
+  if (match == null) {
+    return null;
+  }
+  return (int.parse(match.group(1)!), int.parse(match.group(2)!));
 }
 
 String _formatApiDate(DateTime value) {

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pawmate_mobile/features/vets/application/vet_finder_session_provider.dart';
 import 'package:pawmate_mobile/features/vets/application/vet_map_provider.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_location_service.dart';
@@ -196,6 +197,53 @@ void main() {
     expect(state.status, VetMapStatus.error);
     expect(state.message, 'Nearby service failed');
   });
+
+  test(
+    'hydrates the map from the shared list dataset without refetching',
+    () async {
+      final fakeApi = _FakeVetApi();
+      final container = ProviderContainer(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetLocationServiceProvider.overrideWith(
+            (ref) => _FakeLocationService.success(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      container
+          .read(vetFinderSessionProvider.notifier)
+          .storeDataset(
+            items: const [
+              VetSummary(
+                id: 'shared-vet',
+                name: 'Shared Clinic',
+                city: 'Hà Nội',
+                district: 'Ba Đình',
+                address: '12 Tràng Thi',
+                phone: '0903222333',
+                services: ['Khám tổng quát'],
+                seedRank: 1,
+                averageRating: 4.8,
+                reviewCount: 60,
+                isOpen: true,
+                readyForMap: true,
+                latitude: 21.0278,
+                longitude: 105.8342,
+              ),
+            ],
+            total: 1,
+            source: VetFinderDatasetSource.search,
+          );
+
+      await container.read(vetMapProvider.notifier).initialize();
+
+      final state = container.read(vetMapProvider);
+      expect(state.status, VetMapStatus.ready);
+      expect(state.items.single.vetId, 'shared-vet');
+      expect(fakeApi.nearbyRequests, isEmpty);
+    },
+  );
 }
 
 class _FakeVetApi extends VetApi {

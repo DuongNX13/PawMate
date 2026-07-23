@@ -28,6 +28,9 @@ class VetMapState {
     this.minRating,
     this.message,
     this.hasLoadedAtLeastOnce = false,
+    this.mapUnavailable = false,
+    this.mapReloadToken = 0,
+    this.datasetRevision = 0,
   });
 
   final VetMapStatus status;
@@ -39,6 +42,9 @@ class VetMapState {
   final double? minRating;
   final String? message;
   final bool hasLoadedAtLeastOnce;
+  final bool mapUnavailable;
+  final int mapReloadToken;
+  final int datasetRevision;
 
   VetMapState copyWith({
     VetMapStatus? status,
@@ -53,6 +59,9 @@ class VetMapState {
     bool clearMessage = false,
     bool clearItems = false,
     bool? hasLoadedAtLeastOnce,
+    bool? mapUnavailable,
+    int? mapReloadToken,
+    int? datasetRevision,
   }) {
     return VetMapState(
       status: status ?? this.status,
@@ -63,7 +72,10 @@ class VetMapState {
       openNow: openNow ?? this.openNow,
       minRating: clearMinRating ? null : (minRating ?? this.minRating),
       message: clearMessage ? null : (message ?? this.message),
-      hasLoadedAtLeastOnce: hasLoadedAtLeastOnce ?? true,
+      hasLoadedAtLeastOnce: hasLoadedAtLeastOnce ?? this.hasLoadedAtLeastOnce,
+      mapUnavailable: mapUnavailable ?? this.mapUnavailable,
+      mapReloadToken: mapReloadToken ?? this.mapReloadToken,
+      datasetRevision: datasetRevision ?? this.datasetRevision,
     );
   }
 }

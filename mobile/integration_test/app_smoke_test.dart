@@ -19,7 +19,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 3));
 
     expect(find.byType(MaterialApp), findsOneWidget);
-    expect(find.text('PawMate'), findsOneWidget);
-    expect(find.text('Bắt đầu'), findsOneWidget);
+    expect(find.text('Hãy cùng làm quen với bạn thân của bạn'), findsOneWidget);
+    expect(find.text('Tiếp tục'), findsOneWidget);
+    expect(find.text('Bỏ qua và đăng nhập'), findsOneWidget);
   });
 }

@@ -1,0 +1,503 @@
+{
+  "schema": "pawmate.w3.post-write-audit.v1",
+  "capturedAt": "2026-07-22T17:20:00+07:00",
+  "baseline": "UI-CC-2026-07-21-G4B",
+  "fileKey": "zPyYIN058igxtbj44G30o8",
+  "approvals": {
+    "g5a": "APPROVE_ALL_4",
+    "w2": "APPROVE_NO_USE_EXCEPTION",
+    "w3": "APPROVE_77_ROWS_AND_7_SCREENS",
+    "allowlist": "APPROVE",
+    "srs": "ADOPT_V1.1",
+    "voiceOver": "G4C"
+  },
+  "allowlist": {
+    "mutatedSections": [
+      "453:7374",
+      "453:10333"
+    ],
+    "historicalSections": [
+      "442:2",
+      "444:3050",
+      "447:4266",
+      "382:87177",
+      "426:8956"
+    ]
+  },
+  "matrix": {
+    "rows": 77,
+    "canonical": 56,
+    "responsiveExtra": 21,
+    "existingBefore": 15,
+    "createdNow": 62,
+    "approvedSeven": [
+      "W3-CAN-P1-01-390x844",
+      "W3-CAN-P1-07-390x844",
+      "W3-CAN-P1-08-390x844",
+      "W3-CAN-P1-12-390x844",
+      "W3-CAN-P1-16-390x844",
+      "W3-CAN-P2-01-390x844",
+      "W3-CAN-P2-12-390x844"
+    ]
+  },
+  "liveAudit": {
+    "v031NativeFrames": 56,
+    "v032NativeFrames": 77,
+    "totalNativeFrames": 133,
+    "targetCreatedFrames": 62,
+    "unsupportedTextFamilies": 0,
+    "geometryViolations": 0,
+    "unsupportedDetails": []
+  },
+  "protectedAfter": [
+    {
+      "id": "442:2",
+      "name": "PawMate Native Editable Rebuild v0.29 - Chocomint Compact CTA - Full Flow + States - TRUE EDITABLE",
+      "bounds": {
+        "height": 18392,
+        "width": 2820,
+        "x": 8000,
+        "y": 24880
+      },
+      "childCount": 170,
+      "childIdsUnchangedAgainstSnapshot": true
+    },
+    {
+      "id": "444:3050",
+      "name": "PawMate Native Editable Rebuild v0.30 - Chocomint Compact CTA - Responsive Core 360 412 430 - TRUE EDITABLE",
+      "bounds": {
+        "height": 5616,
+        "width": 3008,
+        "x": 11200,
+        "y": 24880
+      },
+      "childCount": 50,
+      "childIdsUnchangedAgainstSnapshot": true
+    },
+    {
+      "id": "447:4266",
+      "name": "PawMate v0.29 SNAPSHOT BEFORE COMMENT FIXES 2026-07-20 - DO NOT EDIT",
+      "bounds": {
+        "height": 18392,
+        "width": 2820,
+        "x": 14600,
+        "y": 24880
+      },
+      "childCount": 170,
+      "childIdsUnchangedAgainstSnapshot": true
+    },
+    {
+      "id": "382:87177",
+      "name": "PawMate Native Editable Rebuild v0.27 - Full Flow + States - TRUE EDITABLE",
+      "bounds": {
+        "height": 18392,
+        "width": 2820,
+        "x": -529,
+        "y": 24880
+      },
+      "childCount": 170,
+      "childIdsUnchangedAgainstSnapshot": true
+    },
+    {
+      "id": "426:8956",
+      "name": "PawMate Native Editable Rebuild v0.28 - Responsive Core Screens 360 412 430 - TRUE EDITABLE",
+      "bounds": {
+        "height": 5616,
+        "width": 3008,
+        "x": -529,
+        "y": 44272
+      },
+      "childCount": 50,
+      "childIdsUnchangedAgainstSnapshot": true
+    }
+  ],
+  "evidence": {
+    "matrixCsv": "docs/qa/ui-v031/W3_RESPONSIVE_PROOF_MATRIX_PROPOSAL.csv",
+    "matrixSha256": "D9F295525E261D797823F06E872472C0CAB2C2F599F57AB8A74126F1B8D3468A",
+    "cloneMap": "docs/design/pawmate-v031-platform-ui/FIGMA_CLONE_MAP.csv",
+    "cloneMapSha256": "2A35F22E0B43544FFD663AC9FBB9F42969676BD7115A7BD2F1BAE732C4A56E27",
+    "preSnapshot": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W3/pre-snapshot-20260722-1641",
+    "postWriteV031": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W3/post-write-v031-section.png",
+    "postWriteV031Sha256": "15C1C91A2D95B16AAF0DB4CAF1E0D7CBA577C8DC7C16099577D68459770C0238",
+    "postWriteV032": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W3/post-write-v032-section.png",
+    "postWriteV032Sha256": "7C27ACB71E3FE54D02D56992701B02FD15EFD37EF9412786CE758060CB99D050",
+    "approvedSevenDir": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W3/approved-seven",
+    "protectedFingerprint": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W3/pre-snapshot-20260722-1641/protected-node-fingerprint-before.json"
+  },
+  "result": "W3_POST_WRITE_PASS",
+  "claimBoundary": "W7 post-change iOS, W8 traceability/G4C disposition, W9 and G4B remain downstream gates; Day39 remains closed.",
+  "createdFrames": [
+    {
+      "proof_id": "W3-CAN-P1-01-390x844",
+      "target_node_id": "462:5",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-02-390x844",
+      "target_node_id": "462:22",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-03-390x844",
+      "target_node_id": "462:45",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-04-390x844",
+      "target_node_id": "462:70",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-05-390x844",
+      "target_node_id": "462:99",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-06-390x844",
+      "target_node_id": "462:157",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-07-390x844",
+      "target_node_id": "462:206",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-08-390x844",
+      "target_node_id": "462:294",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-09-390x844",
+      "target_node_id": "462:392",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-10-390x844",
+      "target_node_id": "462:475",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-11-390x844",
+      "target_node_id": "462:524",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-12-390x844",
+      "target_node_id": "462:572",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-13-390x844",
+      "target_node_id": "462:659",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-14-390x844",
+      "target_node_id": "462:716",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-15-390x844",
+      "target_node_id": "462:824",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P1-16-390x844",
+      "target_node_id": "462:893",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-01-390x844",
+      "target_node_id": "462:966",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-02-390x844",
+      "target_node_id": "462:1028",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-03-390x844",
+      "target_node_id": "462:1074",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-04-390x844",
+      "target_node_id": "462:1109",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-05-390x844",
+      "target_node_id": "462:1142",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-06-390x844",
+      "target_node_id": "462:1205",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-07-390x844",
+      "target_node_id": "462:1251",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-08-390x844",
+      "target_node_id": "462:1301",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-09-390x844",
+      "target_node_id": "462:1382",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-10-390x844",
+      "target_node_id": "462:1444",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-11-390x844",
+      "target_node_id": "462:1493",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-12-390x844",
+      "target_node_id": "462:1532",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-13-390x844",
+      "target_node_id": "462:1575",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-14-390x844",
+      "target_node_id": "462:1664",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-15-390x844",
+      "target_node_id": "462:1704",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-P2-16-390x844",
+      "target_node_id": "462:1744",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-01-390x844",
+      "target_node_id": "462:1823",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-02-390x844",
+      "target_node_id": "462:1861",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-03-390x844",
+      "target_node_id": "462:1910",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-04-390x844",
+      "target_node_id": "462:1967",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-05-390x844",
+      "target_node_id": "462:2009",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-06-390x844",
+      "target_node_id": "462:2062",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-07-390x844",
+      "target_node_id": "462:2114",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-08-390x844",
+      "target_node_id": "462:2121",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-09-390x844",
+      "target_node_id": "462:2148",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-10-390x844",
+      "target_node_id": "462:2168",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-11-390x844",
+      "target_node_id": "462:2203",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-12-390x844",
+      "target_node_id": "462:2259",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-13-390x844",
+      "target_node_id": "462:2306",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-14-390x844",
+      "target_node_id": "462:2346",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-15-390x844",
+      "target_node_id": "462:2371",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-16-390x844",
+      "target_node_id": "462:2412",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-17-390x844",
+      "target_node_id": "462:2464",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-18-390x844",
+      "target_node_id": "462:2492",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-19-390x844",
+      "target_node_id": "462:2544",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-20-390x844",
+      "target_node_id": "462:2581",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-21-390x844",
+      "target_node_id": "462:2615",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-22-390x844",
+      "target_node_id": "462:2636",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-23-390x844",
+      "target_node_id": "462:2679",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-CAN-ST-24-390x844",
+      "target_node_id": "462:2753",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "proof_id": "W3-RESP-P1-01-360x800",
+      "target_node_id": "462:2796",
+      "width": 360,
+      "height": 800
+    },
+    {
+      "proof_id": "W3-RESP-P1-01-412x915",
+      "target_node_id": "462:2813",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "proof_id": "W3-RESP-P1-01-430x932",
+      "target_node_id": "462:2830",
+      "width": 430,
+      "height": 932
+    },
+    {
+      "proof_id": "W3-RESP-P2-12-360x800",
+      "target_node_id": "462:2847",
+      "width": 360,
+      "height": 800
+    },
+    {
+      "proof_id": "W3-RESP-P2-12-412x915",
+      "target_node_id": "462:2890",
+      "width": 412,
+      "height": 915
+    },
+    {
+      "proof_id": "W3-RESP-P2-12-430x932",
+      "target_node_id": "462:2933",
+      "width": 430,
+      "height": 932
+    }
+  ]
+}

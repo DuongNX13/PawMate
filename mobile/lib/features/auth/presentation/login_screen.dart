@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
-import '../../../core/widgets/primary_gradient_button.dart';
+import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_text_field.dart';
+import '../application/auth_session_coordinator.dart';
 import '../data/auth_api.dart';
-import '../data/auth_session_store.dart';
+import 'auth_return_route.dart';
 import 'auth_qa_defaults.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -14,10 +17,12 @@ class LoginScreen extends ConsumerStatefulWidget {
     super.key,
     this.initialEmail,
     this.showVerifiedMessage = false,
+    this.returnTo,
   });
 
   final String? initialEmail;
   final bool showVerifiedMessage;
+  final String? returnTo;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -30,6 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _obscurePassword = true;
   bool _isSubmitting = false;
   bool _qaSmokeStarted = false;
+  String? _errorText;
 
   @override
   void initState() {
@@ -67,6 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _isSubmitting = true;
+      _errorText = null;
     });
 
     final messenger = ScaffoldMessenger.of(context);
@@ -97,11 +104,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final session = await ref
           .read(authApiProvider)
           .login(email: email, password: password);
-      await ref.read(authSessionStoreProvider).save(session);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('hasActiveSession', true);
+      await _persistAuthenticatedSession(session);
       if (mounted) {
-        context.go('/pets');
+        context.go(_postLoginRoute);
       }
     } on AuthApiException catch (error) {
       if (mounted) {
@@ -140,6 +145,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!regex.hasMatch(email)) {
       return 'Email chưa đúng định dạng';
     }
+    if (email.length > 254) {
+      return 'Email tối đa 254 ký tự';
+    }
     return null;
   }
 
@@ -150,6 +158,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return null;
   }
 
+  void _openRegister() {
+    final email = _emailController.text.trim();
+    context.go(
+      Uri(
+        path: '/auth/register',
+        queryParameters: authQueryParameters(
+          values: {if (email.isNotEmpty) 'email': email},
+          returnTo: widget.returnTo,
+        ),
+      ).toString(),
+    );
+  }
+
+  Future<void> _persistAuthenticatedSession(AuthSession session) async {
+    await ref.read(authSessionCoordinatorProvider).saveSession(session);
+    ref.invalidate(authSessionSnapshotProvider);
+  }
+
+  String get _postLoginRoute =>
+      resolveAuthenticatedReturnRoute(widget.returnTo);
+
   Future<void> _submitLogin() async {
     if (!(_formKey.currentState?.validate() ?? false) || _isSubmitting) {
       return;
@@ -158,6 +187,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _isSubmitting = true;
+      _errorText = null;
     });
 
     final messenger = ScaffoldMessenger.of(context);
@@ -167,18 +197,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final session = await ref
           .read(authApiProvider)
           .login(email: email, password: _passwordController.text);
-      await ref.read(authSessionStoreProvider).save(session);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('hasActiveSession', true);
+      await _persistAuthenticatedSession(session);
       if (!mounted) {
         return;
       }
-      context.go('/pets');
+      context.go(_postLoginRoute);
     } on AuthApiException catch (error) {
       if (!mounted) {
         return;
       }
       if (error.code == 'AUTH_006') {
+        setState(() {
+          _errorText = error.message;
+        });
         messenger.showSnackBar(
           SnackBar(
             content: Text(
@@ -186,9 +217,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         );
-        context.go('/auth/otp?email=${Uri.encodeComponent(email)}');
+        context.go(
+          Uri(
+            path: '/auth/otp',
+            queryParameters: authQueryParameters(
+              values: {'email': email},
+              returnTo: widget.returnTo,
+            ),
+          ).toString(),
+        );
       } else {
-        messenger.showSnackBar(SnackBar(content: Text(error.message)));
+        setState(() {
+          _errorText = error.message;
+        });
       }
     } catch (_) {
       if (!mounted) {
@@ -197,6 +238,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Đăng nhập thất bại. Vui lòng thử lại.')),
       );
+      setState(() {
+        _errorText = 'Đăng nhập chưa hoàn tất. Vui lòng thử lại.';
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -208,149 +252,166 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppGradients.hero),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-            child: Column(
-              children: [
-                const SizedBox(height: 8),
-                const _AuthHero(
-                  title: 'Chào mừng trở lại!',
-                  subtitle:
-                      'Đăng nhập để tiếp tục chăm sóc những người bạn bốn chân của bạn.',
-                ),
-                const SizedBox(height: 32),
-                Form(
-                  key: _formKey,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('EMAIL', style: theme.textTheme.labelMedium),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: _validateEmail,
-                        decoration: const InputDecoration(
-                          hintText: 'abc@gmail.com',
-                          prefixIcon: Icon(Icons.mail_outline_rounded),
-                        ),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _AuthHero(
+                imageAsset: 'assets/images/auth/login_vet_dog.png',
+                height: 300,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Mừng bạn đã trở lại',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.h1(color: AppColors.primary500),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Đăng nhập để theo dõi sức khỏe thú cưng của bạn.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.bodyStrong(
+                        color: AppColors.textSecondary,
                       ),
-                      const SizedBox(height: 20),
-                      Row(
+                    ),
+                    if (_errorText != null) ...[
+                      const SizedBox(height: 40),
+                      _LoginErrorBanner(message: _errorText!),
+                    ] else
+                      const SizedBox(height: 40),
+                    Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: Text(
-                              'MẬT KHẨU',
-                              style: theme.textTheme.labelMedium,
-                            ),
+                          PawMateTextField(
+                            key: const Key('login-email-field'),
+                            controller: _emailController,
+                            label: 'Email',
+                            hintText: 'example@gmail.com',
+                            isRequired: true,
+                            showRequiredIndicator: false,
+                            enabled: !_isSubmitting,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            validator: _validateEmail,
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(254),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () =>
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Luồng quên mật khẩu sẽ nối tiếp sau MVP lõi.',
-                                    ),
-                                  ),
+                          const SizedBox(height: 18),
+                          PawMateTextField(
+                            key: const Key('login-password-field'),
+                            controller: _passwordController,
+                            label: 'Mật khẩu',
+                            hintText: '••••••••',
+                            isRequired: true,
+                            showRequiredIndicator: false,
+                            enabled: !_isSubmitting,
+                            labelTrailing: TextButton(
+                              key: const Key('login-forgot-password'),
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(
+                                  AppControlSize.minTouchTarget,
+                                  AppControlSize.minTouchTarget,
                                 ),
-                            child: const Text('Quên mật khẩu?'),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                              ),
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Luồng quên mật khẩu sẽ nối tiếp sau MVP lõi.',
+                                            ),
+                                          ),
+                                        ),
+                              child: Text(
+                                'Quên mật khẩu?',
+                                style: AppTextStyles.label(
+                                  color: AppColors.primary500,
+                                ),
+                              ),
+                            ),
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _submitLogin(),
+                            validator: _validatePassword,
+                            suffixIcon: IconButton(
+                              tooltip: _obscurePassword
+                                  ? 'Hiện mật khẩu'
+                                  : 'Ẩn mật khẩu',
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    }),
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submitLogin(),
-                        validator: _validatePassword,
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            }),
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                    ),
+                    const SizedBox(height: 34),
+                    PawMateButton(
+                      key: const Key('login-submit-button'),
+                      label: 'Đăng nhập',
+                      isLoading: _isSubmitting,
+                      onPressed: _isSubmitting ? null : _submitLogin,
+                    ),
+                    const SizedBox(height: 22),
+                    TextButton(
+                      key: const Key('login-register-cta'),
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(48, 48),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                      onPressed: _isSubmitting ? null : _openRegister,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 6,
+                        runSpacing: 2,
+                        children: [
+                          Text(
+                            'Bạn chưa có tài khoản?',
+                            style: AppTextStyles.bodyStrong(
+                              color: AppColors.label,
                             ),
                           ),
-                        ),
+                          Text(
+                            'Đăng ký ngay',
+                            style: AppTextStyles.bodyStrong(
+                              color: AppColors.primary700,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                PrimaryGradientButton(
-                  label: _isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập',
-                  onPressed: _isSubmitting ? null : _submitLogin,
-                ),
-                const SizedBox(height: 20),
-                Text.rich(
-                  TextSpan(
-                    text: 'MVP hiện tại ưu tiên đăng nhập bằng email. ',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
                     ),
-                    children: [
-                      TextSpan(
-                        text: 'Google và Apple sẽ mở lại ở phase sau.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.secondary500,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
+                  ],
                 ),
-                const SizedBox(height: 20),
-                TextButton(
-                  key: const Key('login-register-cta'),
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                  onPressed: () => context.go('/auth/register'),
-                  child: Wrap(
-                    alignment: WrapAlignment.center,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 4,
-                    runSpacing: 2,
-                    children: [
-                      Text(
-                        'Chưa có tài khoản?',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: AppColors.label,
-                        ),
-                      ),
-                      Text(
-                        'Đăng ký ngay',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: AppColors.primary700,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 56),
-                const _PetFooterIllustration(),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -359,156 +420,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 }
 
 class _AuthHero extends StatelessWidget {
-  const _AuthHero({required this.title, required this.subtitle});
+  const _AuthHero({required this.imageAsset, required this.height});
 
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Stack(
-      clipBehavior: Clip.none,
-      alignment: Alignment.topCenter,
-      children: [
-        Positioned(
-          left: -48,
-          top: 20,
-          child: Container(
-            width: 160,
-            height: 160,
-            decoration: const BoxDecoration(
-              color: Color(0x1A9FCAFE),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        Positioned(
-          right: -10,
-          top: -12,
-          child: Container(
-            width: 172,
-            height: 172,
-            decoration: const BoxDecoration(
-              color: Color(0x1AFF8A5B),
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-        Column(
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: AppGradients.primary,
-                borderRadius: BorderRadius.circular(34),
-                boxShadow: AppShadows.soft,
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  const Icon(Icons.pets_rounded, size: 54, color: Colors.white),
-                  Positioned(
-                    right: -10,
-                    bottom: -8,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFD1E4FF),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.favorite_rounded,
-                        size: 20,
-                        color: Color(0xFF174976),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              title,
-              style: theme.textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              subtitle,
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: AppColors.label,
-                fontWeight: FontWeight.w400,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PetFooterIllustration extends StatelessWidget {
-  const _PetFooterIllustration();
+  final String imageAsset;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 220,
-      alignment: Alignment.bottomCenter,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.white.withValues(alpha: 0),
-            Colors.white.withValues(alpha: 0.9),
-          ],
-        ),
-      ),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: const [
-            _PetShadowIcon(icon: Icons.pets_outlined, size: 56),
-            SizedBox(width: 24),
-            _PetShadowIcon(icon: Icons.pets_rounded, size: 110),
-            SizedBox(width: 24),
-            _PetShadowIcon(icon: Icons.pets_outlined, size: 48),
-          ],
+    const semanticLabel =
+        'Minh họa bác sĩ thú y đang chăm sóc chó cưng cho màn đăng nhập';
+    return Semantics(
+      image: true,
+      label: semanticLabel,
+      child: ExcludeSemantics(
+        child: SizedBox(
+          height: height,
+          child: Image.asset(
+            imageAsset,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const ColoredBox(
+              color: AppColors.careGreenSoft,
+              child: Center(
+                child: Icon(
+                  Icons.health_and_safety_outlined,
+                  size: 64,
+                  color: AppColors.primary500,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _PetShadowIcon extends StatelessWidget {
-  const _PetShadowIcon({required this.icon, required this.size});
+class _LoginErrorBanner extends StatelessWidget {
+  const _LoginErrorBanner({required this.message});
 
-  final IconData icon;
-  final double size;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size + 24,
-      height: size + 24,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
-        shape: BoxShape.circle,
-        boxShadow: AppShadows.soft,
+    return Semantics(
+      liveRegion: true,
+      label: 'Lỗi đăng nhập: $message',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: AppColors.errorSoft,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.error),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline_rounded, color: AppColors.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppTextStyles.body(
+                    color: AppColors.error,
+                  ).copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      alignment: Alignment.center,
-      child: Icon(icon, size: size, color: const Color(0xFFA6A9AF)),
     );
   }
 }

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "pawmate.w3.matrix-approval.v1",
+  "approvedAt": "2026-07-22T16:41:12+07:00",
+  "baselineId": "UI-CC-2026-07-21-G4B",
+  "approver": "User / Product Owner (explicit Codex-thread confirmation)",
+  "matrixPath": "docs/qa/ui-v031/W3_RESPONSIVE_PROOF_MATRIX_PROPOSAL.csv",
+  "matrixSha256": "044FBF20B404AF84866FC62B1D08227177196638CD81CD363EB6001E136EB62F",
+  "rowCount": 77,
+  "canonicalRows": 56,
+  "responsiveExtraRows": 21,
+  "approvedSevenScreenSelection": [
+    "P1-01",
+    "P1-07",
+    "P1-08",
+    "P1-12",
+    "P1-16",
+    "P2-01",
+    "P2-12"
+  ],
+  "targetSectionAllowlist": ["453:7374", "453:10333"],
+  "historicalMutation": "FORBIDDEN",
+  "stitch": "REFERENCE_ONLY_NO_NEW_CALLS",
+  "status": "APPROVED_FOR_W3_EXECUTION"
+}

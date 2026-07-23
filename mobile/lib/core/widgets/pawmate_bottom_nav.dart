@@ -1,124 +1,189 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/router/app_navigation.dart';
+import '../../app/theme/app_text_styles.dart';
 import '../../app/theme/app_tokens.dart';
 
 class PawMateBottomNav extends StatelessWidget {
-  const PawMateBottomNav({super.key, required this.currentRoute});
+  const PawMateBottomNav({
+    super.key,
+    required this.currentRoute,
+    this.onDestinationSelected,
+  });
 
   final String currentRoute;
+  final ValueChanged<String>? onDestinationSelected;
+
+  static const destinations = <PawMateBottomNavDestination>[
+    PawMateBottomNavDestination(
+      label: 'Home',
+      iconAsset: 'assets/icons/navigation/home.png',
+      route: '/pets',
+      activePrefix: '/pets',
+    ),
+    PawMateBottomNavDestination(
+      label: 'Vet',
+      iconAsset: 'assets/icons/navigation/vet.png',
+      route: '/vets/map',
+      activePrefix: '/vets',
+    ),
+    PawMateBottomNavDestination(
+      label: 'Health',
+      iconAsset: 'assets/icons/navigation/health.png',
+      route: '/health',
+      activePrefix: '/health',
+    ),
+    PawMateBottomNavDestination(
+      label: 'Rescue',
+      iconAsset: 'assets/icons/navigation/rescue.png',
+      route: '/rescue',
+      activePrefix: '/rescue',
+    ),
+    PawMateBottomNavDestination(
+      label: 'Profile',
+      iconAsset: 'assets/icons/navigation/profile.png',
+      route: '/profile',
+      activePrefix: '/profile',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final items = <_BottomNavItem>[
-      const _BottomNavItem(
-        label: 'Thú cưng',
-        icon: Icons.home_outlined,
-        route: '/pets',
-      ),
-      const _BottomNavItem(
-        label: 'Thú y',
-        icon: Icons.travel_explore_outlined,
-        route: '/vets/list',
-      ),
-      const _BottomNavItem(
-        label: 'Sức khỏe',
-        icon: Icons.favorite_border,
-        route: '/health',
-      ),
-      const _BottomNavItem(
-        label: 'Hồ sơ',
-        icon: Icons.person_outline,
-        route: '/profile',
-      ),
-    ];
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final scaledLabelHeight =
+        AppTextStyles.nav().fontSize! * AppTextStyles.nav().height! * textScale;
+    final labelLines = textScale > 1.3 ? 2 : 1;
+    final navigationHeight = math.max(
+      AppControlSize.bottomNavHeight,
+      AppControlSize.bottomNavIcon +
+          AppSpacing.s4 +
+          (scaledLabelHeight * labelLines) +
+          (AppSpacing.s4 * 2) +
+          2,
+    );
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
-        decoration: const BoxDecoration(
-          color: Color(0xE5FFFFFF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          boxShadow: AppShadows.soft,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: items.map((item) {
-            final isActive = currentRoute == item.route;
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        boxShadow: AppShadows.soft,
+      ),
+      child: SafeArea(
+        top: false,
+        minimum: EdgeInsets.zero,
+        child: SizedBox(
+          height: navigationHeight,
+          child: Row(
+            children: destinations.map((item) {
+              final isActive = item.isActive(currentRoute);
 
-            return Expanded(
-              child: Semantics(
-                button: true,
-                selected: isActive,
-                label: item.label,
-                child: ExcludeSemantics(
-                  child: Material(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: InkWell(
-                      onTap: isActive ? null : () => context.go(item.route),
+              return Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: isActive,
+                  label: item.label,
+                  onTap: () => _select(context, item.route),
+                  child: ExcludeSemantics(
+                    child: Material(
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.circular(AppRadius.pill),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        constraints: const BoxConstraints(minHeight: 52),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
+                      child: InkWell(
+                        onTap: () => _select(context, item.route),
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.navActive,
                         ),
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? const Color(0xFFFFEDD5)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              item.icon,
-                              size: 22,
-                              color: isActive
-                                  ? AppColors.primary700
-                                  : AppColors.icon,
+                        child: AnimatedContainer(
+                          duration: AppMotion.standard,
+                          curve: AppMotion.standardCurve,
+                          height: navigationHeight - 2,
+                          margin: const EdgeInsets.symmetric(vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.s4,
+                            vertical: AppSpacing.s4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? AppColors.navActive
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.navActive,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
-                                    fontFamily: 'Be Vietnam Pro',
-                                    fontWeight: FontWeight.w600,
-                                    color: isActive
-                                        ? AppColors.primary700
-                                        : AppColors.icon,
-                                  ),
-                            ),
-                          ],
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ImageIcon(
+                                AssetImage(item.iconAsset),
+                                size: AppControlSize.bottomNavIcon,
+                                color: isActive
+                                    ? AppColors.white
+                                    : AppColors.navInactiveIcon,
+                              ),
+                              const SizedBox(height: AppSpacing.s4),
+                              Flexible(
+                                child: Text(
+                                  item.label,
+                                  maxLines: labelLines,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: isActive
+                                      ? AppTextStyles.navActive()
+                                      : AppTextStyles.nav(),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
   }
+
+  void _select(BuildContext context, String route) {
+    final callback = onDestinationSelected;
+    if (callback != null) {
+      callback(route);
+      return;
+    }
+    final navigationScope = PawMateNavigationScope.maybeOf(context);
+    if (navigationScope != null) {
+      navigationScope.selectShellLocation(
+        route,
+        scrollContext: context,
+        currentLocation: currentRoute,
+      );
+      return;
+    }
+    context.go(route);
+  }
 }
 
-class _BottomNavItem {
-  const _BottomNavItem({
+class PawMateBottomNavDestination {
+  const PawMateBottomNavDestination({
     required this.label,
-    required this.icon,
+    required this.iconAsset,
     required this.route,
+    required this.activePrefix,
   });
 
   final String label;
-  final IconData icon;
+  final String iconAsset;
   final String route;
+  final String activePrefix;
+
+  bool isActive(String currentRoute) {
+    return currentRoute == route ||
+        currentRoute == activePrefix ||
+        currentRoute.startsWith('$activePrefix/');
+  }
 }

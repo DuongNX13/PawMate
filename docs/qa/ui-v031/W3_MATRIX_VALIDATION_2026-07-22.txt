@@ -1,0 +1,19 @@
+Validator: W3-PROOF-MATRIX-READONLY-01
+Mode: read-only static validation; no Figma MCP write
+Working directory: D:\My Playground\PawMate
+Command (PowerShell, read-only):
+  $m=Import-Csv docs/qa/ui-v031/W3_RESPONSIVE_PROOF_MATRIX_PROPOSAL.csv
+  $map=Import-Csv docs/design/pawmate-v031-platform-ui/FIGMA_CLONE_MAP.csv
+  $v31=@($map|? kind -eq screen|% target_node_id)
+  $v32=@($map|? kind -eq responsive|% target_node_id)
+  $sourceBad=@($m|? {$_.source_v031_frame_id -notin $v31})
+  $targetBad=@($m|? {$_.target_v032_frame_id -and $_.target_v032_frame_id -notin $v32})
+  $historical=@($m|? {$_.target_v032_frame_id -match '^(382:|426:|442:|444:)'})
+  $dupeProof=@($m|group proof_id|? Count -gt 1)
+  $dupeTarget=@($m|? target_v032_frame_id|group target_v032_frame_id|? Count -gt 1)
+  Project counts, matrix SHA-256, figma_write_calls=0, and w2_generation_calls=6/9
+  as compact JSON.
+Output SHA-256 (UTF-8 JSON bytes, no trailing newline):
+  ec6566a553f1b4c896effeb4b5e648c26e4b14e0910050710b4f3fd35761ed9e
+Output:
+  {"validator":"W3-PROOF-MATRIX-READONLY-01","rows":77,"unique_proof_ids":77,"canonical_rows":56,"responsive_extra_rows":21,"existing_candidates":15,"proposed_missing":62,"source_bad":0,"target_bad":0,"historical_targets":0,"duplicate_proof_ids":0,"duplicate_target_ids":0,"matrix_sha256":"044FBF20B404AF84866FC62B1D08227177196638CD81CD363EB6001E136EB62F","figma_write_calls":0,"w2_generation_calls":"6/9","verdict":"PASS_STATIC_VALIDATION_NO_WRITE"}

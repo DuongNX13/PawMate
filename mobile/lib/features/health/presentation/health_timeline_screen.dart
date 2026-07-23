@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
+import '../../../core/widgets/pawmate_chip.dart';
 import '../application/health_record_providers.dart';
 import '../data/health_record_api.dart';
 import '../domain/health_record.dart';
@@ -22,20 +24,8 @@ class HealthTimelineScreen extends ConsumerStatefulWidget {
 }
 
 class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
-  final _noteController = TextEditingController();
-  final _clinicController = TextEditingController();
   String? _selectedPetId;
   HealthRecordType? _activeFilter;
-  HealthRecordType _newEventType = HealthRecordType.vaccination;
-  bool _isSavingEvent = false;
-  String? _saveError;
-
-  @override
-  void dispose() {
-    _noteController.dispose();
-    _clinicController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,54 +49,67 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
         ? null
         : ref.watch(healthRecordListProvider(recordQuery));
     final upcomingRemindersState = ref.watch(upcomingRemindersProvider);
+    final primaryReminder = upcomingRemindersState.maybeWhen(
+      data: (items) => items.isEmpty ? null : items.first,
+      orElse: () => null,
+    );
+    final reminderErrorMessage = upcomingRemindersState.maybeWhen(
+      error: (error, _) => _reminderErrorMessage(error),
+      orElse: () => null,
+    );
     final useCompactFab =
         MediaQuery.sizeOf(context).width < 430 ||
         MediaQuery.textScalerOf(context).scale(1) > 1.15;
 
     return Scaffold(
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/health'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: useCompactFab
           ? FloatingActionButton(
+              heroTag: 'health-add-event-fab',
               tooltip: 'Thêm sự kiện',
+              backgroundColor: AppColors.primary500,
+              foregroundColor: Colors.white,
               onPressed: selectedPet == null
                   ? null
-                  : () => _openAddEventSheet(),
+                  : () => _openAddEventScreen(selectedPet.id),
               child: const Icon(Icons.add_rounded),
             )
           : FloatingActionButton.extended(
+              heroTag: 'health-add-event-fab',
               onPressed: selectedPet == null
                   ? null
-                  : () => _openAddEventSheet(),
+                  : () => _openAddEventScreen(selectedPet.id),
               icon: const Icon(Icons.add_rounded),
               label: const Text('Thêm sự kiện'),
             ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 220),
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 190),
           children: [
-            Text(
-              'Sức khỏe',
-              style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                color: AppColors.primary700,
-                fontWeight: FontWeight.w800,
+            _HealthProfileHeader(
+              selectedPet: selectedPet,
+              pets: pets,
+              selectedPetId: selectedPetId,
+              onPetChanged: (value) => setState(() => _selectedPetId = value),
+              onSettings: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Cài đặt sức khỏe sẽ nối ở bước sau.'),
+                ),
               ),
+              onNotifications: () =>
+                  context.go('/notifications?returnTo=%2Fhealth'),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                tooltip: 'Thông báo',
-                onPressed: () => context.go('/notifications'),
-                icon: const Icon(Icons.notifications_none_rounded),
-              ),
+            const SizedBox(height: 34),
+            Text('Sức khỏe', style: AppTextStyles.pageTitle()),
+            const SizedBox(height: 28),
+            _ReminderHeroCard(
+              reminder: primaryReminder,
+              isLoading: upcomingRemindersState.isLoading,
+              errorMessage: reminderErrorMessage,
+              onTap: () => context.push('/health/reminders'),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Theo dõi tiêm phòng, tẩy giun và lịch nhắc theo từng bé.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             if (syncedPetsState.isLoading) ...[
               const _TimelineStatusCard(
                 title: 'Đang tải hồ sơ thú cưng',
@@ -123,213 +126,29 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
               ),
               const SizedBox(height: 18),
             ],
-            _PetSelectorCard(
-              petName: selectedPet?.name ?? 'Chưa có thú cưng',
-              subtitle: selectedPet == null
-                  ? 'Tạo hồ sơ thú cưng trước khi ghi nhận sức khỏe.'
-                  : recordsState?.maybeWhen(
-                          data: (result) =>
-                              '${selectedPet.breed} · ${result.items.length} sự kiện',
-                          loading: () => '${selectedPet.breed} · đang đồng bộ',
-                          error: (_, _) =>
-                              '${selectedPet.breed} · cần kiểm tra đồng bộ',
-                          orElse: () => selectedPet.breed,
-                        ) ??
-                        selectedPet.breed,
-              pets: pets
-                  .map(
-                    (pet) =>
-                        DropdownMenuItem(value: pet.id, child: Text(pet.name)),
-                  )
-                  .toList(),
-              selectedPetId: selectedPetId,
-              onChanged: (value) => setState(() => _selectedPetId = value),
-            ),
-            const SizedBox(height: 18),
             _FilterRow(
               selected: _activeFilter,
               onSelected: (type) => setState(() {
-                _activeFilter = _activeFilter == type ? null : type;
+                _activeFilter = type;
               }),
+              onShowAll: () => setState(() => _activeFilter = null),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Dòng thời gian',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 30),
             if (recordQuery == null || recordsState == null)
-              _EmptyTimeline(onAdd: () => _openAddEventSheet())
+              _EmptyTimeline(onAdd: () => _openAddEventScreen(selectedPetId))
             else
               ..._buildTimelineCards(recordQuery, recordsState),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Sắp tới',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.go('/health/reminders'),
-                  child: const Text('Xem lịch'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ..._buildUpcomingReminderCards(upcomingRemindersState),
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _buildUpcomingReminderCards(
-    AsyncValue<List<Reminder>> remindersState,
-  ) {
-    return remindersState.when(
-      loading: () => const [
-        _TimelineStatusCard(
-          title: 'Đang tải lịch nhắc',
-          message: 'PawMate đang lấy các lịch sắp tới từ backend.',
-          showProgress: true,
-        ),
-      ],
-      error: (error, _) => [
-        _TimelineStatusCard(
-          title: 'Chưa tải được lịch nhắc',
-          message: _reminderErrorMessage(error),
-          actionLabel: 'Thử lại',
-          onAction: () => ref.invalidate(upcomingRemindersProvider),
-        ),
-      ],
-      data: (reminders) {
-        if (reminders.isEmpty) {
-          return const [
-            _TimelineStatusCard(
-              title: 'Chưa có lịch nhắc sắp tới',
-              message:
-                  'Tạo lịch nhắc để PawMate theo dõi ngày tiêm và tái khám.',
-            ),
-          ];
-        }
-
-        return reminders
-            .map<Widget>(
-              (reminder) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _UpcomingReminderCard(
-                  title: reminder.title,
-                  subtitle:
-                      '${_formatReminderDate(reminder.dueAt)} · ${reminder.repeatRule.label}',
-                  accentColor: AppColors.primary500,
-                ),
-              ),
-            )
-            .toList();
-      },
-    );
-  }
-
-  void _openAddEventSheet() {
-    _noteController.clear();
-    _clinicController.clear();
-    _newEventType = HealthRecordType.vaccination;
-    _isSavingEvent = false;
-    _saveError = null;
-
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              top: false,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  24,
-                  24,
-                  24 + MediaQuery.of(context).viewInsets.bottom,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Thêm sự kiện',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<HealthRecordType>(
-                      initialValue: _newEventType,
-                      decoration: const InputDecoration(
-                        labelText: 'Loại sự kiện',
-                      ),
-                      items: HealthRecordType.values
-                          .map(
-                            (type) => DropdownMenuItem(
-                              value: type,
-                              child: Text(type.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setSheetState(() => _newEventType = value);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _noteController,
-                      decoration: const InputDecoration(
-                        labelText: 'Ghi chú',
-                        hintText: 'Ví dụ: bé ăn uống bình thường sau tiêm',
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _clinicController,
-                      decoration: const InputDecoration(
-                        labelText: 'Mã phòng khám - tùy chọn',
-                        hintText: 'Ví dụ: petcare-elite',
-                      ),
-                    ),
-                    if (_saveError != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _saveError!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.error,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _isSavingEvent
-                            ? null
-                            : () =>
-                                  _saveRemoteEvent(sheetContext, setSheetState),
-                        child: Text(
-                          _isSavingEvent ? 'Đang lưu...' : 'Lưu sự kiện',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
+  void _openAddEventScreen(String? selectedPetId) {
+    final petQuery = selectedPetId == null
+        ? ''
+        : '?petId=${Uri.encodeComponent(selectedPetId)}';
+    context.push('/health/events/new$petQuery');
   }
 
   List<Widget> _buildTimelineCards(
@@ -354,185 +173,372 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
       ],
       data: (result) {
         if (result.items.isEmpty) {
-          return [_EmptyTimeline(onAdd: () => _openAddEventSheet())];
+          return [
+            _EmptyTimeline(onAdd: () => _openAddEventScreen(query.petId)),
+          ];
         }
 
-        return result.items
-            .map<Widget>((event) => _HealthEventCard(event: event))
-            .toList();
+        return _groupTimelineByDate(result.items);
       },
     );
   }
 
-  Future<void> _saveRemoteEvent(
-    BuildContext sheetContext,
-    StateSetter setSheetState,
-  ) async {
-    final List<PetProfile> pets = ref
-        .read(petBackendListProvider)
-        .maybeWhen(
-          data: (items) => items,
-          orElse: () => ref.read(petListProvider),
-        );
-    if (pets.isEmpty) {
-      return;
-    }
-
-    final petId = _selectedPetId ?? pets.first.id;
-    final type = _newEventType;
-    setSheetState(() {
-      _isSavingEvent = true;
-      _saveError = null;
-    });
-
-    try {
-      final accessToken = await ref.read(
-        healthRecordAccessTokenProvider.future,
-      );
-      if (accessToken == null) {
-        throw const HealthRecordApiException(
-          'Bạn cần đăng nhập để lưu hồ sơ sức khỏe.',
-          code: 'AUTH_REQUIRED',
-          statusCode: 401,
-        );
-      }
-
-      await ref
-          .read(healthRecordApiProvider)
-          .createRecord(
-            petId,
-            CreateHealthRecordInput(
-              type: type,
-              date: DateTime.now(),
-              title: type.defaultTitle,
-              note: _noteController.text,
-              vetId: _clinicController.text,
-            ),
-            accessToken: accessToken,
-          );
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() => _activeFilter = null);
-      ref.invalidate(
-        healthRecordListProvider(HealthRecordListQuery(petId: petId)),
-      );
-      if (sheetContext.mounted) {
-        Navigator.of(sheetContext).pop();
-      }
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setSheetState(() {
-        _isSavingEvent = false;
-        _saveError = _errorMessage(error);
+  List<Widget> _groupTimelineByDate(List<HealthRecord> records) {
+    final sorted = [...records]
+      ..sort((left, right) {
+        final occurredCompare = right.occurredAt.compareTo(left.occurredAt);
+        return occurredCompare != 0
+            ? occurredCompare
+            : right.createdAt.compareTo(left.createdAt);
       });
+    final widgets = <Widget>[];
+    String? activeDateKey;
+
+    for (final event in sorted) {
+      final dateKey = _dateKey(event.occurredAt);
+      if (dateKey != activeDateKey) {
+        if (widgets.isNotEmpty) {
+          widgets.add(const SizedBox(height: 4));
+        }
+        widgets.add(_TimelineDateHeader(date: event.occurredAt));
+        activeDateKey = dateKey;
+      }
+      widgets.add(_HealthEventCard(event: event));
     }
+
+    return widgets;
   }
 }
 
-class _PetSelectorCard extends StatelessWidget {
-  const _PetSelectorCard({
-    required this.petName,
-    required this.subtitle,
+class _TimelineDateHeader extends StatelessWidget {
+  const _TimelineDateHeader({required this.date});
+
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Padding(
+        key: Key('health-timeline-date-${_dateKey(date)}'),
+        padding: const EdgeInsets.fromLTRB(66, 0, 0, 14),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.calendar_month_outlined,
+              size: 18,
+              color: AppColors.primary700,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                _formatTimelineGroupDate(date),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppColors.primary700,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HealthProfileHeader extends StatelessWidget {
+  const _HealthProfileHeader({
+    required this.selectedPet,
     required this.pets,
     required this.selectedPetId,
-    required this.onChanged,
+    required this.onPetChanged,
+    required this.onSettings,
+    required this.onNotifications,
   });
 
-  final String petName;
-  final String subtitle;
-  final List<DropdownMenuItem<String>> pets;
+  final PetProfile? selectedPet;
+  final List<PetProfile> pets;
   final String? selectedPetId;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<String?> onPetChanged;
+  final VoidCallback onSettings;
+  final VoidCallback onNotifications;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pet = selectedPet;
+    final petName = pet?.name ?? 'Chưa có thú cưng';
+
+    return Row(
+      children: [
+        PopupMenuButton<String>(
+          tooltip: 'Chọn thú cưng',
+          enabled: pets.isNotEmpty,
+          initialValue: selectedPetId,
+          onSelected: onPetChanged,
+          itemBuilder: (context) => pets
+              .map(
+                (item) => PopupMenuItem<String>(
+                  value: item.id,
+                  child: Text(item.name),
+                ),
+              )
+              .toList(),
+          child: _PetAvatar(name: petName, size: 58),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                petName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  height: 1.04,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _healthStatusLabel(pet),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          tooltip: 'Cài đặt sức khỏe',
+          onPressed: onSettings,
+          icon: const Icon(Icons.settings_outlined, size: 30),
+          color: AppColors.textPrimary,
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          tooltip: 'Thông báo',
+          onPressed: onNotifications,
+          icon: const Icon(Icons.notifications_none_rounded, size: 30),
+          color: AppColors.primary700,
+        ),
+      ],
+    );
+  }
+}
+
+class _PetAvatar extends StatelessWidget {
+  const _PetAvatar({required this.name, required this.size});
+
+  final String name;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.primarySoft,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        shape: BoxShape.circle,
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.primary500, width: 3),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors.white,
-            child: Text(
-              petName.characters.first.toUpperCase(),
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(color: AppColors.primary700),
-            ),
+      child: CircleAvatar(
+        backgroundColor: AppColors.secondarySoft,
+        child: Text(
+          name.characters.first.toUpperCase(),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: AppColors.primary700,
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  petName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReminderHeroCard extends StatelessWidget {
+  const _ReminderHeroCard({
+    required this.reminder,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onTap,
+  });
+
+  final Reminder? reminder;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width <= 360;
+    final title = isLoading
+        ? 'Đang tải lịch nhắc...'
+        : errorMessage != null
+        ? 'Chưa tải được lịch nhắc'
+        : reminder == null
+        ? 'Chưa có lịch nhắc sắp tới'
+        : '${reminder!.title} - ${_formatReminderHeroTime(reminder!.dueAt)}';
+
+    return Material(
+      color: AppColors.primary500,
+      borderRadius: BorderRadius.circular(28),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            compact ? 14 : 20,
+            22,
+            compact ? 14 : 20,
+            22,
           ),
-          if (pets.isNotEmpty)
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: selectedPetId,
-                items: pets,
-                onChanged: onChanged,
-                icon: const SizedBox.shrink(),
-                selectedItemBuilder: (context) => pets
-                    .map(
-                      (_) => const Icon(
-                        Icons.expand_more_rounded,
-                        color: AppColors.primary700,
-                      ),
-                    )
-                    .toList(),
+          child: Row(
+            children: [
+              Container(
+                width: compact ? 52 : 62,
+                height: compact ? 52 : 62,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Icon(
+                  Icons.alarm_rounded,
+                  color: Colors.white,
+                  size: compact ? 28 : 32,
+                ),
               ),
-            ),
-        ],
+              SizedBox(width: compact ? 12 : 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'NHẮC NHỞ SẮP TỚI',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: compact
+                          ? AppTextStyles.captionStrong(color: Colors.white)
+                          : theme.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: compact
+                          ? AppTextStyles.h3(color: Colors.white)
+                          : theme.textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              height: 1.12,
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(width: compact ? 6 : 12),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white,
+                size: compact ? 28 : 34,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 class _FilterRow extends StatelessWidget {
-  const _FilterRow({required this.selected, required this.onSelected});
+  const _FilterRow({
+    required this.selected,
+    required this.onSelected,
+    required this.onShowAll,
+  });
 
   final HealthRecordType? selected;
   final ValueChanged<HealthRecordType> onSelected;
+  final VoidCallback onShowAll;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: HealthRecordType.values.map((type) {
-        return FilterChip(
-          selected: selected == type,
-          label: Text(type.label),
-          onSelected: (_) => onSelected(type),
-        );
-      }).toList(),
+    final filters = [
+      _HealthFilterOption(label: 'Vaccine', type: HealthRecordType.vaccination),
+      _HealthFilterOption(label: 'Cân nặng', type: HealthRecordType.checkup),
+      _HealthFilterOption(label: 'Thuốc', type: HealthRecordType.medication),
+      _HealthFilterOption(label: 'Tẩy giun', type: HealthRecordType.deworming),
+      _HealthFilterOption(label: 'Dị ứng', type: HealthRecordType.allergy),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: Row(
+        children: [
+          _FilterPill(
+            label: 'Tất cả',
+            selected: selected == null,
+            onTap: onShowAll,
+          ),
+          const SizedBox(width: 12),
+          ...filters.map(
+            (option) => Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: _FilterPill(
+                label: option.label,
+                selected: selected == option.type,
+                onTap: () => onSelected(option.type),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HealthFilterOption {
+  const _HealthFilterOption({required this.label, required this.type});
+
+  final String label;
+  final HealthRecordType type;
+}
+
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return PawMateChip(
+      key: ValueKey('health-filter-$label'),
+      label: label,
+      selected: selected,
+      onPressed: onTap,
+      semanticLabel: '$label, ${selected ? 'đã chọn' : 'chưa chọn'}',
     );
   }
 }
@@ -544,71 +550,124 @@ class _HealthEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.soft,
-      ),
+    final theme = Theme.of(context);
+    final compact = MediaQuery.sizeOf(context).width <= 360;
+    final status = event.type == HealthRecordType.vaccination
+        ? 'THÀNH CÔNG'
+        : null;
+    final title = Text(
+      event.displayTitle,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: AppTextStyles.cardTitle(),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 26),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 4,
-            height: 54,
-            decoration: BoxDecoration(
-              color: event.type.accentColor,
-              borderRadius: BorderRadius.circular(999),
+          SizedBox(
+            width: 58,
+            child: Column(
+              children: [
+                _TimelineIcon(type: event.type),
+                Container(
+                  width: 2,
+                  height: 82,
+                  margin: const EdgeInsets.only(top: 8),
+                  color: AppColors.border.withValues(alpha: 0.55),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.displayTitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.65),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatDate(event.occurredAt),
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  event.displayNote,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                if (event.vetId != null || event.attachments.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                boxShadow: AppShadows.soft,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (compact && status != null) ...[
+                    title,
+                    const SizedBox(height: 8),
+                    _StatusBadge(label: status),
+                  ] else
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: title),
+                        if (status != null) ...[
+                          const SizedBox(width: 10),
+                          _StatusBadge(label: status),
+                        ],
+                      ],
+                    ),
+                  const SizedBox(height: 12),
+                  if (event.displayNote.trim().isNotEmpty)
+                    Text(
+                      event.displayNote,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        height: 1.25,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                  Row(
                     children: [
-                      if (event.vetId != null)
-                        _MetaPill(
-                          icon: Icons.local_hospital_outlined,
-                          label: event.vetId!,
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 18,
+                        color: AppColors.label,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _formatDateTime(event),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: compact
+                              ? AppTextStyles.bodyStrong(color: AppColors.label)
+                              : theme.textTheme.titleLarge?.copyWith(
+                                  color: AppColors.label,
+                                  fontWeight: FontWeight.w700,
+                                ),
                         ),
-                      if (event.attachments.isNotEmpty)
-                        _MetaPill(
-                          icon: Icons.attach_file_rounded,
-                          label: '${event.attachments.length} tệp',
-                        ),
+                      ),
                     ],
                   ),
+                  if (event.vetId != null || event.attachments.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (event.vetId != null)
+                          _MetaPill(
+                            icon: Icons.local_hospital_outlined,
+                            label: event.vetId!,
+                          ),
+                        if (event.attachments.isNotEmpty)
+                          _MetaPill(
+                            icon: Icons.attach_file_rounded,
+                            label: '${event.attachments.length} tệp',
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
@@ -616,10 +675,59 @@ class _HealthEventCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime value) {
+  String _formatDateTime(HealthRecord event) {
+    final value = event.occurredAt;
     final day = value.day.toString().padLeft(2, '0');
     final month = value.month.toString().padLeft(2, '0');
-    return '$day/$month/${value.year}';
+    final time = event.time?.trim();
+    return time == null || time.isEmpty
+        ? '$day/$month/${value.year}'
+        : '$day/$month/${value.year} · $time';
+  }
+}
+
+class _TimelineIcon extends StatelessWidget {
+  const _TimelineIcon({required this.type});
+
+  final HealthRecordType type;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = type.accentColor;
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.16),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Icon(type.icon, color: color, size: 26),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.mint,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: AppColors.secondary500,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }
 
@@ -756,74 +864,42 @@ class _EmptyTimeline extends StatelessWidget {
   }
 }
 
-class _UpcomingReminderCard extends StatelessWidget {
-  const _UpcomingReminderCard({
-    required this.title,
-    required this.subtitle,
-    required this.accentColor,
-  });
-
-  final String title;
-  final String subtitle;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.secondarySoft,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 5,
-            height: 46,
-            decoration: BoxDecoration(
-              color: accentColor,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 extension _HealthRecordTypeStyle on HealthRecordType {
   Color get accentColor {
     switch (this) {
       case HealthRecordType.vaccination:
-        return const Color(0xFFFF8A5B);
+        return AppColors.brown;
       case HealthRecordType.deworming:
-        return const Color(0xFF60A5FA);
+        return AppColors.deepGreen;
       case HealthRecordType.checkup:
-        return const Color(0xFF22C55E);
+        return AppColors.deepGreen;
       case HealthRecordType.grooming:
-        return const Color(0xFFF59E0B);
+        return AppColors.brown;
       case HealthRecordType.medication:
-        return const Color(0xFF8B5CF6);
+        return AppColors.deepGreen;
       case HealthRecordType.allergy:
-        return const Color(0xFFE11D48);
+        return AppColors.error;
       case HealthRecordType.note:
-        return AppColors.secondary500;
+        return AppColors.brown;
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case HealthRecordType.vaccination:
+        return Icons.vaccines_outlined;
+      case HealthRecordType.deworming:
+        return Icons.spa_outlined;
+      case HealthRecordType.checkup:
+        return Icons.monitor_weight_outlined;
+      case HealthRecordType.grooming:
+        return Icons.content_cut_rounded;
+      case HealthRecordType.medication:
+        return Icons.medication_outlined;
+      case HealthRecordType.allergy:
+        return Icons.warning_amber_rounded;
+      case HealthRecordType.note:
+        return Icons.note_alt_outlined;
     }
   }
 }
@@ -842,10 +918,49 @@ String _reminderErrorMessage(Object error) {
   return 'Không thể đồng bộ lịch nhắc. Vui lòng thử lại.';
 }
 
-String _formatReminderDate(DateTime value) {
+String _dateKey(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
+}
+
+String _formatTimelineGroupDate(DateTime value) {
   final day = value.day.toString().padLeft(2, '0');
   final month = value.month.toString().padLeft(2, '0');
+  return 'Ngày $day/$month/${value.year}';
+}
+
+String _healthStatusLabel(PetProfile? pet) {
+  final status = pet?.healthStatus.trim().toLowerCase();
+  switch (status) {
+    case 'healthy':
+    case 'good':
+      return 'Sức khỏe tốt';
+    case 'needs_vaccine':
+    case 'needs care':
+      return 'Cần theo dõi';
+    case 'unknown':
+    case null:
+      return 'Đang cập nhật';
+    default:
+      return 'Theo dõi sức khỏe';
+  }
+}
+
+String _formatReminderHeroTime(DateTime value) {
   final hour = value.hour.toString().padLeft(2, '0');
   final minute = value.minute.toString().padLeft(2, '0');
-  return '$day/$month/${value.year} $hour:$minute';
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final target = DateTime(value.year, value.month, value.day);
+  final dayDelta = target.difference(today).inDays;
+  final dayLabel = switch (dayDelta) {
+    0 => 'Hôm nay',
+    1 => 'Ngày mai',
+    -1 => 'Hôm qua',
+    _ =>
+      '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}',
+  };
+
+  return '$dayLabel, $hour:$minute';
 }

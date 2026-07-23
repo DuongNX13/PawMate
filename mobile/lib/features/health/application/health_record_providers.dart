@@ -1,14 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/data/auth_session_store.dart';
+import '../../auth/application/auth_session_coordinator.dart';
 import '../data/health_record_api.dart';
 import '../domain/health_record.dart';
 
-final healthRecordAccessTokenProvider = FutureProvider<String?>((ref) async {
-  final session = await ref.watch(authSessionStoreProvider).read();
-  final token = session?.accessToken.trim();
-  return token == null || token.isEmpty ? null : token;
-});
+final healthRecordAccessTokenProvider = authAccessTokenProvider;
 
 final healthRecordListProvider =
     FutureProvider.family<HealthRecordListResult, HealthRecordListQuery>((

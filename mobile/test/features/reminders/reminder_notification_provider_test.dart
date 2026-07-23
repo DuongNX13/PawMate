@@ -92,6 +92,46 @@ void main() {
     expect(result.unreadCount, 1);
     expect(result.items.single.title, 'Sap den lich tiem');
   });
+
+  test(
+    'notificationListProvider keeps list usable when due sync stalls',
+    () async {
+      final fakeNotificationApi = _HangingNotificationApi(
+        NotificationListResult(
+          items: [
+            PawMateNotification(
+              id: 'notification-1',
+              type: 'reminder_due',
+              title: 'Sap den lich tiem',
+              body: 'Bap co lich tiem luc 09:30.',
+              createdAt: DateTime(2026, 5, 5),
+            ),
+          ],
+          total: 1,
+          unreadCount: 1,
+          limit: 20,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          notificationAccessTokenProvider.overrideWith(
+            (ref) async => 'notification-token',
+          ),
+          notificationDueSyncTimeoutProvider.overrideWith(
+            (ref) => const Duration(milliseconds: 10),
+          ),
+          notificationApiProvider.overrideWith((ref) => fakeNotificationApi),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final result = await container.read(notificationListProvider.future);
+
+      expect(fakeNotificationApi.processStarted, isTrue);
+      expect(fakeNotificationApi.listAccessToken, 'notification-token');
+      expect(result.items.single.title, 'Sap den lich tiem');
+    },
+  );
 }
 
 class _FakeReminderApi extends ReminderApi {
@@ -126,6 +166,31 @@ class _FakeNotificationApi extends NotificationApi {
   Future<int> processDueReminders({required String accessToken}) async {
     processAccessToken = accessToken;
     return 1;
+  }
+
+  @override
+  Future<NotificationListResult> listNotifications({
+    required String accessToken,
+    int limit = 20,
+    String? cursor,
+    bool unreadOnly = false,
+  }) async {
+    listAccessToken = accessToken;
+    return result;
+  }
+}
+
+class _HangingNotificationApi extends NotificationApi {
+  _HangingNotificationApi(this.result) : super(Dio());
+
+  final NotificationListResult result;
+  bool processStarted = false;
+  String? listAccessToken;
+
+  @override
+  Future<int> processDueReminders({required String accessToken}) async {
+    processStarted = true;
+    return Future<int>.delayed(const Duration(days: 1));
   }
 
   @override

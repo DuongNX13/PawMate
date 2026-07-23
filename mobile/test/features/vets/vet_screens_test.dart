@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/features/vets/application/vet_finder_session_provider.dart';
 import 'package:pawmate_mobile/features/vets/application/vet_providers.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
 import 'package:pawmate_mobile/features/vets/domain/vet_models.dart';
@@ -47,10 +49,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Chăm sóc tốt nhất\ncho thú cưng của bạn.'),
-      findsOneWidget,
-    );
+    expect(find.text('Tìm kiếm thú y...'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('PetCare Elite'),
       200,
@@ -62,6 +61,106 @@ void main() {
     expect(find.text('(124 đánh giá)'), findsOneWidget);
     expect(find.text('Hà Nội • Quận 1'), findsOneWidget);
   });
+
+  testWidgets('restores the shared map dataset when entering the vet list', (
+    tester,
+  ) async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    container
+        .read(vetFinderSessionProvider.notifier)
+        .storeDataset(
+          items: const [
+            VetSummary(
+              id: 'cached-vet',
+              name: 'Cached Paws Clinic',
+              city: 'TP Hồ Chí Minh',
+              district: 'Quận 1',
+              address: '10 Đồng Khởi',
+              phone: '0903 999 888',
+              services: ['Khám tổng quát'],
+              seedRank: 1,
+              averageRating: 4.8,
+              reviewCount: 42,
+              isOpen: true,
+              readyForMap: true,
+            ),
+          ],
+          total: 1,
+          source: VetFinderDatasetSource.nearby,
+        );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: VetListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Cached Paws Clinic'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Cached Paws Clinic'), findsOneWidget);
+    expect(find.text('1 Phòng khám'), findsOneWidget);
+  });
+
+  testWidgets(
+    'renders v0.27 vet list shell on mobile viewport without overflow',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(390, 844));
+      final fakeApi = _FakeVetApi(
+        searchHandler: (_) async => const VetSearchResult(
+          items: [
+            VetSummary(
+              id: 'dr-minh-tran',
+              name: 'Dr. Minh Tran',
+              city: 'Hà Nội',
+              district: 'Quận 1',
+              address: '125 Nguyễn Huệ, Phường Bến Nghé',
+              phone: '0903 111 222',
+              summary: 'Tiêm phòng và cấp cứu.',
+              services: ['Tiêm phòng', 'Phẫu thuật', 'Cấp cứu 24/7'],
+              seedRank: 1,
+              averageRating: 4.9,
+              reviewCount: 124,
+              is24h: true,
+              isOpen: true,
+              readyForMap: true,
+              distanceMeters: 1200,
+            ),
+          ],
+          total: 12,
+          limit: 20,
+        ),
+        detailHandler: (_) async => throw UnimplementedError(),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(1.1),
+            home: const VetListScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('PawMate'), findsOneWidget);
+      expect(find.text('Tìm kiếm thú y...'), findsOneWidget);
+      expect(find.text('Gần nhất'), findsOneWidget);
+      expect(find.text('24/7'), findsWidgets);
+      expect(find.text('Đang mở'), findsWidgets);
+      expect(find.text('Xem trên bản đồ'), findsOneWidget);
+      expect(find.text('12 Phòng khám'), findsOneWidget);
+      expect(find.text('Đang cập nhật vị trí...'), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('vet list is overflow-free on compact large text', (
     tester,
@@ -163,7 +262,11 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.text('Vet list failed'), findsOneWidget);
-    expect(find.byType(OutlinedButton), findsOneWidget);
+    final retryButton = find.byKey(const Key('vet-list-retry-button'));
+    await tester.ensureVisible(retryButton);
+    await tester.pumpAndSettle();
+    expect(retryButton, findsOneWidget);
+    expect(tester.getSize(retryButton).height, greaterThanOrEqualTo(48));
   });
 
   testWidgets('renders vet detail with fallback opening note', (tester) async {
@@ -197,6 +300,68 @@ void main() {
     );
     expect(find.textContaining('Danh sách kiểm duyệt PawMate'), findsOneWidget);
   });
+
+  testWidgets(
+    'renders compact Chocomint vet detail shell without CTA overlap',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(390, 844));
+      final fakeApi = _FakeVetApi(
+        searchHandler: (_) async =>
+            const VetSearchResult(items: [], total: 0, limit: 20),
+        detailHandler: (_) async => _sampleVetDetail(
+          name: 'PetHome Q7',
+          city: 'Thành phố Hồ Chí Minh',
+          district: 'Phú Mỹ',
+          address: '120 Nguyễn Lương Bằng, Quận 7',
+          services: const ['Tiêm phòng', 'Cấp cứu', 'Khám tổng quát'],
+          reviewCount: 120,
+          averageRating: 4.8,
+          is24h: true,
+          isOpen: true,
+        ),
+        reviewHandler: (_) async =>
+            _reviewResult(items: [_sampleReview(helpfulCount: 2)]),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(1.1),
+            home: const VetDetailScreen(vetId: 'pethome-q7'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('PawMate'), findsOneWidget);
+      expect(find.text('PetHome Q7'), findsOneWidget);
+      expect(find.textContaining('4.8 (120+)'), findsOneWidget);
+      expect(find.text('Dịch vụ cung cấp'), findsOneWidget);
+      expect(find.text('Tiêm phòng'), findsWidgets);
+      expect(find.text('Chỉ đường'), findsOneWidget);
+      expect(find.text('Gọi ngay'), findsOneWidget);
+      for (final label in ['Chỉ đường', 'Gọi ngay']) {
+        final paragraph = tester.renderObject<RenderParagraph>(
+          find.text(label),
+        );
+        expect(
+          paragraph.didExceedMaxLines,
+          isFalse,
+          reason: '$label must remain fully legible in the fixed CTA bar',
+        );
+      }
+      final directions = find.bySemanticsLabel('Chỉ đường');
+      final callNow = find.bySemanticsLabel('Gọi ngay');
+      expect(directions, findsOneWidget);
+      expect(callNow, findsOneWidget);
+      expect(tester.getSize(directions).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(callNow).height, greaterThanOrEqualTo(48));
+      expect(tester.getRect(callNow).bottom, lessThanOrEqualTo(844));
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('vet detail is overflow-free on compact large text', (
     tester,
@@ -283,11 +448,19 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.ensureVisible(
+      find.byKey(const Key('vet-detail-write-review-button')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('vet-detail-write-review-button')));
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.byKey(const Key('write-review-submit')));
     await tester.pumpAndSettle();
+    expect(
+      tester.getSize(find.byKey(const Key('write-review-submit'))).height,
+      greaterThanOrEqualTo(48),
+    );
     await tester.tap(find.byKey(const Key('write-review-submit')));
     await tester.pump();
     expect(find.byKey(const Key('write-review-error')), findsOneWidget);
@@ -373,6 +546,10 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    await tester.ensureVisible(
+      find.byKey(const Key('vet-detail-write-review-button')),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('vet-detail-write-review-button')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('write-review-star-4')));
@@ -816,16 +993,21 @@ class _FakeVetApi extends VetApi {
 VetDetail _sampleVetDetail({
   String id = 'mochi-vet',
   String name = 'Mochi Vet',
+  String city = 'Đà Nẵng',
+  String district = 'Hải Châu',
   String address = '22 Bạch Đằng',
   List<String> services = const [],
   int reviewCount = 0,
   double? averageRating,
+  bool? is24h,
+  bool? isOpen,
+  List<String> openHours = const [],
 }) {
   return VetDetail(
     id: id,
     name: name,
-    city: 'Đà Nẵng',
-    district: 'Hải Châu',
+    city: city,
+    district: district,
     address: address,
     phone: '0912 333 444',
     summary: 'Khám tổng quát và theo dõi hồ sơ sức khỏe.',
@@ -833,10 +1015,10 @@ VetDetail _sampleVetDetail({
     seedRank: 4,
     averageRating: averageRating,
     reviewCount: reviewCount,
-    is24h: false,
-    isOpen: null,
+    is24h: is24h ?? false,
+    isOpen: isOpen,
     readyForMap: false,
-    openHours: const [],
+    openHours: openHours,
     photoUrls: const [],
     source: const VetSource(
       url: 'https://example.com/mochi-vet',

@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/app_dio.dart';
+import '../../auth/data/authenticated_dio.dart';
 import '../domain/health_record.dart';
 
 final healthRecordApiProvider = Provider<HealthRecordApi>((ref) {
-  return HealthRecordApi(ref.watch(dioProvider));
+  return HealthRecordApi(ref.watch(authenticatedDioProvider));
 });
 
 class HealthRecordApiException implements Exception {

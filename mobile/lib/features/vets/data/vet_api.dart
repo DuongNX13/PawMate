@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/network/app_dio.dart';
+import '../../auth/data/authenticated_dio.dart';
 import '../domain/vet_models.dart';
 
 final vetApiProvider = Provider<VetApi>((ref) {
-  return VetApi(ref.watch(dioProvider));
+  return VetApi(ref.watch(authenticatedDioProvider));
 });
 
 class VetApiException implements Exception {
