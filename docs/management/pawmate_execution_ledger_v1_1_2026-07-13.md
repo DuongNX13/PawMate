@@ -297,3 +297,24 @@ Manifest SHA-256:
 Day 40 đủ dependency nhưng vẫn `NOT STARTED`; không có Day row `IN PROGRESS`.
 Browse/create flags giữ `false/false`, vì Day 39 PASS không tự kích hoạt
 staging/production.
+
+## Day 39 staging activation — 2026-07-23
+
+Product Owner đã yêu cầu giải quyết nhánh Day 39 chưa push và trạng thái hai
+feature flag. Activation áp dụng đúng dependency đã khóa:
+
+- staging profile:
+  `PAWMATE_RESCUE_BROWSE_ENABLED=true`;
+- Day 40 create vẫn khóa:
+  `PAWMATE_RESCUE_CREATE_ENABLED=false`;
+- marker kiểm thử:
+  `PAWMATE_DAY39_RESCUE_BROWSE_STAGING=true`;
+- default/fallback production trong `AppFeatureAvailability` giữ
+  `false/false`;
+- Codemagic `ios-appetize-simulator-smoke` kiểm thử và build bằng
+  `mobile/config/day39-rescue-browse-staging.json`;
+- rollback/kill switch: build lại không dùng profile staging hoặc redeploy với
+  hai define `false/false`.
+
+Day 39 vẫn `PASS`; Day 40 vẫn `NOT STARTED`. Việc kích hoạt này không mở bất kỳ
+route create/update/comment/status/discussion nào.

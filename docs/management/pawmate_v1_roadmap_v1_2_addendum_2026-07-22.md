@@ -832,3 +832,20 @@ Machine manifest:
 Day 39 chuyển `IN PROGRESS -> PASS`. Day 40 đủ dependency nhưng giữ
 `NOT STARTED` cho tới khi entry được ghi nhận. Hai compile-time flags tiếp tục
 `false/false`; không có staging/production activation trong closure này.
+
+## 16. Day 39 staging activation overlay — 2026-07-23
+
+Sau khi Day 39 đã PASS, staging activation được mở bằng profile versioned
+`mobile/config/day39-rescue-browse-staging.json`:
+
+| Environment/profile | Rescue browse | Rescue create | Status |
+|---|---:|---:|---|
+| Missing defines / production fallback | `false` | `false` | Fail closed, không đổi |
+| Day 39 staging browse | `true` | `false` | Activated |
+| Day 40 create | `true` | `true` | Chưa được phép; Day 40 vẫn `NOT STARTED` |
+
+Codemagic workflow `ios-appetize-simulator-smoke` phải chạy test hợp đồng
+feature profile trước khi build và dùng cùng file define cho artifact. Bật
+browse không được suy diễn thành bật create; constructor tiếp tục ép
+`rescueCreate=false` khi browse tắt. Rollback là build/redeploy không dùng
+profile staging hoặc truyền lại `false/false`.

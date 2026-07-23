@@ -107,10 +107,14 @@ void main() {
   });
 
   group('AppFeatureAvailability', () {
-    test('fails closed by default', () {
+    test('matches the selected compile-time deployment profile', () {
       const availability = AppFeatureAvailability.fromEnvironment();
+      const isDay39BrowseStaging = bool.fromEnvironment(
+        'PAWMATE_DAY39_RESCUE_BROWSE_STAGING',
+        defaultValue: false,
+      );
 
-      expect(availability.rescueBrowse, isFalse);
+      expect(availability.rescueBrowse, isDay39BrowseStaging);
       expect(availability.rescueCreate, isFalse);
     });
 
