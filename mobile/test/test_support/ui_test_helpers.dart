@@ -19,34 +19,54 @@ Future<void> loadPawMateTestFonts() async {
 }
 
 Future<void> _loadMaterialIconsFont() async {
-  final executable = File(Platform.resolvedExecutable);
-  final flutterRoot = executable.parent.parent.parent.parent.parent;
-  final candidates = [
-    File(
-      '${flutterRoot.path}${Platform.pathSeparator}bin${Platform.pathSeparator}'
-      'cache${Platform.pathSeparator}artifacts${Platform.pathSeparator}'
-      'material_fonts${Platform.pathSeparator}materialicons-regular.otf',
-    ),
-    File(
-      'D:/mp/tools/flutter/bin/cache/artifacts/material_fonts/'
-      'materialicons-regular.otf',
-    ),
-    File(
-      'D:/My Playground/tools/flutter/bin/cache/artifacts/material_fonts/'
-      'materialicons-regular.otf',
-    ),
-  ];
+  final candidates = materialIconsFontCandidates(
+    resolvedExecutable: Platform.resolvedExecutable,
+    flutterRootEnvironment: Platform.environment['FLUTTER_ROOT'],
+  );
   final fontFile = candidates.where((file) => file.existsSync()).firstOrNull;
   if (fontFile == null) {
     throw StateError(
       'MaterialIcons font not found. Checked: '
-      '${candidates.map((file) => file.path).join(', ')}',
+      '${candidates.map((file) => file.path).join(', ')}. '
+      'Dart executable: ${Platform.resolvedExecutable}',
     );
   }
   final bytes = await fontFile.readAsBytes();
   final loader = FontLoader('MaterialIcons')
     ..addFont(Future.value(ByteData.sublistView(bytes)));
   await loader.load();
+}
+
+List<File> materialIconsFontCandidates({
+  required String resolvedExecutable,
+  String? flutterRootEnvironment,
+}) {
+  final roots = <String?>[
+    flutterRootEnvironment?.trim(),
+    inferFlutterSdkRoot(resolvedExecutable),
+  ].whereType<String>().where((root) => root.isNotEmpty).toSet();
+  final separator = Platform.pathSeparator;
+  return roots
+      .map((root) {
+        final nativeRoot = separator == r'\'
+            ? root.replaceAll('/', separator)
+            : root.replaceAll(r'\', separator);
+        return File(
+          '$nativeRoot${separator}bin${separator}cache${separator}artifacts'
+          '${separator}material_fonts${separator}materialicons-regular.otf',
+        );
+      })
+      .toList(growable: false);
+}
+
+String? inferFlutterSdkRoot(String resolvedExecutable) {
+  final normalized = resolvedExecutable.replaceAll(r'\', '/');
+  const marker = '/bin/cache/dart-sdk/';
+  final markerIndex = normalized.toLowerCase().indexOf(marker);
+  if (markerIndex <= 0) {
+    return null;
+  }
+  return normalized.substring(0, markerIndex);
 }
 
 Future<void> setTestViewport(
