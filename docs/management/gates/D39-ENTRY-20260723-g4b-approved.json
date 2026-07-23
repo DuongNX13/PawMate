@@ -1,0 +1,341 @@
+{
+  "schema": "pawmate.d39-entry.v1",
+  "run_id": "20260723-g4b-approved",
+  "roadmap_change_control_id": "ROADMAP-CC-2026-07-22-V1.2",
+  "status": "PASS",
+  "captured_at": "2026-07-23T08:53:39.737Z",
+  "source": {
+    "branch": "feature/day39-rescue-home-20260723",
+    "commit": "4046B4C70E2892985A54725A998E43B8F93784C4",
+    "snapshot_sha256": "4ED7D12A19AACE517D9708DE0D75093F83F2778BB78320F1288E17EA7EEB3429",
+    "snapshot": [
+      {
+        "path": "docs/architecture/day38_g5a_decision_record.md",
+        "bytes": 3510,
+        "sha256": "D86C696352C9FDC3E553D021BB4798DBEA688CE402D49A977274BB8358DAB4CA"
+      },
+      {
+        "path": "docs/management/pawmate_product_owner_approval_2026-07-22.md",
+        "bytes": 2157,
+        "sha256": "9AB2FB0ECC52158F1EA755244C0847B3B71DE8E50CF078E5F1F0B9AB76979EC5"
+      },
+      {
+        "path": "docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md",
+        "bytes": 2032,
+        "sha256": "0BAB82B88CBE890C9AE909810D310EB42BFDD7B5489984A5F26BA1DEFEA1C228"
+      },
+      {
+        "path": "docs/product/srs_v031_day37_38_update_2026-07-22/PawMate_SRS_Phase1_22-07-2026_v1.1.xlsx",
+        "bytes": 13381237,
+        "sha256": "0941F3BD4BDA4228AB137AC5A172919D5A7A1329C17D92FCBF09F8FDB8E78248"
+      },
+      {
+        "path": "docs/product/srs_v031_day37_38_update_2026-07-22/PawMate_SRS_Phase2_22-07-2026_v1.1.xlsx",
+        "bytes": 13147100,
+        "sha256": "8B53E336AB1B4042335C786648083D275A96D0E5DDB3101437D0A97AD0C418ED"
+      },
+      {
+        "path": "docs/product/srs_v031_day37_38_update_2026-07-22/SRS_UPDATE_CONTRACT.md",
+        "bytes": 25230,
+        "sha256": "7F374F9115F99F32BBA84F487CBD4C497F5DF72DFF8F4A92C1DE6E871B5402F2"
+      },
+      {
+        "path": "docs/qa/ui-v031/G4B_JOINT_SIGNOFF.md",
+        "bytes": 3782,
+        "sha256": "E7631C3C614116E91E2480CFC47F69D7052B26A84C4DC373E183DC427EB9F27E"
+      },
+      {
+        "path": "docs/qa/ui-v031/W3_POST_WRITE_AUDIT_2026-07-22.json",
+        "bytes": 12218,
+        "sha256": "5D5DBCB8C12C1768A174B299DE5E4FE818C80B6989C23D3453473698172BAB0F"
+      },
+      {
+        "path": "docs/qa/ui-v031/W8_CROSS_PLATFORM_QA_REPORT.md",
+        "bytes": 13156,
+        "sha256": "C17237738101A2F9AADB2F061DCE418A901C0A1A3016A446E5035F87F6F72102"
+      },
+      {
+        "path": "docs/qa/ui-v031/W9_HANDOFF_BLOCKED_REPORT.md",
+        "bytes": 8285,
+        "sha256": "97094AE5A5262F8E1088F63161353ED0B10ED0D8F1A48A26DAE427C4C10F893B"
+      },
+      {
+        "path": "mobile/lib/app/router/app_feature_availability.dart",
+        "bytes": 1086,
+        "sha256": "29E96982DE6826A7A368427770501C579BC2CD02F02F60B9203D5646073AFE2B"
+      },
+      {
+        "path": "output-evidence/day38/final-20260722-1533/g5a-product-approval-reconciliation-20260722.json",
+        "bytes": 1321,
+        "sha256": "58F4D77F8D38940A08B0ABEAD13520D64624DBE045C1C086413AF3538F1BED2A"
+      },
+      {
+        "path": "output-evidence/day38/final-20260722-1533/manifest.json",
+        "bytes": 9090,
+        "sha256": "25B66518BB423898614582DA177BC581DD03AE704F7CA870CE4F45257ADEB9D6"
+      },
+      {
+        "path": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W0/protected/protected-baseline.json",
+        "bytes": 49719,
+        "sha256": "EB0930E33E825BE057AEFDED7549330562D3095A99C57BE2E66364DC20F42DE7"
+      },
+      {
+        "path": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/evidence-manifest.json",
+        "bytes": 385349,
+        "sha256": "3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1"
+      },
+      {
+        "path": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/protected/approved-owner-delta-20260722.json",
+        "bytes": 13198,
+        "sha256": "461032FA73590F5FDB04F9DBDF356879808E69FD774F0B977BB02AE3B4316A05"
+      },
+      {
+        "path": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/protected/protected-verify-after-approved-owner-delta.json",
+        "bytes": 16254,
+        "sha256": "BD98DD0930EA68F934F69D575A1E64533C947A8CAD5A8C988ABF3B09EA50E4D5"
+      }
+    ]
+  },
+  "gates": {
+    "srs": {
+      "status": "PASS",
+      "phase1_sha256": "0941F3BD4BDA4228AB137AC5A172919D5A7A1329C17D92FCBF09F8FDB8E78248",
+      "phase2_sha256": "8B53E336AB1B4042335C786648083D275A96D0E5DDB3101437D0A97AD0C418ED",
+      "approval_reference": "docs/management/pawmate_product_owner_approval_2026-07-22.md"
+    },
+    "g5a": {
+      "status": "PASS",
+      "technical_manifest_sha256": "25B66518BB423898614582DA177BC581DD03AE704F7CA870CE4F45257ADEB9D6",
+      "approval_reconciliation_sha256": "58F4D77F8D38940A08B0ABEAD13520D64624DBE045C1C086413AF3538F1BED2A",
+      "decision_ids": [
+        "G5A-DEC-AUTH-01",
+        "G5A-DEC-PRIVACY-01",
+        "G5A-DEC-CONTACT-01",
+        "G5A-DEC-OUTBOX-01"
+      ]
+    },
+    "g4b": {
+      "status": "PASS",
+      "w8_manifest_sha256": "3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1",
+      "w8_source_snapshot_sha256": "9D1E17293EF7532DAC0FC1ED286FDBCDF1027B200A00826C8AEEB6F836D52245",
+      "w3_verdict": "PASS",
+      "w8_verdict": "PASS",
+      "w9_verdict": "PASS",
+      "g4c_disposition": "VOICEOVER=G4C",
+      "approval_reference": "docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md"
+    },
+    "protected_paths": {
+      "status": "PASS",
+      "baseline_id": "170B536B40DC73DC269515ABE335DA1CFC7B088F7A4D68ACA2D2D5F355BE8E4B",
+      "baseline_manifest_sha256": "EB0930E33E825BE057AEFDED7549330562D3095A99C57BE2E66364DC20F42DE7",
+      "owner_delta_manifest_sha256": "461032FA73590F5FDB04F9DBDF356879808E69FD774F0B977BB02AE3B4316A05",
+      "verification_sha256": "BD98DD0930EA68F934F69D575A1E64533C947A8CAD5A8C988ABF3B09EA50E4D5"
+    }
+  },
+  "feature_flags": {
+    "PAWMATE_RESCUE_BROWSE_ENABLED": false,
+    "PAWMATE_RESCUE_CREATE_ENABLED": false,
+    "scope": "compile-time build-global; missing/invalid values fail closed"
+  },
+  "day39_transition": {
+    "from": "NOT_STARTED",
+    "to": "IN_PROGRESS",
+    "entry": "OPEN"
+  },
+  "reviewer": "Codex lead / QA owner",
+  "approver": "User / Product Owner via explicit G4B=APPROVE",
+  "checks": [
+    {
+      "id": "FILE-PHASE1WORKBOOK",
+      "status": "PASS",
+      "evidence": "docs/product/srs_v031_day37_38_update_2026-07-22/PawMate_SRS_Phase1_22-07-2026_v1.1.xlsx",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-PHASE2WORKBOOK",
+      "status": "PASS",
+      "evidence": "docs/product/srs_v031_day37_38_update_2026-07-22/PawMate_SRS_Phase2_22-07-2026_v1.1.xlsx",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-SRSCONTRACT",
+      "status": "PASS",
+      "evidence": "docs/product/srs_v031_day37_38_update_2026-07-22/SRS_UPDATE_CONTRACT.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-PRODUCTAPPROVAL",
+      "status": "PASS",
+      "evidence": "docs/management/pawmate_product_owner_approval_2026-07-22.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-G5ATECHNICALMANIFEST",
+      "status": "PASS",
+      "evidence": "output-evidence/day38/final-20260722-1533/manifest.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-G5AAPPROVALRECONCILIATION",
+      "status": "PASS",
+      "evidence": "output-evidence/day38/final-20260722-1533/g5a-product-approval-reconciliation-20260722.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-G5ADECISIONRECORD",
+      "status": "PASS",
+      "evidence": "docs/architecture/day38_g5a_decision_record.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-G4BW8MANIFEST",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/evidence-manifest.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-G4BAPPROVAL",
+      "status": "PASS",
+      "evidence": "docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-G4BJOINTSIGNOFF",
+      "status": "PASS",
+      "evidence": "docs/qa/ui-v031/G4B_JOINT_SIGNOFF.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-W3AUDIT",
+      "status": "PASS",
+      "evidence": "docs/qa/ui-v031/W3_POST_WRITE_AUDIT_2026-07-22.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-W8REPORT",
+      "status": "PASS",
+      "evidence": "docs/qa/ui-v031/W8_CROSS_PLATFORM_QA_REPORT.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-W9REPORT",
+      "status": "PASS",
+      "evidence": "docs/qa/ui-v031/W9_HANDOFF_BLOCKED_REPORT.md",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-PROTECTEDBASELINE",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W0/protected/protected-baseline.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-APPROVEDOWNERDELTA",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/protected/approved-owner-delta-20260722.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-PROTECTEDVERIFICATION",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/protected/protected-verify-after-approved-owner-delta.json",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "FILE-FEATUREAVAILABILITY",
+      "status": "PASS",
+      "evidence": "mobile/lib/app/router/app_feature_availability.dart",
+      "detail": "Required artifact exists."
+    },
+    {
+      "id": "SRS-PHASE1-V1.1",
+      "status": "PASS",
+      "evidence": "docs/product/srs_v031_day37_38_update_2026-07-22/PawMate_SRS_Phase1_22-07-2026_v1.1.xlsx",
+      "detail": "SHA-256 0941F3BD4BDA4228AB137AC5A172919D5A7A1329C17D92FCBF09F8FDB8E78248"
+    },
+    {
+      "id": "SRS-PHASE2-V1.1",
+      "status": "PASS",
+      "evidence": "docs/product/srs_v031_day37_38_update_2026-07-22/PawMate_SRS_Phase2_22-07-2026_v1.1.xlsx",
+      "detail": "SHA-256 8B53E336AB1B4042335C786648083D275A96D0E5DDB3101437D0A97AD0C418ED"
+    },
+    {
+      "id": "SRS-PRODUCT-ADOPTION",
+      "status": "PASS",
+      "evidence": "docs/management/pawmate_product_owner_approval_2026-07-22.md",
+      "detail": "Product/BA adoption record contains ADOPT_V1.1."
+    },
+    {
+      "id": "G5A-TECHNICAL-MANIFEST",
+      "status": "PASS",
+      "evidence": "output-evidence/day38/final-20260722-1533/manifest.json",
+      "detail": "SHA-256 25B66518BB423898614582DA177BC581DD03AE704F7CA870CE4F45257ADEB9D6"
+    },
+    {
+      "id": "G5A-PRODUCT-RECONCILIATION",
+      "status": "PASS",
+      "evidence": "output-evidence/day38/final-20260722-1533/g5a-product-approval-reconciliation-20260722.json",
+      "detail": "G5A_PASS; four decision IDs; SHA-256 58F4D77F8D38940A08B0ABEAD13520D64624DBE045C1C086413AF3538F1BED2A"
+    },
+    {
+      "id": "W3-VERDICT",
+      "status": "PASS",
+      "evidence": "docs/qa/ui-v031/W3_POST_WRITE_AUDIT_2026-07-22.json",
+      "detail": "77 rows; seven approved screens; SHA-256 5D5DBCB8C12C1768A174B299DE5E4FE818C80B6989C23D3453473698172BAB0F"
+    },
+    {
+      "id": "W8-IMMUTABLE-MANIFEST",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/evidence-manifest.json",
+      "detail": "779 artifacts; iOS PASS; redaction PASS; SHA-256 3832C950AFCED7ADDFE8B7D828DFE7CD8E40A566F4B9147778203F1C35FCD7A1"
+    },
+    {
+      "id": "G4B-JOINT-APPROVAL",
+      "status": "PASS",
+      "evidence": "docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md",
+      "detail": "Product Owner and Codex lead approve the same immutable W8 manifest."
+    },
+    {
+      "id": "W9-HANDOFF",
+      "status": "PASS",
+      "evidence": "docs/qa/ui-v031/W9_HANDOFF_BLOCKED_REPORT.md",
+      "detail": "W9 handoff verdict is PASS."
+    },
+    {
+      "id": "G4C-DISPOSITION",
+      "status": "PASS",
+      "evidence": "docs/management/pawmate_product_owner_g4b_approval_2026-07-23.md",
+      "detail": "VoiceOver remains outside the G4B denominator in G4C."
+    },
+    {
+      "id": "PROTECTED-BASELINE",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W0/protected/protected-baseline.json",
+      "detail": "Baseline 170B536B40DC73DC269515ABE335DA1CFC7B088F7A4D68ACA2D2D5F355BE8E4B; SHA-256 EB0930E33E825BE057AEFDED7549330562D3095A99C57BE2E66364DC20F42DE7"
+    },
+    {
+      "id": "PROTECTED-OWNER-DELTA",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/protected/approved-owner-delta-20260722.json",
+      "detail": "Approved owner delta; SHA-256 461032FA73590F5FDB04F9DBDF356879808E69FD774F0B977BB02AE3B4316A05"
+    },
+    {
+      "id": "PROTECTED-VERIFY",
+      "status": "PASS",
+      "evidence": "output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/protected/protected-verify-after-approved-owner-delta.json",
+      "detail": "38 added; 12 modified; 0 removed; SHA-256 BD98DD0930EA68F934F69D575A1E64533C947A8CAD5A8C988ABF3B09EA50E4D5"
+    },
+    {
+      "id": "FEATURE-FLAGS-FAIL-CLOSED",
+      "status": "PASS",
+      "evidence": "mobile/lib/app/router/app_feature_availability.dart",
+      "detail": "Browse/create default false; create is forced false when browse is false."
+    },
+    {
+      "id": "ENTRY-SOURCE-COMMIT",
+      "status": "PASS",
+      "evidence": "git:HEAD",
+      "detail": "Branch feature/day39-rescue-home-20260723; commit 4046B4C70E2892985A54725A998E43B8F93784C4"
+    }
+  ]
+}

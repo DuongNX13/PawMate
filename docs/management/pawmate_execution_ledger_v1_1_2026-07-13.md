@@ -76,7 +76,7 @@ Test xanh không đồng nghĩa với visual fidelity hoặc Phase 2 implementat
 | 36 | Rescue write/media/comment/status API | - | PASS | [Status](../engineering/day36_rescue_write_api_status.md), [test matrix](../qa/phase2/day36_rescue_write_api_test_matrix.md), [machine proof](../../output-evidence/day36/day36-write-api-proof-20260721.json). Eight mutation/media endpoints, owner permissions, exact-location privacy, idempotency, optimistic version, transaction/outbox and sanitized media lifecycle are wired. Full backend 28 suites/212 tests, real local Rescue DB 3 suites/8 tests, lint/build/Prisma generate+validate/coverage/audit PASS. Local/cloud SQL constraints and Supabase buckets are aligned at 50 MiB; live metadata removal/hash/cleanup proof PASS via `browser-use`, no Chrome Extension. P0=0/P1=0 known; Day 37 opened. |
 | 37 | Rescue Backend Feature Test | - | PASS | [Canonical Day 37 status](../engineering/day37_rescue_backend_feature_test_status.md) và [clean-chain checkpoint](../../output-evidence/day37/final-20260722-1510/manifest.json) đã freeze một P1 dependency đúng owner; Day 38 sau đó resolve `fast-uri` và current clean-chain [PASS không defect](../../output-evidence/day37/20260722t085001z/manifest.json). Migration/rollback/idempotency/full regression an toàn; Day 37 đóng, không reopen Day 34-36. |
 | 38 | Rescue Backend Fix, Verify và Integration | G5A | PASS | [Day 38 status](../engineering/day38_rescue_backend_fix_verify_g5a_status.md), [G5A matrix](../qa/rescue-backend/day38_g5a_gate_matrix.md), [machine manifest](../../output-evidence/day38/final-20260722-1533/manifest.json), [approval](./pawmate_product_owner_approval_2026-07-22.md). Technical gate PASS: 32 suite/247 test, changed-source coverage 100%, audit 0, P0/P1 mở 0/0; Product/BA đã approve bốn decision AUTH/PRIVACY/CONTACT/OUTBOX. G4B vẫn chưa PASS nên Day 39 chưa mở. |
-| 39 | P2-01 Rescue Home | - | NOT STARTED | |
+| 39 | P2-01 Rescue Home | - | IN PROGRESS | [D39 entry manifest](./gates/D39-ENTRY-20260723-g4b-approved.json) PASS `32/32`; SRS v1.1, G5A, G4B, protected paths and feature-flag defaults are verified. Scope remains entry/list/map preview with real API data; browse/create flags stay `false/false` until Day 39 behavior/evidence passes. |
 | 40 | P2-02 Create Lost Alert và P2-03 Lost Info Form | - | NOT STARTED | |
 | 41 | P2-04 Case Detail | - | NOT STARTED | |
 | 42 | Rescue Core Feature Test | - | NOT STARTED | |
@@ -252,3 +252,22 @@ manifest validation đều PASS.
 Không recapture W8 sau approval vì việc đưa successor sign-off metadata trở lại
 source snapshot sẽ thay đổi chính baseline vừa được ký. Mọi Day 39 source change
 phải bắt đầu từ một successor branch sau khi `D39-ENTRY` pass.
+
+## D39 entry opened — 2026-07-23 15:55 ICT
+
+`D39-ENTRY-20260723-g4b-approved.json` đã validate `PASS` với `32/32` checks,
+source commit `4046b4c70e2892985a54725a998e43b8f93784c4`, source snapshot SHA-256
+`4ED7D12A19AACE517D9708DE0D75093F83F2778BB78320F1288E17EA7EEB3429`
+và manifest SHA-256
+`1B558EFC8B27C2A0B2C24001A60941B548144D782C04818B367F6E02F7CA6B83`.
+
+Day 39 là row `IN PROGRESS` duy nhất. Scope bất biến:
+
+- P2-01 Rescue Home entry/list/map preview;
+- 5 ca gần nhất, status, filter, refresh, pagination;
+- empty/loading/error, bottom nav, long text và accessibility;
+- data thật qua Rescue read API;
+- không visible `Báo thấy`;
+- `PAWMATE_RESCUE_BROWSE_ENABLED=false` và
+  `PAWMATE_RESCUE_CREATE_ENABLED=false` cho tới khi Day 39 behavior/evidence
+  gate PASS.

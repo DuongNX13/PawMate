@@ -781,3 +781,23 @@ chuyển `PASS`. Day 39 chỉ được đổi thành `IN PROGRESS` sau khi manif
 mục 10 xác minh đồng thời SRS v1.1 adoption, G5A, G4B, protected baseline/owner
 delta, feature flag defaults `false/false`, commit/source snapshot và
 reviewer/approver.
+
+## 21. D39-ENTRY PASS — 2026-07-23 15:55 ICT
+
+Machine manifest
+`docs/management/gates/D39-ENTRY-20260723-g4b-approved.json` đã PASS `32/32`
+checks:
+
+- SRS Phase 1/2 v1.1 đúng hai hash adopted;
+- G5A technical/product proof và bốn Decision ID PASS;
+- W3/W8/W9 và joint G4B PASS; VoiceOver giữ G4C;
+- protected baseline, approved owner delta và verification PASS;
+- feature flags giữ mặc định `false/false`;
+- source commit `4046b4c70e2892985a54725a998e43b8f93784c4`;
+- source snapshot SHA-256
+  `4ED7D12A19AACE517D9708DE0D75093F83F2778BB78320F1288E17EA7EEB3429`.
+
+Manifest SHA-256:
+`1B558EFC8B27C2A0B2C24001A60941B548144D782C04818B367F6E02F7CA6B83`.
+`D39-ENTRY` là `PASS`; Day 39 chuyển `IN PROGRESS`. Việc mở entry không tự bật
+Rescue browse/create và không cho phép fixture giả thay API thật.
