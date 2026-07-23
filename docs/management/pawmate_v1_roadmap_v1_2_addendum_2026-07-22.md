@@ -801,3 +801,34 @@ Manifest SHA-256:
 `1B558EFC8B27C2A0B2C24001A60941B548144D782C04818B367F6E02F7CA6B83`.
 `D39-ENTRY` là `PASS`; Day 39 chuyển `IN PROGRESS`. Việc mở entry không tự bật
 Rescue browse/create và không cho phép fixture giả thay API thật.
+
+## 22. Day 39 P2-01 exit closure — 2026-07-23 16:31 ICT
+
+Day 39 đã hoàn tất đúng scope bất biến:
+
+- entry/list 5 ca gần nhất qua production `GET /rescue/cases`;
+- status, filter, refresh và opaque-cursor pagination;
+- privacy-safe map preview từ public approximate location;
+- loading, empty, error/retry, stale-data retention và load-more;
+- bottom nav, long text, semantics và responsive 360/390/430;
+- không visible `Báo thấy`.
+
+| Contract | Current status |
+|---|---|
+| Source commit | `137c83c33e45dd5c035a47676979423d799f0594` |
+| D39 exit | `PASS 11/11` |
+| Focused Rescue | `PASS 13/13` |
+| Responsive golden | `PASS 6/6` |
+| Full mobile | `PASS 427 + 1 intentional skip` |
+| Analyze | `PASS`, 0 issue |
+| Rescue line coverage | `503/616 = 81.66%` |
+| Android debug build | `PASS` |
+| Product P0/P1 mở | `0/0` |
+
+Machine manifest:
+`output-evidence/day39/D39-EXIT-20260723.json`, SHA-256
+`C049533E44E488A7E54EDAB7064C06358E0282FC347715F42DB4C4E81B6961E8`.
+
+Day 39 chuyển `IN PROGRESS -> PASS`. Day 40 đủ dependency nhưng giữ
+`NOT STARTED` cho tới khi entry được ghi nhận. Hai compile-time flags tiếp tục
+`false/false`; không có staging/production activation trong closure này.
