@@ -2,7 +2,7 @@
 
 Baseline: `UI-CC-2026-07-21-G4B`
 Execution date: `2026-07-21`; latest audit: `2026-07-22`
-Verdict: `PARTIAL_PASS / FAIL_CLOSED`
+Verdict: `PASS_PENDING_G4B_SIGNOFF`
 
 ## Outcome
 
@@ -197,3 +197,22 @@ fatal-log scanning. YAML parsing and Bash syntax checks pass locally. It cannot
 produce post-change proof until this dirty local source is published as an
 authorized CI-visible revision. W8 therefore remains fail-closed only on the
 iOS gate; cross-platform PASS is not claimed yet.
+
+## Post-change iOS closure addendum — 2026-07-23 15:08 ICT
+
+The preceding iOS-pending statement is superseded by Codemagic build
+`6a61c58e95159f0929dd483e` on commit `9afdb53`.
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Codemagic branch/SHA binding | `PASS` | `evidence/g4b-ios-postchange-20260723` / `9afdb53` |
+| Platform-neutral iOS test suite | `PASS` | `316 PASS + 1 intentional skip`; `platform-neutral-tests.full.log.txt` |
+| iOS Simulator compile | `PASS` | `build-ios-simulator.full.log.txt` |
+| Simulator launch | `PASS` | `artifacts/output-evidence/ios-post-change/simulator-launch.raw.txt` |
+| Render screenshot | `PASS` | `pawmate-ios-post-change.png`, 1,360,973 bytes, 1260×2736 |
+| Screenshot SHA-256 | `PASS` | sidecar matches `F532A98417C6D63BA51ECC57AEE3BC927A2AD60876A17DEEAAA77CC71A25121D` |
+| Runner fatal scan | `PASS` | `runner-log.raw.txt`; fatal/crash fingerprint count `0` |
+| Evidence manifest | `PASS` | 779 artifacts; redaction PASS; validator errors 0 |
+
+W8 is now evidence-complete and awaits only Product Owner joint approval.
+VoiceOver remains G4C and is not part of this denominator.

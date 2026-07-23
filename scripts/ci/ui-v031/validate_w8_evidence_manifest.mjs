@@ -102,14 +102,28 @@ if (!Array.isArray(manifest.device_runtime) || manifest.device_runtime.length ==
     }
   }
 }
+const attempts = manifest.attempts;
+const allowedFailureClasses = new Set([
+  'IOS_POSTCHANGE_NOT_RUN',
+  'IOS_POSTCHANGE_INCOMPLETE',
+  'IOS_POSTCHANGE_PROOF_INVALID',
+  'IOS_POSTCHANGE_TEST_ENVIRONMENT',
+  'IOS_POSTCHANGE_GOLDEN_HOST_MISMATCH',
+  'IOS_POSTCHANGE_PASS',
+]);
 if (
-  !Array.isArray(manifest.attempts) ||
-  manifest.attempts.length === 0 ||
-  manifest.attempts.some(
-    (attempt) => attempt.failure_class !== 'IOS_POSTCHANGE_NOT_RUN',
-  )
+  !Array.isArray(attempts) ||
+  attempts.length === 0 ||
+  attempts.some((attempt) => !allowedFailureClasses.has(attempt.failure_class))
 ) {
-  errors.push('attempts must classify the remaining blocker as IOS_POSTCHANGE_NOT_RUN');
+  errors.push('attempts contain an unknown iOS post-change failure class');
+}
+if (
+  typeof manifest.status === 'string' &&
+  manifest.status.includes('PASS') &&
+  attempts?.at(-1)?.failure_class !== 'IOS_POSTCHANGE_PASS'
+) {
+  errors.push('a passing manifest must end with IOS_POSTCHANGE_PASS');
 }
 
 const seen = new Set();

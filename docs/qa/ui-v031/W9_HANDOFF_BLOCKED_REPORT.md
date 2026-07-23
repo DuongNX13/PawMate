@@ -2,10 +2,11 @@
 
 Baseline: `UI-CC-2026-07-21-G4B`
 Execution date: `2026-07-21`; latest audit: `2026-07-22`
-Verdict: `NOT_READY / FAIL_CLOSED`
+Verdict: `PRODUCT_OWNER_SIGNOFF_PENDING / FAIL_CLOSED`
 
 W9 was evaluated but not signed. Its Definition of Ready requires W8 PASS;
-current W8 status is `PARTIAL_PASS / FAIL_CLOSED`.
+current W8 evidence is complete, but the joint Product Owner sign-off is still
+pending.
 
 ## Prepared pre-signoff artifacts
 
@@ -140,3 +141,19 @@ artifact cannot be relabeled as post-change evidence. VoiceOver remains in G4C.
 The exact joint-signoff contract is recorded in
 `docs/qa/ui-v031/G4B_JOINT_SIGNOFF.md`. Day 39 stays
 `NOT_STARTED / CLOSED`.
+
+## iOS proof and final handoff addendum — 2026-07-23 15:08 ICT
+
+The former iOS blocker is closed by Codemagic build
+`6a61c58e95159f0929dd483e` on commit `9afdb53`. Build, simulator launch,
+render screenshot/hash, Runner fatal scan, artifact binding and terminal W8
+manifest validation all pass.
+
+W9 remains fail-closed for one approval condition only:
+
+1. Product Owner must sign the exact terminal manifest baseline with
+   `G4B=APPROVE`.
+
+Codex has recorded `RECOMMEND_APPROVE_AFTER_MANIFEST` and cannot substitute for
+the Product Owner authority. Day 39 remains closed until that decision is
+recorded.

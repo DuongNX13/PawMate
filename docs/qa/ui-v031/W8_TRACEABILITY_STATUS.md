@@ -1,7 +1,7 @@
 # W8 Traceability Status
 
 Baseline: `UI-CC-2026-07-21-G4B`
-Current verdict: `EXECUTION_PASS / IOS_GATE_PENDING`
+Current verdict: `EXECUTION_PASS / IOS_GATE_PASS / G4B_SIGNOFF_PENDING`
 
 Opening checkpoint (superseded): `STRUCTURE_PASS / EXECUTION_STATUS_BLOCKED`
 
@@ -126,4 +126,17 @@ Fresh deterministic validation is `PASS`:
 
 VoiceOver remains outside this denominator under the approved
 `VOICEOVER=G4C` decision. W8 trace execution is complete; the post-change iOS
-compile/render gate and joint G4B sign-off remain separate downstream gates.
+compile/render gate is now PASS; joint G4B sign-off remains the only downstream
+approval gate.
+
+## Post-change iOS gate closure addendum — 2026-07-23 15:08 ICT
+
+The trace denominator remains frozen at `191 PASS / 0 PLANNED`. The separate
+iOS gate is now bound to Codemagic build `6a61c58e95159f0929dd483e` on commit
+`9afdb53`, with compile, launch, screenshot/hash and Runner fatal-scan evidence
+under:
+
+`output-evidence/ui-v031/UI-CC-2026-07-21-G4B/W8/ios-post-change-20260723/codemagic-build-6a61c58e95159f0929dd483e`.
+
+The terminal W8 manifest validator returns `PASS`; the trace contract is
+therefore execution-complete and waits only for Product Owner `G4B=APPROVE`.

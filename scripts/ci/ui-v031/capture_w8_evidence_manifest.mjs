@@ -192,6 +192,92 @@ const artifacts = artifactFiles.map((filePath) => ({
   retention_days: null,
 }));
 
+function findIosPostChangeProof() {
+  const screenshotCandidates = artifactFiles.filter(
+    (filePath) =>
+      path.basename(filePath) === 'pawmate-ios-post-change.png' &&
+      filePath.includes(
+        path.join('artifacts', 'output-evidence', 'ios-post-change'),
+      ),
+  );
+  if (screenshotCandidates.length === 0) {
+    return {
+      status: 'BLOCKED',
+      failure_class: 'IOS_POSTCHANGE_NOT_RUN',
+      evidence: `${relativeEvidenceRoot}/redaction-scan.json`,
+      note: 'No post-change Codemagic iOS simulator artifact was found.',
+    };
+  }
+
+  const screenshotPath = screenshotCandidates.at(-1);
+  const proofDirectory = path.dirname(screenshotPath);
+  const requiredNames = [
+    'pawmate-ios-post-change.png',
+    'pawmate-ios-post-change.sha256',
+    'runner-log.raw.txt',
+    'simulator-device.json',
+    'simulator-launch.raw.txt',
+  ];
+  const requiredPaths = Object.fromEntries(
+    requiredNames.map((name) => [name, path.join(proofDirectory, name)]),
+  );
+  const missing = requiredNames.filter(
+    (name) => !fs.existsSync(requiredPaths[name]),
+  );
+  if (missing.length > 0) {
+    return {
+      status: 'BLOCKED',
+      failure_class: 'IOS_POSTCHANGE_INCOMPLETE',
+      evidence: path
+        .relative(repoRoot, proofDirectory)
+        .replaceAll('\\', '/'),
+      note: `Required iOS proof files are missing: ${missing.join(', ')}`,
+    };
+  }
+
+  const screenshotBytes = fs.statSync(requiredPaths['pawmate-ios-post-change.png']).size;
+  const screenshotSha = sha256File(requiredPaths['pawmate-ios-post-change.png']);
+  const sidecar = fs.readFileSync(
+    requiredPaths['pawmate-ios-post-change.sha256'],
+    'utf8',
+  );
+  const runnerLog = fs.readFileSync(requiredPaths['runner-log.raw.txt'], 'utf8');
+  const fatalFingerprint =
+    /\b(?:FATAL|SIGABRT|EXC_BAD_ACCESS|Unhandled exception|FlutterError)\b/i;
+  if (
+    screenshotBytes <= 10000 ||
+    !sidecar.toUpperCase().includes(screenshotSha) ||
+    fatalFingerprint.test(runnerLog)
+  ) {
+    return {
+      status: 'BLOCKED',
+      failure_class: 'IOS_POSTCHANGE_PROOF_INVALID',
+      evidence: path
+        .relative(repoRoot, proofDirectory)
+        .replaceAll('\\', '/'),
+      note: 'Screenshot size/hash or Runner fatal-fingerprint checks failed.',
+    };
+  }
+
+  const relativeProofDirectory = path
+    .relative(repoRoot, proofDirectory)
+    .replaceAll('\\', '/');
+  const buildMatch = relativeProofDirectory.match(/codemagic-build-([^/]+)/);
+  return {
+    status: 'PASS',
+    failure_class: 'IOS_POSTCHANGE_PASS',
+    evidence: path
+      .relative(repoRoot, requiredPaths['pawmate-ios-post-change.png'])
+      .replaceAll('\\', '/'),
+    deviceEvidence: path
+      .relative(repoRoot, requiredPaths['simulator-device.json'])
+      .replaceAll('\\', '/'),
+    buildId: buildMatch?.[1] ?? 'unknown',
+    note: `Codemagic post-change simulator proof; build ${buildMatch?.[1] ?? 'unknown'}; screenshot SHA-256 and Runner fatal scan PASS.`,
+  };
+}
+
+const iosProof = findIosPostChangeProof();
 const sourceSnapshotFiles = [
   ...new Set(sourceSnapshotRoots.flatMap(expandSnapshotRoot)),
 ].sort((left, right) => left.localeCompare(right));
@@ -281,9 +367,9 @@ const manifest = {
     {
       platform: 'ios',
       runtime: 'Codemagic iOS simulator post-change',
-      status: 'NOT_RUN',
-      evidence: 'docs/qa/ui-v031/W7_NATIVE_REPORT.md',
-      note: 'Only the pre-change baseline exists; the dirty local tree is not CI-visible.',
+      status: iosProof.status,
+      evidence: iosProof.deviceEvidence ?? iosProof.evidence,
+      note: iosProof.note,
     },
   ],
   command: {
@@ -294,17 +380,50 @@ const manifest = {
     finished_at: now,
     exit_code: 0,
   },
-  status: 'BLOCKED',
-  attempts: [
-    {
-      attempt: 1,
-      exit_code: 0,
-      status: 'BLOCKED_BY_IOS_POSTCHANGE',
-      inputs_changed: false,
-      failure_class: 'IOS_POSTCHANGE_NOT_RUN',
-      evidence_path: `${relativeEvidenceRoot}/redaction-scan.json`,
-    },
-  ],
+  status:
+    iosProof.status === 'PASS'
+      ? 'PASS_PENDING_G4B_SIGNOFF'
+      : 'BLOCKED',
+  attempts:
+    iosProof.status === 'PASS'
+      ? [
+          {
+            attempt: 1,
+            exit_code: 1,
+            status: 'BLOCKED_BY_IOS_TEST_ENVIRONMENT',
+            inputs_changed: false,
+            failure_class: 'IOS_POSTCHANGE_TEST_ENVIRONMENT',
+            evidence_path:
+              `${relativeEvidenceRoot}/ios-post-change-20260723/codemagic-build-6a61c14c5acb95337478a689/failure-diagnosis.md`,
+          },
+          {
+            attempt: 2,
+            exit_code: 1,
+            status: 'BLOCKED_BY_HOST_GOLDEN_MISMATCH',
+            inputs_changed: false,
+            failure_class: 'IOS_POSTCHANGE_GOLDEN_HOST_MISMATCH',
+            evidence_path:
+              `${relativeEvidenceRoot}/ios-post-change-20260723/codemagic-build-6a61c14c5acb95337478a689/failure-diagnosis.md`,
+          },
+          {
+            attempt: 3,
+            exit_code: 0,
+            status: 'PASS',
+            inputs_changed: false,
+            failure_class: iosProof.failure_class,
+            evidence_path: iosProof.evidence,
+          },
+        ]
+      : [
+          {
+            attempt: 1,
+            exit_code: 0,
+            status: 'BLOCKED_BY_IOS_POSTCHANGE',
+            inputs_changed: false,
+            failure_class: iosProof.failure_class,
+            evidence_path: iosProof.evidence,
+          },
+        ],
   artifacts,
   executor: 'Codex lead',
   reviewer: 'Codex lead self-review; Product Owner joint G4B sign-off pending',
@@ -313,9 +432,13 @@ const manifest = {
   known_exceptions: [
     {
       id: 'W7-IOS-POSTCHANGE-CI',
-      description: 'W3 is PASS at 77/77, traceability is PASS at 191/191, 82 CTA manifests and seven Android TalkBack journey manifests are attached, and the normal post-instrumentation Android APK proof is PASS. No post-change Codemagic iOS simulator compile/render artifact exists for the dirty local UI tree.',
+      description:
+        iosProof.status === 'PASS'
+          ? `Resolved by Codemagic post-change simulator build ${iosProof.buildId}; compile, launch, screenshot/hash and Runner fatal scan are attached.`
+          : 'No post-change Codemagic iOS simulator compile/render artifact exists for the current UI tree.',
       owner: 'Codex lead / CI owner',
-      reconsideration_trigger: 'Authorize a commit/push or provide an equivalent macOS simulator runner.',
+      reconsideration_trigger:
+        'Reopen if the post-change source or iOS proof workflow changes.',
     },
   ],
 };

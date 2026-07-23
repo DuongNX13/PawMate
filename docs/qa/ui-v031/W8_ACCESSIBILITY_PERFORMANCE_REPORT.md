@@ -94,3 +94,12 @@ This does not claim release-performance completion: the normal debug cold start
 was `5,948 ms` and logged `59` skipped frames on the emulator at text scale
 `2.0`. Release/profile startup and jank budgets remain residual performance
 risk, not a G4B accessibility blocker. VoiceOver remains assigned to G4C.
+
+## iOS post-change runtime cross-check — 2026-07-23 15:08 ICT
+
+Codemagic build `6a61c58e95159f0929dd483e` completed the iOS Simulator
+compile/install/launch/render path on commit `9afdb53`. The captured proof is
+`1260×2736`, its SHA-256 sidecar matches, and the Runner log has zero
+fatal/crash/Flutter-error fingerprints. This is a runtime smoke/render
+cross-check, not a VoiceOver claim; VoiceOver remains explicitly assigned to
+G4C.
