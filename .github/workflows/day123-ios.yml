@@ -70,12 +70,21 @@ jobs:
             xcrun simctl boot "$udid" || true
             xcrun simctl bootstatus "$udid" -b
             xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 || true
-            D123_CAPTURE_DIR="$OUT/$name" flutter drive \
+            # Let SpringBoard settle so the first app launch is not dropped.
+            sleep 30
+            xcrun simctl spawn "$udid" log stream --level debug \
+              --predicate 'process == "Runner"' > "$OUT/simlog-$name.txt" 2>&1 &
+            logpid=$!
+            # Run 1 hung for ~1h after "Xcode build done"; cap each device.
+            D123_CAPTURE_DIR="$OUT/$name" perl -e 'alarm shift; exec @ARGV' 900 \
+              flutter drive --verbose \
               --driver test_driver/day123_driver.dart \
               --target integration_test/day123_ios_render_test.dart \
               --dart-define=D123_DEVICE="$name" \
-              -d "$udid" 2>&1 | tee "$OUT/drive-$name.log"
-            code=${PIPESTATUS[0]}
+              -d "$udid" > "$OUT/drive-$name.log" 2>&1
+            code=$?
+            kill "$logpid" 2>/dev/null || true
+            tail -60 "$OUT/drive-$name.log"
             echo "$name: udid=$udid exit=$code" | tee -a "$OUT/summary.txt"
             xcrun simctl io "$udid" screenshot "$OUT/$name-final.png" || true
             xcrun simctl shutdown "$udid" || true
