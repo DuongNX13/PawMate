@@ -39,7 +39,7 @@ class PawMateCard extends StatelessWidget {
         color: AppColors.border,
         width: AppBorderWidth.hairline,
       ),
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       boxShadow: variant == PawMateCardVariant.raised
           ? AppShadows.raised
           : null,
@@ -47,11 +47,26 @@ class PawMateCard extends StatelessWidget {
 
     Widget content = Padding(padding: padding, child: child);
     if (onTap != null) {
+      content = ConstrainedBox(
+        constraints: const BoxConstraints(
+          minHeight: AppControlSize.minTouchTarget,
+        ),
+        child: content,
+      );
       content = Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.focused)) {
+              return AppColors.focusOverlay;
+            }
+            if (states.contains(WidgetState.pressed)) {
+              return AppColors.pressedOverlay;
+            }
+            return Colors.transparent;
+          }),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: content,
         ),
       );

@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/widgets/placeholder_screen.dart';
+import '../../features/adoption/presentation/adoption_profile_screen.dart';
+import '../../features/adoption/presentation/adoption_request_form_screen.dart';
+import '../../features/adoption/presentation/adoption_swipe_deck_screen.dart';
+import '../../features/adoption/presentation/my_adoption_requests_screen.dart';
+import '../../features/adoption/presentation/shelter_chat_screen.dart';
 import '../../features/auth/application/auth_session_coordinator.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/health/presentation/add_health_event_screen.dart';
 import '../../features/health/presentation/health_timeline_screen.dart';
+import '../../features/health_hub/presentation/health_hub_screen.dart';
 import '../../features/notifications/presentation/notification_center_screen.dart';
 import '../../features/onboarding/presentation/onboarding_gate_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
@@ -16,10 +21,17 @@ import '../../features/pets/presentation/create_pet_screen.dart';
 import '../../features/pets/presentation/pet_detail_screen.dart';
 import '../../features/pets/presentation/pet_list_screen.dart';
 import '../../features/profile/presentation/profile_screen.dart';
+import '../../features/profile/presentation/notification_preferences_screen.dart';
+import '../../features/profile/presentation/privacy_defaults_screen.dart';
+import '../../features/profile/presentation/profile_controls_screen.dart';
 import '../../features/reminders/presentation/reminder_calendar_screen.dart';
+import '../../features/rescue/presentation/rescue_case_detail_screen.dart';
+import '../../features/rescue/presentation/rescue_comment_screen.dart';
 import '../../features/rescue/presentation/rescue_home_screen.dart';
 import '../../features/rescue/presentation/rescue_create_screen.dart';
 import '../../features/rescue/presentation/rescue_info_form_screen.dart';
+import '../../features/rescue/presentation/rescue_map_screen.dart';
+import '../../features/rescue/presentation/rescue_status_screen.dart';
 import '../../features/vets/presentation/vet_detail_screen.dart';
 import '../../features/vets/presentation/vet_list_screen.dart';
 import '../../features/vets/presentation/vet_map_screen.dart';
@@ -143,12 +155,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/adoption',
                 name: 'adoption',
-                builder: (context, state) => const PlaceholderScreen(
-                  title: 'Nhận nuôi',
-                  subtitle:
-                      'Luồng nhận nuôi đang được chuẩn bị theo contract Phase 2. Dữ liệu thật sẽ được mở ở ngày triển khai Adoption.',
-                  bottomNavRoute: '/pets',
-                ),
+                builder: (context, state) => const AdoptionSwipeDeckScreen(),
               ),
             ],
           ),
@@ -184,6 +191,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     name: 'health-reminders',
                     builder: (context, state) => const ReminderCalendarScreen(),
                   ),
+                  GoRoute(
+                    path: 'knowledge',
+                    name: 'health-knowledge',
+                    builder: (context, state) => const HealthHubScreen(),
+                  ),
                 ],
               ),
             ],
@@ -204,14 +216,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'map',
                     name: 'rescue-map',
-                    builder: (context, state) => FeatureUnavailableScreen(
-                      title: 'Bản đồ cứu hộ',
-                      message: availability.rescueBrowse
-                          ? 'Bản đồ toàn màn hình sẽ được hoàn thiện ở Day 44. Bạn vẫn có thể xem bản đồ khu vực ước tính trên Rescue Home.'
-                          : 'Bản đồ cứu hộ chưa được bật. PawMate không tải dữ liệu hoặc vị trí thật ở trạng thái này.',
-                      fallbackLocation: '/rescue',
-                      bottomNavRoute: '/rescue',
-                    ),
+                    builder: (context, state) => availability.rescueBrowse
+                        ? const RescueMapScreen()
+                        : const FeatureUnavailableScreen(
+                            title: 'Bản đồ cứu hộ',
+                            message:
+                                'Bản đồ cứu hộ chưa được bật. PawMate không tải dữ liệu hoặc vị trí thật ở trạng thái này.',
+                            fallbackLocation: '/rescue',
+                            bottomNavRoute: '/rescue',
+                          ),
                   ),
                 ],
               ),
@@ -230,22 +243,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   GoRoute(
                     path: 'controls',
                     name: 'profile-controls',
-                    builder: (context, state) => const PlaceholderScreen(
-                      title: 'Cài đặt tài khoản',
-                      subtitle:
-                          'Các điều khiển tài khoản nâng cao sẽ được mở theo đúng scope Profile Controls của Phase 2.',
-                      bottomNavRoute: '/profile',
-                    ),
+                    builder: (context, state) => const ProfileControlsScreen(),
                   ),
                   GoRoute(
                     path: 'privacy',
                     name: 'profile-privacy',
-                    builder: (context, state) => const PlaceholderScreen(
-                      title: 'Quyền riêng tư & Bảo mật',
-                      subtitle:
-                          'PawMate chưa lưu thay đổi ở màn này cho tới khi privacy contract Phase 2 được triển khai.',
-                      bottomNavRoute: '/profile',
-                    ),
+                    builder: (context, state) => const PrivacyDefaultsScreen(),
+                  ),
+                  GoRoute(
+                    path: 'notifications',
+                    name: 'profile-notifications',
+                    builder: (context, state) =>
+                        const NotificationPreferencesScreen(),
                   ),
                 ],
               ),
@@ -259,6 +268,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/adoption/requests',
+        name: 'adoption-requests',
+        pageBuilder: (context, state) => PawMateNavigation.adaptivePage(
+          context: context,
+          state: state,
+          child: const MyAdoptionRequestsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/adoption/:listingId/request',
+        name: 'adoption-request',
+        pageBuilder: (context, state) {
+          final listingId = state.pathParameters['listingId']!;
+          return PawMateNavigation.adaptivePage(
+            context: context,
+            state: state,
+            child: AdoptionRequestFormScreen(listingId: listingId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/adoption/chat/:threadId',
+        name: 'adoption-chat',
+        pageBuilder: (context, state) => PawMateNavigation.adaptivePage(
+          context: context,
+          state: state,
+          child: ShelterChatScreen(threadId: state.pathParameters['threadId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/adoption/:listingId',
+        name: 'adoption-profile',
+        pageBuilder: (context, state) => PawMateNavigation.adaptivePage(
+          context: context,
+          state: state,
+          child: AdoptionProfileScreen(
+            listingId: state.pathParameters['listingId']!,
+          ),
+        ),
       ),
       GoRoute(
         path: '/pets/create',
@@ -363,45 +413,78 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rescue/:caseId/comment',
         name: 'rescue-comment',
-        pageBuilder: (context, state) => _rescueUnavailablePage(
-          context,
-          state,
-          availability: availability,
-          title: 'Bình luận ca cứu hộ',
-          requiresCreate: true,
-        ),
+        pageBuilder: (context, state) => availability.rescueCreate
+            ? PawMateNavigation.adaptivePage(
+                context: context,
+                state: state,
+                child: RescueCommentScreen(
+                  caseId: state.pathParameters['caseId']!,
+                ),
+              )
+            : _rescueUnavailablePage(
+                context,
+                state,
+                availability: availability,
+                title: 'Bình luận ca cứu hộ',
+                requiresCreate: true,
+              ),
       ),
       GoRoute(
         path: '/rescue/:caseId/status',
         name: 'rescue-status',
-        pageBuilder: (context, state) => _rescueUnavailablePage(
-          context,
-          state,
-          availability: availability,
-          title: 'Cập nhật trạng thái',
-          requiresCreate: true,
-        ),
+        pageBuilder: (context, state) => availability.rescueCreate
+            ? PawMateNavigation.adaptivePage(
+                context: context,
+                state: state,
+                child: RescueStatusScreen(
+                  caseId: state.pathParameters['caseId']!,
+                ),
+              )
+            : _rescueUnavailablePage(
+                context,
+                state,
+                availability: availability,
+                title: 'Cập nhật trạng thái',
+                requiresCreate: true,
+              ),
       ),
       GoRoute(
         path: '/rescue/:caseId/discussion',
         name: 'rescue-discussion',
-        pageBuilder: (context, state) => _rescueUnavailablePage(
-          context,
-          state,
-          availability: availability,
-          title: 'Trao đổi ca cứu hộ',
-          requiresCreate: true,
-        ),
+        pageBuilder: (context, state) => availability.rescueCreate
+            ? PawMateNavigation.adaptivePage(
+                context: context,
+                state: state,
+                child: RescueCommentScreen(
+                  caseId: state.pathParameters['caseId']!,
+                  discussionMode: true,
+                ),
+              )
+            : _rescueUnavailablePage(
+                context,
+                state,
+                availability: availability,
+                title: 'Trao đổi ca cứu hộ',
+                requiresCreate: true,
+              ),
       ),
       GoRoute(
         path: '/rescue/:caseId',
         name: 'rescue-case',
-        pageBuilder: (context, state) => _rescueUnavailablePage(
-          context,
-          state,
-          availability: availability,
-          title: 'Chi tiết ca cứu hộ',
-        ),
+        pageBuilder: (context, state) => availability.rescueBrowse
+            ? PawMateNavigation.adaptivePage(
+                context: context,
+                state: state,
+                child: RescueCaseDetailScreen(
+                  caseId: state.pathParameters['caseId']!,
+                ),
+              )
+            : _rescueUnavailablePage(
+                context,
+                state,
+                availability: availability,
+                title: 'Chi tiết ca cứu hộ',
+              ),
       ),
     ],
   );

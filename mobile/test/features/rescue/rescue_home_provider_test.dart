@@ -129,6 +129,11 @@ class _FailAfterFirstSource implements RescueCaseSource {
   int calls = 0;
 
   @override
+  Future<RescueCaseDetail> getCase(String caseId) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<RescueCasePage> listCases(RescueCaseQuery query) async {
     calls += 1;
     if (calls == 1) return page;
@@ -141,6 +146,11 @@ class _GenerationSource implements RescueCaseSource {
 
   final Completer<RescueCasePage> first;
   int calls = 0;
+
+  @override
+  Future<RescueCaseDetail> getCase(String caseId) {
+    throw UnimplementedError();
+  }
 
   @override
   Future<RescueCasePage> listCases(RescueCaseQuery query) {

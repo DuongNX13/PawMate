@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_dio.dart';
+import '../domain/rescue_case_models.dart';
 import '../domain/rescue_draft_models.dart';
 
 abstract interface class RescueWriteSource {
@@ -21,7 +22,7 @@ abstract interface class RescueWriteSource {
     required Map<String, Object?> patch,
   });
 
-  Future<void> publishDraft({
+  Future<RescueCaseDetail> publishDraft({
     required String accessToken,
     required String draftId,
     required int expectedVersion,
@@ -95,12 +96,12 @@ class RescueWriteApi implements RescueWriteSource {
   }
 
   @override
-  Future<void> publishDraft({
+  Future<RescueCaseDetail> publishDraft({
     required String accessToken,
     required String draftId,
     required int expectedVersion,
   }) async {
-    await _request(
+    final response = await _request(
       () => _dio.post(
         '/rescue/case-drafts/$draftId/publish',
         data: {'expectedVersion': expectedVersion},
@@ -110,6 +111,7 @@ class RescueWriteApi implements RescueWriteSource {
         ),
       ),
     );
+    return RescueCaseDetail.fromJson(_dataMap(response.data));
   }
 
   @override

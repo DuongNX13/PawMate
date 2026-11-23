@@ -7,14 +7,75 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/app/theme/app_tokens.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_session_store.dart';
 import 'package:pawmate_mobile/features/auth/presentation/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../test_support/ui_test_helpers.dart';
+import '../../test_support/day114_capture.dart';
+import 'package:pawmate_mobile/features/pets/application/pet_list_provider.dart';
+import 'package:pawmate_mobile/features/pets/presentation/pet_list_screen.dart';
+import 'package:pawmate_mobile/features/reminders/application/reminder_providers.dart';
 
 void main() {
+  testWidgets(
+    'D114 ST-08 failed login has native retry and preserves credentials',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await setTestViewport(tester, size: const Size(390, 844));
+      final api = _FakeAuthApi(
+        _sampleSession(),
+        errorMessage: 'Email hoặc mật khẩu không đúng.',
+      );
+      final store = _FakeAuthSessionStore();
+      final router = _loginRouter();
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authApiProvider.overrideWithValue(api),
+            authSessionStoreProvider.overrideWithValue(store),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await _enterValidCredentials(tester);
+      final submit = find.byKey(const Key('login-submit-button'));
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField).at(0))
+            .controller
+            ?.text,
+        'nam@example.com',
+      );
+      expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField).at(1))
+            .controller
+            ?.text,
+        'secret123',
+      );
+      expect(find.text('Thử lại'), findsOneWidget);
+      await captureDay114(tester, 'ST-08');
+      api.errorMessage = null;
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+      expect(api.loginCallCount, 2);
+      expect(store.savedSession, isNotNull);
+      expect(find.text('Home target'), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+    },
+  );
   testWidgets('login success routes to Phase 1 Home at /pets', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await setTestViewport(tester, size: const Size(390, 844));
@@ -30,8 +91,7 @@ void main() {
         ),
         GoRoute(
           path: '/pets',
-          builder: (context, state) =>
-              const Scaffold(body: Center(child: Text('Home target'))),
+          builder: (context, state) => const PetHomeScreen(),
         ),
       ],
     );
@@ -41,6 +101,8 @@ void main() {
         overrides: [
           authApiProvider.overrideWith((ref) => fakeApi),
           authSessionStoreProvider.overrideWith((ref) => fakeStore),
+          petBackendListProvider.overrideWith((ref) async => []),
+          upcomingRemindersProvider.overrideWith((ref) async => []),
         ],
         child: MaterialApp.router(
           theme: AppTheme.light(),
@@ -52,12 +114,15 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).at(0), 'nam@example.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
-    await tester.tap(find.text('Đăng nhập'));
+    final submit = find.byKey(const Key('login-submit-button'));
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
     await tester.pumpAndSettle();
 
     expect(fakeApi.loginCalled, isTrue);
     expect(fakeStore.savedSession, session);
-    expect(find.text('Home target'), findsOneWidget);
+    expect(find.text('Chưa có thú cưng nào'), findsOneWidget);
+    await captureDay114(tester, 'ST-07');
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('hasActiveSession'), isTrue);
     expectNoFlutterOverflow(tester);
@@ -106,7 +171,9 @@ void main() {
     );
     await tester.pumpAndSettle();
     await _enterValidCredentials(tester);
-    await tester.tap(find.text('Đăng nhập'));
+    final submit = find.byKey(const Key('login-submit-button'));
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
     await tester.pumpAndSettle();
 
     expect(find.text('Vet target: 24h'), findsOneWidget);
@@ -116,7 +183,7 @@ void main() {
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({});
-    await setTestViewport(tester, size: const Size(390, 844));
+    await setTestViewport(tester, size: const Size(320, 568));
     final fakeApi = _FakeAuthApi(
       _sampleSession(),
       errorMessage: 'Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.',
@@ -145,6 +212,7 @@ void main() {
         ],
         child: MaterialApp.router(
           theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
           routerConfig: router,
         ),
       ),
@@ -159,7 +227,10 @@ void main() {
 
     await tester.enterText(find.byType(TextFormField).at(0), 'nam@example.com');
     await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
-    await tester.tap(find.text('Đăng nhập'));
+    final submitButton = find.byKey(const Key('login-submit-button'));
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(submitButton);
     await tester.pumpAndSettle();
 
     expect(fakeApi.loginCalled, isTrue);
@@ -169,6 +240,22 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Mừng bạn đã trở lại'), findsOneWidget);
+    final title = tester.widget<Text>(find.text('Mừng bạn đã trở lại'));
+    expect(title.style?.color, AppColors.textPrimary);
+    final errorBanner = tester.widget<Container>(
+      find.byKey(const Key('login-error-banner')),
+    );
+    expect(
+      (errorBanner.decoration as BoxDecoration).color,
+      AppColors.errorSoft,
+    );
+    await tester.ensureVisible(find.byKey(const Key('login-error-banner')));
+    await captureDay114(tester, 'ST-08-small-text2');
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    expect(submitButton.hitTestable(), findsOneWidget);
+    expect(find.text('Thử lại'), findsOneWidget);
+    await captureDay114(tester, 'ST-08-small-text2-cta');
     expectNoFlutterOverflow(tester);
   });
 
@@ -194,7 +281,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp.router(
         theme: AppTheme.light(),
-        builder: testTextScaleBuilder(1.5),
+        builder: testTextScaleBuilder(2),
         routerConfig: router,
       ),
     );
@@ -217,6 +304,43 @@ void main() {
     expect(find.text('Register target'), findsOneWidget);
     semantics.dispose();
   });
+
+  testWidgets(
+    'login keeps password and submit reachable with large text and keyboard',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      await setTestViewport(tester, size: const Size(320, 568));
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const LoginScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final passwordField = find.descendant(
+        of: find.byKey(const Key('login-password-field')),
+        matching: find.byType(TextFormField),
+      );
+      await tester.ensureVisible(passwordField);
+      await tester.tap(passwordField);
+      await tester.enterText(passwordField, 'secret123');
+      await setKeyboardInset(tester, bottom: 300);
+
+      await tester.ensureVisible(passwordField);
+      await tester.pumpAndSettle();
+      expect(tester.getBottomRight(passwordField).dy, lessThanOrEqualTo(268));
+
+      final submitButton = find.byKey(const Key('login-submit-button'));
+      await tester.ensureVisible(submitButton);
+      await tester.pumpAndSettle();
+      expect(tester.getBottomRight(submitButton).dy, lessThanOrEqualTo(268));
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('login validates fields before calling API', (tester) async {
     SharedPreferences.setMockInitialValues({});
@@ -387,7 +511,7 @@ class _FakeAuthApi extends AuthApi {
   }) : super(Dio());
 
   final AuthSession _session;
-  final String? errorMessage;
+  String? errorMessage;
   final String? errorCode;
   final Completer<AuthSession>? response;
   bool loginCalled = false;
@@ -510,7 +634,7 @@ AuthSession _sampleSession() {
     ),
     accessToken: 'access-token',
     refreshToken: 'refresh-token',
-    accessTokenExpiresAt: '2026-07-08T10:00:00Z',
-    refreshTokenExpiresAt: '2026-08-08T10:00:00Z',
+    accessTokenExpiresAt: '2099-07-08T10:00:00Z',
+    refreshTokenExpiresAt: '2099-08-08T10:00:00Z',
   );
 }

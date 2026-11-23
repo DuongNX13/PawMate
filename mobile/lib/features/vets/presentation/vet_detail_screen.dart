@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/router/app_navigation.dart';
@@ -14,12 +14,14 @@ import '../../../core/widgets/pawmate_adaptive.dart';
 import '../../../core/widgets/pawmate_button.dart';
 import '../../../core/widgets/pawmate_chip.dart';
 import '../../../core/widgets/pawmate_fixed_cta_bar.dart';
+import '../../../core/widgets/pawmate_state_view.dart';
 import '../application/vet_providers.dart';
 import '../data/vet_api.dart';
+import '../data/vet_share_service.dart';
 import '../domain/vet_models.dart';
 import 'vet_actions.dart';
 
-class VetDetailScreen extends ConsumerWidget {
+class VetDetailScreen extends ConsumerStatefulWidget {
   const VetDetailScreen({
     super.key,
     required this.vetId,
@@ -30,11 +32,22 @@ class VetDetailScreen extends ConsumerWidget {
   final String returnPath;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final vetAsync = ref.watch(vetDetailProvider(vetId));
+  ConsumerState<VetDetailScreen> createState() => _VetDetailScreenState();
+}
+
+class _VetDetailScreenState extends ConsumerState<VetDetailScreen> {
+  bool _isSharing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final vetAsync = ref.watch(vetDetailProvider(widget.vetId));
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      // All editable vet-detail controls live in modal sheets. Those sheets
+      // own the IME inset; resizing this covered route also lifts its two-item
+      // footer and can overflow the action cluster behind the sheet.
+      resizeToAvoidBottomInset: false,
       bottomNavigationBar: vetAsync.maybeWhen(
         data: (vet) => _VetDetailCtaBar(vet: vet),
         orElse: () => null,
@@ -42,38 +55,23 @@ class VetDetailScreen extends ConsumerWidget {
       body: SafeArea(
         child: vetAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => _VetStateCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Không tải được chi tiết phòng khám',
-                  style: AppTextStyles.h4(),
-                ),
-                const SizedBox(height: 8),
-                Text(error.toString(), style: AppTextStyles.bodyCompact()),
-                const SizedBox(height: 16),
-                PawMateButton(
-                  label: 'Thử lại',
-                  fullWidth: false,
-                  variant: PawMateButtonVariant.secondary,
-                  onPressed: () => ref.invalidate(vetDetailProvider(vetId)),
-                ),
-              ],
-            ),
-          ),
+          error: (error, _) => _buildDetailError(context, error),
           data: (vet) {
             final reviewsAsync = ref.watch(vetReviewListProvider(vet.id));
+            final usesExpandedTextLayout =
+                MediaQuery.textScalerOf(context).scale(1) >
+                AppControlSize.compactButtonMaxTextScale;
 
             return ListView(
               padding: const EdgeInsets.only(bottom: AppSpacing.s24),
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _VetDetailHeader(
                     onBack: () =>
-                        PawMateNavigation.backOrGo(context, returnPath),
-                    onShare: () => _copyVetDetails(context, vet),
+                        PawMateNavigation.backOrGo(context, widget.returnPath),
+                    onShare: () => _shareVetDetails(vet),
+                    isSharing: _isSharing,
                   ),
                 ),
                 _HeroCard(vet: vet),
@@ -84,8 +82,10 @@ class VetDetailScreen extends ConsumerWidget {
                     children: [
                       Text(
                         vet.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: usesExpandedTextLayout ? null : 2,
+                        overflow: usesExpandedTextLayout
+                            ? TextOverflow.visible
+                            : TextOverflow.ellipsis,
                         style: AppTextStyles.h2(),
                       ),
                       const SizedBox(height: 10),
@@ -131,17 +131,39 @@ class VetDetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildDetailError(BuildContext context, Object error) {
+    final unavailable = error is VetApiException && error.statusCode == 404;
+    void goBack() => PawMateNavigation.backOrGo(context, widget.returnPath);
+    return PawMateStateView(
+      key: Key(unavailable ? 'vet-detail-unavailable' : 'vet-detail-error'),
+      type: unavailable ? PawMateStateType.empty : PawMateStateType.error,
+      title: unavailable
+          ? 'Phòng khám không còn khả dụng'
+          : 'Không tải được chi tiết phòng khám',
+      message: unavailable
+          ? 'Thông tin có thể đã được gỡ. Bạn có thể tìm phòng khám khác trong danh sách.'
+          : error is VetApiException
+          ? error.message
+          : 'Kiểm tra kết nối rồi thử tải lại thông tin phòng khám.',
+      primaryActionLabel: unavailable ? 'Về danh sách phòng khám' : 'Thử lại',
+      onPrimaryAction: unavailable
+          ? goBack
+          : () => ref.invalidate(vetDetailProvider(widget.vetId)),
+      secondaryActionLabel: unavailable ? null : 'Về danh sách phòng khám',
+      onSecondaryAction: unavailable ? null : goBack,
+    );
+  }
+
   static Future<void> _openWriteReview(
     BuildContext context,
     WidgetRef ref,
     VetDetail vet,
   ) async {
-    final submitted = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _WriteReviewSheet(vet: vet),
+    final submitted = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        fullscreenDialog: true,
+        builder: (_) => _WriteReviewSheet(vet: vet),
+      ),
     );
 
     if (submitted != true || !context.mounted) {
@@ -155,31 +177,33 @@ class VetDetailScreen extends ConsumerWidget {
     );
   }
 
-  static Future<void> _copyVetDetails(
-    BuildContext context,
-    VetDetail vet,
-  ) async {
-    final address = [
-      vet.address,
-      vet.district,
-      vet.city,
-    ].where((part) => part.trim().isNotEmpty).join(', ');
-    final details = [
-      vet.name,
-      if (address.isNotEmpty) address,
-      if (vet.phone.trim().isNotEmpty) vet.phone,
-      if ((vet.website ?? '').trim().isNotEmpty) vet.website!.trim(),
-    ].join('\n');
+  Future<void> _shareVetDetails(VetDetail vet) async {
+    if (_isSharing) return;
 
-    await Clipboard.setData(ClipboardData(text: details));
-    if (!context.mounted) {
-      return;
+    setState(() => _isSharing = true);
+    try {
+      final renderObject = context.findRenderObject();
+      final viewport = MediaQuery.sizeOf(context);
+      final origin = renderObject is RenderBox && renderObject.hasSize
+          ? renderObject.localToGlobal(Offset.zero) & renderObject.size
+          : Rect.fromCenter(
+              center: Offset(viewport.width / 2, viewport.height / 2),
+              width: 1,
+              height: 1,
+            );
+      await ref
+          .read(vetShareSourceProvider)
+          .shareVet(vet, sharePositionOrigin: origin);
+    } on Object {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Chưa thể mở bảng chia sẻ. Vui lòng thử lại.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã sao chép thông tin phòng khám để chia sẻ.'),
-      ),
-    );
   }
 }
 
@@ -194,24 +218,42 @@ class _WriteReviewSheet extends ConsumerStatefulWidget {
 
 class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
   final _bodyController = TextEditingController();
   final List<XFile> _selectedPhotos = [];
+  // Uploading multiple photos is not atomic. Keep each completed upload so a
+  // retry after a later failure does not create a second storage object for an
+  // image that already succeeded.
+  final Map<XFile, String> _uploadedPhotoUrls = {};
+  final Set<XFile> _failedPhotos = {};
   int _rating = 0;
+  String? _selectedReason;
   bool _isSubmitting = false;
+  bool _uploadFailed = false;
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    final reasons = widget.vet.displayServices;
+    _selectedReason = reasons.cast<String?>().firstWhere(
+      (reason) => reason?.toLowerCase().contains('khám') ?? false,
+      orElse: () => reasons.isEmpty ? null : reasons.first,
+    );
+  }
+
+  @override
   void dispose() {
-    _titleController.dispose();
     _bodyController.dispose();
     super.dispose();
   }
 
   String? _validateBody(String? value) {
     final body = (value ?? '').trim();
-    if (body.isNotEmpty && body.length < 10) {
-      return 'Nội dung cần ít nhất 10 ký tự nếu được nhập.';
+    if (body.isEmpty) {
+      return 'Vui lòng nhập nội dung đánh giá.';
+    }
+    if (body.length < 10) {
+      return 'Vui lòng nhập tối thiểu 10 ký tự.';
     }
     return null;
   }
@@ -256,26 +298,78 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
 
     setState(() {
       _selectedPhotos.add(photo);
-      _errorMessage = null;
+      if (_failedPhotos.isEmpty) {
+        _uploadFailed = false;
+        _errorMessage = null;
+      }
+    });
+  }
+
+  Future<void> _replaceFailedPhoto() async {
+    if (_failedPhotos.isEmpty || _isSubmitting) {
+      return;
+    }
+
+    final failedPhoto = _failedPhotos.first;
+    final failedPhotoIndex = _selectedPhotos.indexOf(failedPhoto);
+    if (failedPhotoIndex < 0) {
+      setState(() {
+        _failedPhotos.remove(failedPhoto);
+        _uploadFailed = _failedPhotos.isNotEmpty;
+      });
+      return;
+    }
+
+    final picker = ref.read(imagePickerProvider);
+    final replacement = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 82,
+      maxWidth: 1600,
+    );
+    if (replacement == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _uploadedPhotoUrls.remove(failedPhoto);
+      _selectedPhotos[failedPhotoIndex] = replacement;
+      _failedPhotos.remove(failedPhoto);
+      _uploadFailed = _failedPhotos.isNotEmpty;
+      if (!_uploadFailed) {
+        _errorMessage = null;
+      }
     });
   }
 
   Future<List<String>> _uploadSelectedPhotos(String accessToken) async {
     final urls = <String>[];
     for (final photo in _selectedPhotos) {
-      final bytes = await photo.readAsBytes();
-      final result = await ref
-          .read(vetApiProvider)
-          .uploadReviewPhoto(
-            widget.vet.id,
-            UploadReviewPhotoInput(
-              fileName: photo.name.isNotEmpty ? photo.name : 'review-photo',
-              contentType: _resolveContentType(photo),
-              base64Data: base64Encode(bytes),
-            ),
-            accessToken: accessToken,
-          );
-      urls.add(result.url);
+      final uploadedUrl = _uploadedPhotoUrls[photo];
+      if (uploadedUrl != null) {
+        urls.add(uploadedUrl);
+        continue;
+      }
+
+      try {
+        final bytes = await photo.readAsBytes();
+        final result = await ref
+            .read(vetApiProvider)
+            .uploadReviewPhoto(
+              widget.vet.id,
+              UploadReviewPhotoInput(
+                fileName: photo.name.isNotEmpty ? photo.name : 'review-photo',
+                contentType: _resolveContentType(photo),
+                base64Data: base64Encode(bytes),
+              ),
+              accessToken: accessToken,
+            );
+        _uploadedPhotoUrls[photo] = result.url;
+        _failedPhotos.remove(photo);
+        urls.add(result.url);
+      } catch (_) {
+        _failedPhotos.add(photo);
+        rethrow;
+      }
     }
 
     return urls;
@@ -295,16 +389,24 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
 
     setState(() {
       _isSubmitting = true;
+      _uploadFailed = false;
       _errorMessage = null;
     });
 
+    var uploadFailed = false;
     try {
       final accessToken = await ref.read(vetReviewAccessTokenProvider.future);
       if (accessToken == null || accessToken.trim().isEmpty) {
         throw const VetApiException('Bạn cần đăng nhập để gửi đánh giá.');
       }
 
-      final photoUrls = await _uploadSelectedPhotos(accessToken);
+      List<String> photoUrls;
+      try {
+        photoUrls = await _uploadSelectedPhotos(accessToken);
+      } catch (_) {
+        uploadFailed = _selectedPhotos.isNotEmpty;
+        rethrow;
+      }
 
       await ref
           .read(vetApiProvider)
@@ -312,7 +414,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
             widget.vet.id,
             CreateVetReviewInput(
               rating: _rating,
-              title: _titleController.text,
+              title: _selectedReason,
               body: _bodyController.text,
               photoUrls: photoUrls,
             ),
@@ -327,6 +429,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
         return;
       }
       setState(() {
+        _uploadFailed = uploadFailed || _failedPhotos.isNotEmpty;
         _errorMessage = error.message;
       });
     } catch (_) {
@@ -334,6 +437,7 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
         return;
       }
       setState(() {
+        _uploadFailed = uploadFailed || _failedPhotos.isNotEmpty;
         _errorMessage = 'Không gửi được đánh giá. Vui lòng thử lại.';
       });
     } finally {
@@ -348,122 +452,233 @@ class _WriteReviewSheetState extends ConsumerState<_WriteReviewSheet> {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
+    final hidePublicWarningForIme =
+        media.textScaler.scale(1) > 1.3 &&
+        media.viewInsets.bottom > 0 &&
+        media.size.height <= 640;
+    final reasons = widget.vet.displayServices.take(3).toList();
+    if (_selectedReason != null && reasons.remove(_selectedReason)) {
+      reasons.insert(reasons.isEmpty ? 0 : 1, _selectedReason!);
+    }
 
-    return SafeArea(
-      top: false,
-      child: Padding(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      resizeToAvoidBottomInset: false,
+      bottomNavigationBar: Padding(
         padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: media.size.height * 0.92),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.border,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hidePublicWarningForIme)
+                  // The submit action is the priority when a large-text
+                  // layout is constrained by the IME. Keep the disclosure in
+                  // the semantics tree without allowing it to cover the CTA.
+                  Semantics(
+                    container: true,
+                    label:
+                        'Đánh giá của bạn sẽ được hiển thị công khai sau khi gửi.',
+                    child: SizedBox.shrink(),
+                  )
+                else ...[
+                  Container(
+                    key: const Key('write-review-public-warning'),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
                     ),
-                    const SizedBox(height: 18),
-                    Text('Viết đánh giá', style: AppTextStyles.h3()),
-                    const SizedBox(height: AppSpacing.s16),
-                    _ReviewClinicSummary(vet: widget.vet),
-                    const SizedBox(height: AppSpacing.s24),
-                    Center(
-                      child: Text(
-                        'Chất lượng dịch vụ',
-                        style: AppTextStyles.h4(),
-                      ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(color: AppColors.border),
                     ),
-                    const SizedBox(height: AppSpacing.s8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(5, (index) {
-                        final value = index + 1;
-                        return IconButton(
-                          key: Key('write-review-star-$value'),
-                          onPressed: _isSubmitting
-                              ? null
-                              : () => setState(() {
-                                  _rating = value;
-                                  _errorMessage = null;
-                                }),
-                          icon: Icon(
-                            value <= _rating
-                                ? Icons.star_rounded
-                                : Icons.star_border_rounded,
-                            color: AppColors.brown,
-                            size: 32,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.public_outlined,
+                          size: 18,
+                          color: AppColors.primary700,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Đánh giá của bạn sẽ được hiển thị công khai sau khi gửi.',
+                            style: AppTextStyles.caption(),
                           ),
-                        );
-                      }),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      key: const Key('write-review-title-field'),
-                      controller: _titleController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Tiêu đề',
-                        hintText: 'Ví dụ: Chăm sóc rất kỹ',
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                PawMateButton(
+                  key: const Key('write-review-submit'),
+                  label: _isSubmitting
+                      ? 'Đang gửi...'
+                      : _uploadFailed
+                      ? 'Tải lại ảnh và gửi đánh giá'
+                      : 'Gửi đánh giá',
+                  onPressed: _isSubmitting ? null : _submit,
+                  isLoading: _isSubmitting,
+                  compact: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          // The footer already reserves the IME inset. Reserving it again in
+          // the body can reduce the scroll viewport to zero on a small phone.
+          padding: EdgeInsets.zero,
+          child: SizedBox(
+            height: media.size.height,
+            child: ColoredBox(
+              color: AppColors.background,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Form(
+                  key: _formKey,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 56,
+                        child: Row(
+                          children: [
+                            PawMateAdaptiveBackButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Viết đánh giá',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.h3(),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      key: const Key('write-review-body-field'),
-                      controller: _bodyController,
-                      minLines: 4,
-                      maxLines: 6,
-                      validator: _validateBody,
-                      decoration: const InputDecoration(
-                        labelText: 'Nội dung',
-                        hintText:
-                            'Chia sẻ trải nghiệm sau khi sử dụng dịch vụ.',
+                      const SizedBox(height: 16),
+                      _ReviewClinicSummary(vet: widget.vet),
+                      const SizedBox(height: 38),
+                      Center(
+                        child: Text(
+                          'Chất lượng dịch vụ',
+                          style: AppTextStyles.h4(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    _ReviewPhotoPicker(
-                      photos: _selectedPhotos,
-                      isSubmitting: _isSubmitting,
-                      onPickPhoto: _pickPhoto,
-                      onRemovePhoto: (index) {
-                        if (_isSubmitting) {
-                          return;
-                        }
-                        setState(() {
-                          _selectedPhotos.removeAt(index);
-                        });
-                      },
-                    ),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        _errorMessage!,
-                        key: const Key('write-review-error'),
-                        style: AppTextStyles.bodyStrong(color: AppColors.error),
+                      const SizedBox(height: 18),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(5, (index) {
+                          final value = index + 1;
+                          return IconButton(
+                            key: Key('write-review-star-$value'),
+                            onPressed: _isSubmitting
+                                ? null
+                                : () => setState(() {
+                                    _rating = value;
+                                    _errorMessage = null;
+                                  }),
+                            icon: Icon(
+                              value <= _rating
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              color: AppColors.brown,
+                              size: 32,
+                            ),
+                          );
+                        }),
                       ),
+                      const SizedBox(height: 36),
+                      Text('Lý do thăm khám', style: AppTextStyles.h4()),
+                      const SizedBox(height: 8),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: reasons.map((reason) {
+                            return PawMateChip(
+                              key: Key('write-review-reason-$reason'),
+                              label: reason,
+                              variant: PawMateChipVariant.choice,
+                              selected: _selectedReason == reason,
+                              onPressed: _isSubmitting
+                                  ? null
+                                  : () => setState(() {
+                                      _selectedReason = reason;
+                                      _errorMessage = null;
+                                    }),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      TextFormField(
+                        key: const Key('write-review-body-field'),
+                        controller: _bodyController,
+                        minLines: 5,
+                        maxLines: 7,
+                        validator: _validateBody,
+                        decoration: const InputDecoration(
+                          labelText: 'Nội dung',
+                          hintText:
+                              'Chia sẻ trải nghiệm sau khi sử dụng dịch vụ.',
+                        ),
+                      ),
+                      const SizedBox(height: 46),
+                      _ReviewPhotoPicker(
+                        photos: _selectedPhotos,
+                        isSubmitting: _isSubmitting,
+                        onPickPhoto: _pickPhoto,
+                        failedPhotos: _failedPhotos,
+                        onReplaceFailedPhoto: _replaceFailedPhoto,
+                        onRemovePhoto: (index) {
+                          if (_isSubmitting) {
+                            return;
+                          }
+                          setState(() {
+                            final removedPhoto = _selectedPhotos.removeAt(
+                              index,
+                            );
+                            _uploadedPhotoUrls.remove(removedPhoto);
+                            final removedFailedPhoto = _failedPhotos.remove(
+                              removedPhoto,
+                            );
+                            _uploadFailed = _failedPhotos.isNotEmpty;
+                            if (removedFailedPhoto && !_uploadFailed) {
+                              _errorMessage = null;
+                            }
+                          });
+                        },
+                      ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            _errorMessage!,
+                            key: const Key('write-review-error'),
+                            style: AppTextStyles.bodyStrong(
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
                     ],
-                    const SizedBox(height: 20),
-                    PawMateButton(
-                      key: const Key('write-review-submit'),
-                      label: _isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá',
-                      onPressed: _isSubmitting ? null : _submit,
-                      isLoading: _isSubmitting,
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -541,12 +756,16 @@ class _ReviewPhotoPicker extends StatelessWidget {
     required this.photos,
     required this.isSubmitting,
     required this.onPickPhoto,
+    required this.failedPhotos,
+    required this.onReplaceFailedPhoto,
     required this.onRemovePhoto,
   });
 
   final List<XFile> photos;
   final bool isSubmitting;
   final VoidCallback onPickPhoto;
+  final Set<XFile> failedPhotos;
+  final VoidCallback? onReplaceFailedPhoto;
   final ValueChanged<int> onRemovePhoto;
 
   @override
@@ -560,18 +779,64 @@ class _ReviewPhotoPicker extends StatelessWidget {
           spacing: 10,
           runSpacing: 10,
           children: [
-            ...photos.asMap().entries.map(
-              (entry) => Stack(
+            ...photos.asMap().entries.map((entry) {
+              final uploadFailed = failedPhotos.contains(entry.value);
+              return Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.file(
-                      File(entry.value.path),
+                  Semantics(
+                    image: true,
+                    label: uploadFailed
+                        ? 'Ảnh đánh giá tải lên lỗi'
+                        : 'Ảnh đánh giá đã chọn',
+                    child: SizedBox(
                       width: 72,
                       height: 72,
-                      fit: BoxFit.cover,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: uploadFailed
+                              ? Border.all(color: AppColors.error, width: 2)
+                              : null,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.all(uploadFailed ? 2 : 0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.file(
+                              File(entry.value.path),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
+                  if (uploadFailed)
+                    Positioned(
+                      left: -8,
+                      top: -8,
+                      child: ExcludeSemantics(
+                        child: SizedBox(
+                          width: 48,
+                          height: 48,
+                          child: Center(
+                            child: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.error_outline_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   Positioned(
                     right: -8,
                     top: -8,
@@ -608,8 +873,8 @@ class _ReviewPhotoPicker extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
+              );
+            }),
             if (photos.length < 3)
               Semantics(
                 button: true,
@@ -638,20 +903,39 @@ class _ReviewPhotoPicker extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text('Tối đa 3 ảnh, mỗi ảnh dưới 5MB.', style: AppTextStyles.caption()),
+        if (failedPhotos.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          PawMateButton(
+            key: const Key('write-review-replace-failed-photo'),
+            label: 'Thay ảnh lỗi',
+            semanticLabel: 'Thay ảnh đánh giá tải lên lỗi',
+            variant: PawMateButtonVariant.secondary,
+            leadingIcon: Icons.swap_horiz_rounded,
+            fullWidth: false,
+            compact: true,
+            onPressed: isSubmitting ? null : onReplaceFailedPhoto,
+          ),
+        ],
       ],
     );
   }
 }
 
 class _VetDetailHeader extends StatelessWidget {
-  const _VetDetailHeader({required this.onBack, required this.onShare});
+  const _VetDetailHeader({
+    required this.onBack,
+    required this.onShare,
+    required this.isSharing,
+  });
 
   final VoidCallback onBack;
   final VoidCallback onShare;
+  final bool isSharing;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
+      key: const Key('vet-detail-header-shell'),
       height: 64,
       child: Stack(
         alignment: Alignment.center,
@@ -664,9 +948,15 @@ class _VetDetailHeader extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: IconButton(
-              onPressed: onShare,
-              icon: const Icon(Icons.share_outlined, size: 28),
-              tooltip: 'Chia sẻ',
+              key: const Key('vet-detail-share'),
+              onPressed: isSharing ? null : onShare,
+              icon: isSharing
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.share_outlined, size: 28),
+              tooltip: isSharing ? 'Đang mở bảng chia sẻ' : 'Chia sẻ',
             ),
           ),
         ],
@@ -683,7 +973,8 @@ class _HeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 238,
+      key: const Key('vet-detail-hero'),
+      height: 240,
       width: double.infinity,
       child: Stack(
         clipBehavior: Clip.none,
@@ -711,7 +1002,7 @@ class _HeroCard extends StatelessWidget {
           ),
           Positioned(
             right: 22,
-            bottom: -28,
+            bottom: 16,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
@@ -823,6 +1114,10 @@ class _VetStatusLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = vet.isOpen == true ? 'Đang mở cửa' : vet.statusLabel;
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Row(
       children: [
         Container(
@@ -836,9 +1131,11 @@ class _VetStatusLine extends StatelessWidget {
         const SizedBox(width: 8),
         Flexible(
           child: Text(
-            '${vet.statusLabel} • ${_openingSummary(vet)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            '$status • ${_openingSummary(vet)}',
+            maxLines: usesExpandedTextLayout ? null : 1,
+            overflow: usesExpandedTextLayout
+                ? TextOverflow.visible
+                : TextOverflow.ellipsis,
             style: AppTextStyles.label(),
           ),
         ),
@@ -854,7 +1151,15 @@ class _QuickFactsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasEmergency24h =
+        vet.is24h == true ||
+        vet.displayServices.any((service) {
+          final normalized = service.toLowerCase();
+          return normalized.contains('cấp cứu') && normalized.contains('24/7');
+        });
+
     return Row(
+      key: const Key('vet-detail-quick-facts'),
       children: [
         Expanded(
           child: _MetricTile(
@@ -868,8 +1173,8 @@ class _QuickFactsCard extends StatelessWidget {
         Expanded(
           child: _MetricTile(
             icon: Icons.emergency_outlined,
-            value: vet.is24h == true ? 'Cấp cứu\n24/7' : vet.statusLabel,
-            label: vet.is24h == true ? 'SẴN SÀNG' : 'TRẠNG THÁI',
+            value: hasEmergency24h ? 'Cấp cứu\n24/7' : vet.statusLabel,
+            label: hasEmergency24h ? 'SẴN SÀNG' : 'TRẠNG THÁI',
             emphasized: true,
           ),
         ),
@@ -907,7 +1212,7 @@ class _MetricTile extends StatelessWidget {
     final color = emphasized ? AppColors.primary700 : AppColors.textPrimary;
 
     return Container(
-      height: 126,
+      constraints: const BoxConstraints(minHeight: 118),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: emphasized ? AppColors.surfaceContainer : AppColors.surfaceMuted,
@@ -932,8 +1237,6 @@ class _MetricTile extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.micro(),
           ),
         ],
@@ -949,8 +1252,13 @@ class _AddressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Container(
+      key: const Key('vet-detail-address-card'),
       width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 104),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -969,8 +1277,10 @@ class _AddressCard extends StatelessWidget {
           Expanded(
             child: Text(
               '${vet.address}\n${vet.district}, ${vet.city}',
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+              maxLines: usesExpandedTextLayout ? null : 3,
+              overflow: usesExpandedTextLayout
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
               style: AppTextStyles.bodyStrong(color: AppColors.textSecondary),
             ),
           ),
@@ -988,6 +1298,7 @@ class _VetDetailCtaBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PawMateFixedCtaBar(
+      liftAboveIme: false,
       primaryAction: PawMateAction(
         label: 'Gọi ngay',
         icon: Icons.phone_outlined,
@@ -1090,16 +1401,13 @@ class _ReviewPreviewCard extends ConsumerWidget {
               final latestReview = reviews.items.isNotEmpty
                   ? reviews.items.first
                   : null;
-              if (latestReview == null && reviews.summary.reviewCount == 0) {
-                return const SizedBox.shrink();
-              }
-
               return Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _RatingDistributionChart(summary: reviews.summary),
+                    if (reviews.items.isNotEmpty)
+                      _RatingDistributionChart(summary: reviews.summary),
                     if (latestReview != null) ...[
                       const SizedBox(height: 12),
                       Wrap(
@@ -1128,9 +1436,8 @@ class _ReviewPreviewCard extends ConsumerWidget {
                       alignment: Alignment.centerLeft,
                       child: TextButton.icon(
                         key: const Key('review-list-open-button'),
-                        onPressed: reviews.items.isEmpty
-                            ? null
-                            : () => _openReviewListSheet(context, reviews),
+                        onPressed: () =>
+                            _openReviewListSheet(context, ref, reviews),
                         icon: const Icon(Icons.format_list_bulleted_rounded),
                         label: const Text('Xem danh sách đánh giá'),
                       ),
@@ -1148,15 +1455,27 @@ class _ReviewPreviewCard extends ConsumerWidget {
 
   Future<void> _openReviewListSheet(
     BuildContext context,
+    WidgetRef ref,
     VetReviewResult initialResult,
   ) async {
-    await showModalBottomSheet<void>(
+    final createReview = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _ReviewListSheet(vet: vet, initialResult: initialResult),
+      builder: (sheetContext) => _ReviewListSheet(
+        vet: vet,
+        initialResult: initialResult,
+        onUnavailable: () {
+          final router = GoRouter.of(context);
+          Navigator.of(sheetContext).pop();
+          router.go('/vets/list');
+        },
+      ),
     );
+    if (createReview == true && context.mounted) {
+      await _VetDetailScreenState._openWriteReview(context, ref, vet);
+    }
   }
 
   Future<String> _requireAccessToken(WidgetRef ref) async {
@@ -1282,10 +1601,15 @@ class _RatingDistributionChart extends StatelessWidget {
 }
 
 class _ReviewListSheet extends ConsumerStatefulWidget {
-  const _ReviewListSheet({required this.vet, required this.initialResult});
+  const _ReviewListSheet({
+    required this.vet,
+    required this.initialResult,
+    required this.onUnavailable,
+  });
 
   final VetDetail vet;
   final VetReviewResult initialResult;
+  final VoidCallback onUnavailable;
 
   @override
   ConsumerState<_ReviewListSheet> createState() => _ReviewListSheetState();
@@ -1297,6 +1621,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
   String? _nextCursor;
   bool _isLoadingMore = false;
   String? _errorMessage;
+  bool _unavailable = false;
 
   @override
   void initState() {
@@ -1308,7 +1633,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
 
   Future<void> _loadMore() async {
     final cursor = _nextCursor;
-    if (cursor == null || _isLoadingMore) {
+    if (cursor == null || _isLoadingMore || _unavailable) {
       return;
     }
 
@@ -1338,6 +1663,7 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
       }
       setState(() {
         _errorMessage = error.message;
+        _unavailable = error.statusCode == 404;
       });
     } catch (_) {
       if (!mounted) {
@@ -1365,61 +1691,74 @@ class _ReviewListSheetState extends ConsumerState<_ReviewListSheet> {
           color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'Đánh giá ${widget.vet.name}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.h3(),
-            ),
-            const SizedBox(height: 14),
-            _RatingDistributionChart(summary: _summary),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _items.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Chưa có đánh giá nào.',
-                        style: AppTextStyles.bodyCompact(),
-                      ),
-                    )
-                  : ListView.separated(
-                      itemBuilder: (context, index) =>
-                          _ReviewListTile(review: _items[index]),
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemCount: _items.length,
+        child: _unavailable
+            ? PawMateStateView(
+                key: const Key('review-list-unavailable'),
+                type: PawMateStateType.empty,
+                title: 'Phòng khám không còn khả dụng',
+                message:
+                    'Thông tin có thể đã được gỡ. Bạn có thể tìm phòng khám khác trong danh sách.',
+                primaryActionLabel: 'Về danh sách phòng khám',
+                onPrimaryAction: widget.onUnavailable,
+              )
+            : ListView(
+                key: const Key('review-list-scroll'),
+                children: [
+                  Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
-            ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                _errorMessage!,
-                key: const Key('review-list-load-error'),
-                style: AppTextStyles.bodyStrong(color: AppColors.error),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Đánh giá ${widget.vet.name}',
+                    style: AppTextStyles.h3(),
+                  ),
+                  const SizedBox(height: 14),
+                  if (_items.isNotEmpty)
+                    _RatingDistributionChart(summary: _summary),
+                  const SizedBox(height: 12),
+                  if (_items.isEmpty)
+                    PawMateStateView(
+                      key: const Key('review-list-empty'),
+                      type: PawMateStateType.empty,
+                      title: 'Chưa có đánh giá',
+                      message:
+                          'Chia sẻ trải nghiệm của bạn để giúp các chủ nuôi chọn phòng khám phù hợp.',
+                      primaryActionLabel: 'Viết đánh giá đầu tiên',
+                      onPrimaryAction: () => Navigator.of(context).pop(true),
+                    )
+                  else
+                    ..._items.map(
+                      (review) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ReviewListTile(review: review),
+                      ),
+                    ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _errorMessage!,
+                      key: const Key('review-list-load-error'),
+                      style: AppTextStyles.bodyStrong(color: AppColors.error),
+                    ),
+                  ],
+                  if (_items.isNotEmpty && _nextCursor != null) ...[
+                    const SizedBox(height: 12),
+                    PawMateButton(
+                      key: const Key('review-load-more-button'),
+                      label: _isLoadingMore
+                          ? 'Đang tải...'
+                          : 'Tải thêm đánh giá',
+                      onPressed: _isLoadingMore ? null : _loadMore,
+                      isLoading: _isLoadingMore,
+                    ),
+                  ],
+                ],
               ),
-            ],
-            if (_nextCursor != null) ...[
-              const SizedBox(height: 12),
-              PawMateButton(
-                key: const Key('review-load-more-button'),
-                label: _isLoadingMore ? 'Đang tải...' : 'Tải thêm đánh giá',
-                onPressed: _isLoadingMore ? null : _loadMore,
-                isLoading: _isLoadingMore,
-              ),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -1654,31 +1993,6 @@ class _SourceAttributionCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(vet.source.selectionReason, style: AppTextStyles.bodyCompact()),
         ],
-      ),
-    );
-  }
-}
-
-class _VetStateCard extends StatelessWidget {
-  const _VetStateCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            boxShadow: AppShadows.soft,
-          ),
-          child: child,
-        ),
       ),
     );
   }

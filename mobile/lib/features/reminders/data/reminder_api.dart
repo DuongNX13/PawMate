@@ -53,6 +53,22 @@ class ReminderApi {
     );
   }
 
+  Future<Reminder> updateReminder(
+    String petId,
+    String reminderId,
+    CreateReminderInput input, {
+    required String accessToken,
+  }) async {
+    return _perform(
+      call: () => _dio.patch(
+        '/pets/$petId/reminders/$reminderId',
+        data: input.toJson(),
+        options: _authOptions(accessToken),
+      ),
+      parser: (json) => Reminder.fromJson(_readMap(json['data'])),
+    );
+  }
+
   Future<Reminder> markDone(
     String petId,
     String reminderId, {

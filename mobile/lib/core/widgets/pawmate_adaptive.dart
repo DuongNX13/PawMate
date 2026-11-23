@@ -52,6 +52,7 @@ Future<T?> showPawMateAdaptiveDialog<T>({
   required String title,
   String? message,
   required List<PawMateAdaptiveAction<T>> actions,
+  Key? dialogKey,
   bool? barrierDismissible,
 }) {
   final isCupertino = _usesCupertino(context);
@@ -62,6 +63,7 @@ Future<T?> showPawMateAdaptiveDialog<T>({
     builder: (dialogContext) {
       if (isCupertino) {
         return CupertinoAlertDialog(
+          key: dialogKey,
           title: Text(title, style: AppTextStyles.h4()),
           content: message == null
               ? null
@@ -69,6 +71,7 @@ Future<T?> showPawMateAdaptiveDialog<T>({
           actions: [
             for (final action in actions)
               CupertinoDialogAction(
+                key: action.key,
                 isDefaultAction: action.isDefaultAction,
                 isDestructiveAction: action.isDestructiveAction,
                 onPressed: () => Navigator.of(dialogContext).pop(action.value),
@@ -86,11 +89,13 @@ Future<T?> showPawMateAdaptiveDialog<T>({
       }
 
       return AlertDialog(
+        key: dialogKey,
         title: Text(title),
         content: message == null ? null : Text(message),
         actions: [
           for (final action in actions)
             TextButton.icon(
+              key: action.key,
               onPressed: () => Navigator.of(dialogContext).pop(action.value),
               icon: action.icon == null
                   ? const SizedBox.shrink()
@@ -127,6 +132,10 @@ Future<DateTime?> showPawMateAdaptiveDatePicker({
       firstDate: firstDate,
       lastDate: lastDate,
       currentDate: currentDate,
+      // The fixed calendar cells clip scaled glyphs on compact screens.
+      initialEntryMode: MediaQuery.textScalerOf(context).scale(1) > 1.3
+          ? DatePickerEntryMode.input
+          : DatePickerEntryMode.calendar,
       helpText: title,
       cancelText: cancelLabel,
       confirmText: confirmLabel,
@@ -167,6 +176,10 @@ Future<TimeOfDay?> showPawMateAdaptiveTimePicker({
     return showTimePicker(
       context: context,
       initialTime: initialTime,
+      // Preserve the user's text size without overlapping the clock dial.
+      initialEntryMode: MediaQuery.textScalerOf(context).scale(1) > 1.3
+          ? TimePickerEntryMode.input
+          : TimePickerEntryMode.dial,
       helpText: title,
       cancelText: cancelLabel,
       confirmText: confirmLabel,
@@ -285,6 +298,7 @@ class _CupertinoPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final expandedText = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Material(
       color: AppColors.surface,
       child: SafeArea(
@@ -293,6 +307,15 @@ class _CupertinoPickerSheet extends StatelessWidget {
           height: 340,
           child: Column(
             children: [
+              if (expandedText)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.label(),
+                  ),
+                ),
               SizedBox(
                 height: AppControlSize.minTouchTarget,
                 child: Row(
@@ -314,15 +337,16 @@ class _CupertinoPickerSheet extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.label(),
+                    if (!expandedText)
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.label(),
+                        ),
                       ),
-                    ),
                     Expanded(
                       child: CupertinoButton(
                         padding: const EdgeInsets.symmetric(

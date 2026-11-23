@@ -13,6 +13,7 @@ import '../../reminders/application/reminder_providers.dart';
 import '../../reminders/data/reminder_api.dart';
 import '../../reminders/domain/reminder.dart';
 import '../application/pet_list_provider.dart';
+import '../data/pet_api.dart';
 import '../domain/pet_profile.dart';
 import 'widgets/pet_avatar_media.dart';
 
@@ -56,6 +57,7 @@ class PetHomeScreen extends ConsumerWidget {
 
           if (pets.isEmpty && backendPetsState.hasError) {
             return _PetSyncError(
+              error: backendPetsState.error!,
               message: _petSyncErrorMessage(backendPetsState.error!),
               onRetry: () => ref.invalidate(petBackendListProvider),
             );
@@ -93,7 +95,7 @@ class PetHomeScreen extends ConsumerWidget {
                             context.go('/notifications?returnTo=%2Fpets'),
                         onOpenProfile: () => context.go('/profile'),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
                       Text(
                         'Chào buổi sáng, $displayName!',
                         style: AppTextStyles.bodyStrong(),
@@ -114,7 +116,7 @@ class PetHomeScreen extends ConsumerWidget {
                           context.push('/pets/${pet.id}');
                         },
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 48),
                       if (backendPetsState.hasError) ...[
                         _PetSyncBanner(
                           message: _petSyncErrorMessage(
@@ -268,7 +270,12 @@ String _homePetHealthLabel(String healthStatus) {
 }
 
 class PetListScreen extends ConsumerWidget {
-  const PetListScreen({super.key});
+  const PetListScreen({this.now, super.key});
+
+  /// Optional clock used by deterministic UI stories and golden tests.
+  ///
+  /// Production keeps using the device clock when no value is supplied.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -279,6 +286,9 @@ class PetListScreen extends ConsumerWidget {
       orElse: () => cachedPets,
     );
     final theme = Theme.of(context);
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
 
     return Scaffold(
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/pets'),
@@ -291,6 +301,7 @@ class PetListScreen extends ConsumerWidget {
 
             if (pets.isEmpty && backendPetsState.hasError) {
               return _PetSyncError(
+                error: backendPetsState.error!,
                 message: _petSyncErrorMessage(backendPetsState.error!),
                 onRetry: () => ref.invalidate(petBackendListProvider),
               );
@@ -304,13 +315,20 @@ class PetListScreen extends ConsumerWidget {
 
             final heroPet = pets.first;
             final secondaryPets = pets.skip(1).toList();
-            final useTwoColumns = constraints.maxWidth >= 430;
+            final useThreeColumns = constraints.maxWidth >= 600;
+            final gridColumnCount = useThreeColumns
+                ? 3
+                : usesExpandedTextLayout
+                ? 1
+                : 2;
+            final currentDate = now ?? DateTime.now();
 
             return CustomScrollView(
+              key: const Key('pet-list-scroll'),
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -320,11 +338,13 @@ class PetListScreen extends ConsumerWidget {
                           ),
                           onOpenSearch: () => context.go('/pets/list'),
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 24),
                         Text(
                           'Chào buổi sáng, Nam!',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: usesExpandedTextLayout ? null : 1,
+                          overflow: usesExpandedTextLayout
+                              ? null
+                              : TextOverflow.ellipsis,
                           style: theme.textTheme.headlineLarge?.copyWith(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,
@@ -333,15 +353,18 @@ class PetListScreen extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Text(
                           'Cùng chăm sóc các bạn nhỏ hôm nay nhé.',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: usesExpandedTextLayout ? null : 1,
+                          overflow: usesExpandedTextLayout
+                              ? null
+                              : TextOverflow.ellipsis,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 36),
                         _FeaturedPetCard(
                           pet: heroPet,
+                          now: currentDate,
                           onTap: () => context.push('/pets/${heroPet.id}'),
                         ),
                         if (backendPetsState.hasError) ...[
@@ -359,13 +382,13 @@ class PetListScreen extends ConsumerWidget {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 140),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 140),
                   sliver: SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: useTwoColumns ? 3 : 2,
+                      crossAxisCount: gridColumnCount,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
-                      childAspectRatio: useTwoColumns ? 0.72 : 0.66,
+                      childAspectRatio: useThreeColumns ? 0.72 : 0.66,
                     ),
                     delegate: SliverChildBuilderDelegate((context, index) {
                       if (index == secondaryPets.length) {
@@ -378,6 +401,7 @@ class PetListScreen extends ConsumerWidget {
                       final pet = secondaryPets[index];
                       return _PetGridCard(
                         pet: pet,
+                        now: currentDate,
                         onTap: () => context.push('/pets/${pet.id}'),
                       );
                     }, childCount: secondaryPets.length + 1),
@@ -408,22 +432,21 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    return Row(
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+    final title = Text(
+      'PawMate',
+      maxLines: usesExpandedTextLayout ? null : 1,
+      overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
+      style: theme.textTheme.titleLarge?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.pets_rounded, size: 22, color: theme.colorScheme.primary),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            'PawMate',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
         IconButton(
           key: const Key('home-vet-search-action'),
           tooltip: 'Tìm phòng khám',
@@ -470,6 +493,30 @@ class _HomeHeader extends StatelessWidget {
         ),
       ],
     );
+
+    final branding = Row(
+      children: [
+        Icon(Icons.pets_rounded, size: 22, color: theme.colorScheme.primary),
+        const SizedBox(width: 6),
+        Expanded(child: title),
+      ],
+    );
+    if (usesExpandedTextLayout) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          branding,
+          const SizedBox(height: AppSpacing.s8),
+          Align(alignment: Alignment.centerRight, child: actions),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: branding),
+        actions,
+      ],
+    );
   }
 }
 
@@ -503,7 +550,7 @@ class _HomePetCarousel extends StatelessWidget {
                   : AppColors.careGreen,
               onTap: () => onPetTap(visiblePets[index]),
             ),
-            const SizedBox(width: 40),
+            SizedBox(width: index == 0 ? 40 : 22),
           ],
           _AddPetAvatar(onTap: () => _openPetForm(context, returnTo: '/pets')),
         ],
@@ -716,7 +763,7 @@ class _HomeEntrySection extends StatelessWidget {
           onBookReminder: () => context.go('/health/reminders'),
           onDeferReminder: onDeferReminder,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 20),
         _HomeEmergencyBanner(onTap: () => context.go('/rescue')),
         const SizedBox(height: 12),
         _HomeMainCards(
@@ -750,23 +797,18 @@ class _HomeHealthReminderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: AppShadows.soft,
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         key: const Key('home-health-reminder-card'),
         onTap: onOpenTimeline,
         borderRadius: BorderRadius.circular(18),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -774,11 +816,14 @@ class _HomeHealthReminderCard extends StatelessWidget {
                 children: [
                   Icon(Icons.favorite_rounded, color: colorScheme.primary),
                   const SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       'LỊCH NHẮC SỨC KHỎE',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: usesExpandedTextLayout ? null : 1,
+                      overflow: usesExpandedTextLayout
+                          ? null
+                          : TextOverflow.ellipsis,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.w700,
@@ -793,8 +838,8 @@ class _HomeHealthReminderCard extends StatelessWidget {
                     (pet == null
                         ? 'Theo dõi sức khỏe thú cưng'
                         : 'Chưa có lịch nhắc cho ${pet!.name}'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: usesExpandedTextLayout ? null : 1,
+                overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
                 style: AppTextStyles.cardTitle(),
               ),
               const SizedBox(height: 4),
@@ -802,8 +847,8 @@ class _HomeHealthReminderCard extends StatelessWidget {
                 reminder == null
                     ? 'Tạo lịch tiêm phòng, tẩy giun hoặc tái khám.'
                     : _homeReminderSubtitle(reminder!, now),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                maxLines: usesExpandedTextLayout ? null : 2,
+                overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall,
               ),
               const SizedBox(height: 4),
@@ -816,6 +861,7 @@ class _HomeHealthReminderCard extends StatelessWidget {
                     label: reminder == null ? 'Tạo lịch' : 'Xác nhận',
                     onPressed: onBookReminder,
                     fullWidth: false,
+                    compact: true,
                   ),
                   if (onDeferReminder != null)
                     PawMateButton(
@@ -824,6 +870,7 @@ class _HomeHealthReminderCard extends StatelessWidget {
                       onPressed: onDeferReminder,
                       variant: PawMateButtonVariant.secondary,
                       fullWidth: false,
+                      compact: true,
                     ),
                 ],
               ),
@@ -843,6 +890,9 @@ class _HomeEmergencyBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const alert = 'Mất Poodle trắng tại phường Tân Quý';
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Semantics(
       button: true,
       label: 'Tin khẩn cấp. $alert',
@@ -886,8 +936,10 @@ class _HomeEmergencyBanner extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           alert,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          maxLines: usesExpandedTextLayout ? null : 2,
+                          overflow: usesExpandedTextLayout
+                              ? null
+                              : TextOverflow.ellipsis,
                           style: AppTextStyles.captionStrong(
                             color: AppColors.white,
                           ),
@@ -958,57 +1010,137 @@ class _NearbyVetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
 
     return Material(
-      color: AppColors.surfaceContainer,
+      color: AppColors.surface,
+      elevation: 1,
+      shadowColor: AppColors.shadow,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         key: const Key('home-nearby-vet-card'),
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.45)),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'PHÒNG KHÁM GẦN BẠN',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: usesExpandedTextLayout ? null : 1,
+                overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: AppColors.careGreen.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 4),
               Text(
                 'PetHome Q7',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: usesExpandedTextLayout ? null : 1,
+                overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: AppColors.careGreen,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                '★ 4.8 (120+)',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppColors.careGreen,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(height: 2),
+              Wrap(
+                spacing: AppSpacing.s4,
+                runSpacing: 2,
+                children: [
+                  Text(
+                    'Google',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    '★ 4.8',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (usesExpandedTextLayout) ...[
+                _HomeClinicImage(height: 96),
+                const SizedBox(height: AppSpacing.s8),
+                PawMateButton(
+                  key: const Key('home-find-vet-shortcut'),
+                  label: 'Gọi ngay',
+                  onPressed: onFindVet,
+                  leadingIcon: Icons.call_rounded,
+                  compact: true,
                 ),
-              ),
-              const SizedBox(height: 18),
-              PawMateButton(
-                key: const Key('home-find-vet-shortcut'),
-                label: 'Gọi ngay',
-                onPressed: onFindVet,
-                leadingIcon: Icons.call_rounded,
-                fullWidth: false,
-              ),
+              ] else
+                SizedBox(
+                  height: 82,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const _HomeClinicImage(height: 82),
+                      Positioned(
+                        left: 8,
+                        bottom: 8,
+                        child: PawMateButton(
+                          key: const Key('home-find-vet-shortcut'),
+                          label: 'Gọi ngay',
+                          onPressed: onFindVet,
+                          leadingIcon: Icons.call_rounded,
+                          fullWidth: false,
+                          compact: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeClinicImage extends StatelessWidget {
+  const _HomeClinicImage({required this.height});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      image: true,
+      label: 'Không gian tiếp đón của phòng khám PetHome Q7',
+      child: Container(
+        key: const Key('home-nearby-vet-image'),
+        height: height,
+        width: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Image.asset(
+          'assets/images/brand/pawmate_vet_clinic_reception.png',
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
+          errorBuilder: (_, _, _) => const Center(
+            child: Icon(
+              Icons.local_hospital_outlined,
+              color: AppColors.careGreen,
+              size: 32,
+            ),
           ),
         ),
       ),
@@ -1023,6 +1155,10 @@ class _AdoptionTeaserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+
     return Material(
       color: AppColors.surfaceMuted,
       borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -1073,31 +1209,49 @@ class _AdoptionTeaserCard extends StatelessWidget {
               Text(
                 key: const Key('home-adoption-meta'),
                 '2 tháng tuổi • Hiền lành',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: usesExpandedTextLayout ? null : 1,
+                overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
                 style: AppTextStyles.micro(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
+              if (usesExpandedTextLayout)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       key: const Key('home-adoption-cta'),
                       'NHẬN NUÔI',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.micro(),
                     ),
-                  ),
-                  Text(
-                    key: const Key('home-adoption-view-more'),
-                    'Xem thêm',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.micro(color: AppColors.primary500),
-                  ),
-                ],
-              ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      key: const Key('home-adoption-view-more'),
+                      'Xem thêm',
+                      style: AppTextStyles.micro(color: AppColors.primary500),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        key: const Key('home-adoption-cta'),
+                        'NHẬN NUÔI',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.micro(),
+                      ),
+                    ),
+                    Text(
+                      key: const Key('home-adoption-view-more'),
+                      'Xem thêm',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.micro(color: AppColors.primary500),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
@@ -1117,28 +1271,18 @@ class _PetListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+    final title = Text(
+      'PawMate',
+      maxLines: usesExpandedTextLayout ? null : 1,
+      overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
+      style: AppTextStyles.h2(color: AppColors.primary700),
+    );
+    final actions = Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const CircleAvatar(
-          radius: 24,
-          backgroundColor: AppColors.careGreenSoft,
-          child: Icon(Icons.person_rounded, color: AppColors.careGreen),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text(
-            'PawMate',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.headlineLarge?.copyWith(
-              color: AppColors.primary700,
-              fontWeight: FontWeight.w700,
-              height: 1,
-            ),
-          ),
-        ),
         IconButton(
           tooltip: 'Thông báo',
           onPressed: onOpenNotifications,
@@ -1151,32 +1295,69 @@ class _PetListHeader extends StatelessWidget {
         ),
       ],
     );
+    final identity = Row(
+      children: [
+        const CircleAvatar(
+          radius: 18,
+          backgroundColor: AppColors.careGreenSoft,
+          child: Icon(
+            Icons.person_rounded,
+            color: AppColors.careGreen,
+            size: 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: title),
+      ],
+    );
+    if (usesExpandedTextLayout) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          identity,
+          const SizedBox(height: AppSpacing.s8),
+          Align(alignment: Alignment.centerRight, child: actions),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: identity),
+        actions,
+      ],
+    );
   }
 }
 
 class _FeaturedPetCard extends StatelessWidget {
-  const _FeaturedPetCard({required this.pet, required this.onTap});
+  const _FeaturedPetCard({
+    required this.pet,
+    required this.now,
+    required this.onTap,
+  });
 
   final PetProfile pet;
+  final DateTime now;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final statusColor = _petStatusColor(context, pet.healthStatus);
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
 
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(AppRadius.xl),
       child: InkWell(
         key: Key('pet-list-featured-${pet.id}'),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         child: Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
             border: Border.all(color: AppColors.border.withValues(alpha: 0.55)),
-            boxShadow: AppShadows.soft,
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -1212,12 +1393,12 @@ class _FeaturedPetCard extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      right: 28,
-                      top: 30,
+                      right: 16,
+                      top: 18,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 12,
+                          horizontal: 14,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.88),
@@ -1228,9 +1409,8 @@ class _FeaturedPetCard extends StatelessWidget {
                           pet.name.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
+                          style: AppTextStyles.captionStrong().copyWith(
                             color: AppColors.primary700,
-                            fontWeight: FontWeight.w700,
                             height: 1,
                           ),
                         ),
@@ -1240,51 +1420,65 @@ class _FeaturedPetCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(22, 22, 22, 24),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                pet.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.headlineSmall?.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.05,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${_petSpeciesLabel(pet.species)} ${pet.breed} • ${_petAgeLabel(pet.dateOfBirth)}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                    if (usesExpandedTextLayout)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(pet.name, style: AppTextStyles.h3()),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_petBreedSummary(pet)} • ${_petAgeLabel(pet.dateOfBirth, now)}',
+                            style: AppTextStyles.body(),
                           ),
-                        ),
-                        const SizedBox(width: 14),
-                        _PetStatusChip(
-                          label: _petHealthLabel(pet.healthStatus),
-                          color: statusColor,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: _PetStatusChip(
+                              label: _petHealthLabel(pet.healthStatus),
+                              color: statusColor,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  pet.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.h3(),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${_petBreedSummary(pet)} • ${_petAgeLabel(pet.dateOfBirth, now)}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.body(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _PetStatusChip(
+                            label: _petHealthLabel(pet.healthStatus),
+                            color: statusColor,
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 16),
                     Wrap(
                       spacing: 12,
-                      runSpacing: 12,
+                      runSpacing: 8,
                       children: [
                         _PetInfoPill(
                           icon: Icons.vaccines_outlined,
@@ -1311,14 +1505,22 @@ class _FeaturedPetCard extends StatelessWidget {
 }
 
 class _PetGridCard extends StatelessWidget {
-  const _PetGridCard({required this.pet, required this.onTap});
+  const _PetGridCard({
+    required this.pet,
+    required this.now,
+    required this.onTap,
+  });
 
   final PetProfile pet;
+  final DateTime now;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
 
     return Material(
       color: AppColors.surface,
@@ -1336,26 +1538,30 @@ class _PetGridCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: PetAvatarMedia(
-                  key: Key('pet-list-avatar-${pet.id}'),
-                  source: pet.avatarPath,
-                  semanticLabel: 'Ảnh của ${pet.name}',
-                  fallback: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: _petHeroGradient(pet),
+              Flexible(
+                fit: FlexFit.loose,
+                child: AspectRatio(
+                  aspectRatio: 167 / 130,
+                  child: PetAvatarMedia(
+                    key: Key('pet-list-avatar-${pet.id}'),
+                    source: pet.avatarPath,
+                    semanticLabel: 'Ảnh của ${pet.name}',
+                    fallback: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: _petHeroGradient(pet),
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        pet.species == 'cat'
-                            ? Icons.cruelty_free_rounded
-                            : Icons.pets_rounded,
-                        color: Colors.white.withValues(alpha: 0.92),
-                        size: 42,
+                      child: Center(
+                        child: Icon(
+                          pet.species == 'cat'
+                              ? Icons.cruelty_free_rounded
+                              : Icons.pets_rounded,
+                          color: Colors.white.withValues(alpha: 0.92),
+                          size: 42,
+                        ),
                       ),
                     ),
                   ),
@@ -1368,8 +1574,10 @@ class _PetGridCard extends StatelessWidget {
                   children: [
                     Text(
                       pet.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: usesExpandedTextLayout ? null : 1,
+                      overflow: usesExpandedTextLayout
+                          ? null
+                          : TextOverflow.ellipsis,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
@@ -1378,9 +1586,11 @@ class _PetGridCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '${_petSpeciesLabel(pet.species)} • ${_petAgeLabel(pet.dateOfBirth)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      '${_petSpeciesLabel(pet.species)} • ${_petAgeLabel(pet.dateOfBirth, now)}',
+                      maxLines: usesExpandedTextLayout ? null : 1,
+                      overflow: usesExpandedTextLayout
+                          ? null
+                          : TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: AppColors.textSecondary,
                         fontWeight: FontWeight.w500,
@@ -1404,59 +1614,70 @@ class _PetListAddCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Material(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(28),
-      child: InkWell(
-        key: const Key('pet-list-add-card'),
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(28),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(
-              color: AppColors.border.withValues(alpha: 0.9),
-              width: 1.4,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  boxShadow: AppShadows.soft,
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  color: AppColors.primary700,
-                  size: 34,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  'Thêm thú cưng',
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final visualHeight = constraints.constrainHeight(
+          constraints.maxWidth + 5,
+        );
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: double.infinity,
+            height: visualHeight,
+            child: Material(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              child: InkWell(
+                key: const Key('pet-list-add-card'),
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(AppRadius.xl),
+                    border: Border.all(
+                      color: AppColors.border.withValues(alpha: 0.9),
+                      width: 1.4,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: AppControlSize.minTouchTarget,
+                        height: AppControlSize.minTouchTarget,
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          boxShadow: AppShadows.soft,
+                        ),
+                        child: const Icon(
+                          Icons.add_rounded,
+                          color: AppColors.primary700,
+                          size: 30,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'Thêm thú cưng',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.label().copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -1591,22 +1812,47 @@ class _PetStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-          height: 1,
-        ),
-      ),
+      child: usesExpandedTextLayout
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_rounded, size: 16, color: color),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.captionStrong().copyWith(
+                    color: color,
+                    height: 1,
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_rounded, size: 16, color: color),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.captionStrong().copyWith(
+                    color: color,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -1625,27 +1871,23 @@ class _PetInfoPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: accent.withValues(alpha: 0.22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: accent, size: 22),
-          const SizedBox(width: 10),
+          Icon(icon, color: accent, size: 20),
+          const SizedBox(width: 8),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: accent,
-                fontWeight: FontWeight.w700,
-                height: 1,
-              ),
+              style: AppTextStyles.label().copyWith(color: accent),
             ),
           ),
         ],
@@ -1682,8 +1924,13 @@ class _PetSyncBanner extends StatelessWidget {
 }
 
 class _PetSyncError extends StatelessWidget {
-  const _PetSyncError({required this.message, required this.onRetry});
+  const _PetSyncError({
+    required this.error,
+    required this.message,
+    required this.onRetry,
+  });
 
+  final Object error;
   final String message;
   final VoidCallback onRetry;
 
@@ -1691,7 +1938,11 @@ class _PetSyncError extends StatelessWidget {
   Widget build(BuildContext context) {
     return PawMateStateView(
       key: const Key('pet-list-error-state'),
-      type: PawMateStateType.offline,
+      type:
+          error is PetApiException &&
+              (error as PetApiException).statusCode != null
+          ? PawMateStateType.error
+          : PawMateStateType.offline,
       title: 'Không tải được dữ liệu',
       message: message,
       primaryActionLabel: 'Thử lại',
@@ -1785,11 +2036,10 @@ String _petSpeciesLabel(String species) {
   }
 }
 
-String _petAgeLabel(DateTime? dateOfBirth) {
+String _petAgeLabel(DateTime? dateOfBirth, DateTime now) {
   if (dateOfBirth == null) {
     return 'Chưa cập nhật tuổi';
   }
-  final now = DateTime.now();
   var years = now.year - dateOfBirth.year;
   final hasBirthdayPassed =
       now.month > dateOfBirth.month ||
@@ -1805,6 +2055,23 @@ String _petAgeLabel(DateTime? dateOfBirth) {
   }
 
   return '$years tuổi';
+}
+
+String _petBreedSummary(PetProfile pet) {
+  final species = _petSpeciesLabel(pet.species).trim();
+  final breed = pet.breed.trim();
+  if (breed.isEmpty) {
+    return species;
+  }
+
+  final normalizedSpecies = species.toLowerCase();
+  final normalizedBreed = breed.toLowerCase();
+  if (normalizedBreed == normalizedSpecies ||
+      normalizedBreed.startsWith('$normalizedSpecies ')) {
+    return breed;
+  }
+
+  return '$species $breed';
 }
 
 String _petHealthLabel(String healthStatus) {

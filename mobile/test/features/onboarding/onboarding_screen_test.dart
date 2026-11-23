@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pawmate_mobile/app/pawmate_app.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/app/theme/app_tokens.dart';
 import 'package:pawmate_mobile/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -139,9 +140,83 @@ void main() {
 
     expect(find.bySemanticsLabel('Tiếp tục'), findsOneWidget);
     expect(find.bySemanticsLabel('Bỏ qua và đăng nhập'), findsOneWidget);
+    for (final entry in {
+      Key('onboarding-pet-name-field'): 'TÊN THÚ CƯNG, bắt buộc',
+      Key('onboarding-breed-field'): 'GIỐNG',
+      Key('onboarding-age-field'): 'TUỔI (NĂM)',
+    }.entries) {
+      final fieldSemantics = tester
+          .getSemantics(
+            find.descendant(
+              of: find.byKey(entry.key),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .getSemanticsData();
+      expect(fieldSemantics.label, contains(entry.value));
+      expect(fieldSemantics.flagsCollection.isTextField, isTrue);
+    }
     expectNoFlutterOverflow(tester);
     semantics.dispose();
   });
+
+  testWidgets('Day 90 compacts the onboarding hero on a small phone', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await setTestViewport(tester, size: const Size(320, 568));
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const OnboardingScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final hero = find.bySemanticsLabel(
+      'Minh họa chó cưng cho bước thiết lập hồ sơ thú cưng',
+    );
+    expect(tester.getSize(hero).height, lessThanOrEqualTo(240));
+    expectNoFlutterOverflow(tester);
+    semantics.dispose();
+  });
+
+  testWidgets(
+    'onboarding keeps the final field and actions reachable with large text and keyboard',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const OnboardingScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final ageField = _fieldWithin(const Key('onboarding-age-field'));
+      await tester.ensureVisible(ageField);
+      await tester.tap(ageField);
+      await tester.enterText(ageField, '2');
+      await setKeyboardInset(tester, bottom: 300);
+
+      await tester.ensureVisible(ageField);
+      await tester.pumpAndSettle();
+      expect(tester.getBottomRight(ageField).dy, lessThanOrEqualTo(268));
+
+      final continueButton = find.byKey(
+        const ValueKey('onboarding-continue-button'),
+      );
+      await tester.ensureVisible(continueButton);
+      await tester.pumpAndSettle();
+      expect(tester.getBottomRight(continueButton).dy, lessThanOrEqualTo(268));
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('onboarding omits progress rails under a system top inset', (
     tester,
@@ -174,6 +249,56 @@ void main() {
       tester.getSize(find.byKey(const Key('onboarding-photo-picker'))).width,
       greaterThanOrEqualTo(48),
     );
+    expectNoFlutterOverflow(tester);
+  });
+
+  testWidgets('onboarding follows the approved P1-01 visual contract', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(390, 844));
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const OnboardingScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final description = tester.widget<Text>(
+      find.text(
+        'Hãy chia sẻ một chút về bé để chúng tôi có thể chăm sóc bé tốt nhất.',
+      ),
+    );
+    expect(description.style?.fontSize, 15);
+    expect(description.style?.height, closeTo(23 / 15, 0.001));
+    expect(description.style?.fontWeight, FontWeight.w400);
+    expect(description.style?.color, AppColors.textSecondary);
+
+    for (final key in const [
+      Key('onboarding-pet-name-field'),
+      Key('onboarding-breed-field'),
+      Key('onboarding-age-field'),
+    ]) {
+      final field = tester.widget<TextField>(
+        find.descendant(of: find.byKey(key), matching: find.byType(TextField)),
+      );
+      expect(field.decoration?.filled, isTrue);
+      expect(field.decoration?.fillColor, AppColors.surface);
+    }
+
+    final picker = find.byKey(const Key('onboarding-photo-picker'));
+    expect(tester.getSize(picker), const Size.square(56));
+    final pickerRect = tester.getRect(picker);
+    expect(pickerRect.right, lessThanOrEqualTo(390 - 16));
+    expect(pickerRect.top, greaterThan(0));
+    final pickerIcon = tester.widget<Icon>(
+      find.descendant(of: picker, matching: find.byType(Icon)),
+    );
+    expect(pickerIcon.icon, Icons.add_a_photo_outlined);
+    expect(pickerIcon.size, 18);
+    expect(pickerIcon.color, AppColors.primary500);
     expectNoFlutterOverflow(tester);
   });
 }

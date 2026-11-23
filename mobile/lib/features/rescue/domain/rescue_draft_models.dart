@@ -48,11 +48,21 @@ class RescueDraftLocation {
   final double longitude;
   final String? formattedAddress;
 
-  Map<String, Object?> toJson() => {
+  bool get isValid =>
+      latitude.isFinite &&
+      longitude.isFinite &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
+
+  Map<String, Object?> toJson({String? formattedAddressOverride}) => {
     'latitude': latitude,
     'longitude': longitude,
-    if (formattedAddress != null && formattedAddress!.trim().isNotEmpty)
-      'formattedAddress': formattedAddress!.trim(),
+    if ((formattedAddressOverride ?? formattedAddress)?.trim().isNotEmpty ==
+        true)
+      'formattedAddress': (formattedAddressOverride ?? formattedAddress)!
+          .trim(),
   };
 }
 
@@ -152,7 +162,9 @@ class RescueDraft {
       errors.add('breedOrColor');
     }
     if (lostAt == null) errors.add('lostAt');
-    if (exactLocation == null) errors.add('exactLocation');
+    if (exactLocation == null || !exactLocation!.isValid) {
+      errors.add('exactLocation');
+    }
     return errors;
   }
 
@@ -184,13 +196,17 @@ class RescueDraft {
     ],
   };
 
-  Map<String, Object?> toStepOnePatchJson() => {
-    'petName': petName.trim(),
-    'species': species.apiValue,
-    'breedOrColor': breedOrColor.trim(),
-    if (lostAt != null) 'lostAt': lostAt!.toUtc().toIso8601String(),
-    if (exactLocation != null) 'exactLocation': exactLocation!.toJson(),
-  };
+  Map<String, Object?> toStepOnePatchJson({String? formattedAddressOverride}) =>
+      {
+        'petName': petName.trim(),
+        'species': species.apiValue,
+        'breedOrColor': breedOrColor.trim(),
+        if (lostAt != null) 'lostAt': lostAt!.toUtc().toIso8601String(),
+        if (exactLocation != null)
+          'exactLocation': exactLocation!.toJson(
+            formattedAddressOverride: formattedAddressOverride,
+          ),
+      };
 
   Map<String, Object?> toStepTwoPatchJson() => {
     'identifyingFeatures': identifyingFeatures.trim(),

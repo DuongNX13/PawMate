@@ -6,6 +6,7 @@ import '../../../app/router/app_navigation.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/pawmate_adaptive.dart';
+import '../../../core/widgets/pawmate_button.dart';
 import '../../pets/application/pet_list_provider.dart';
 import '../../pets/domain/pet_profile.dart';
 import '../../reminders/application/reminder_providers.dart';
@@ -58,6 +59,7 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
       orElse: () => cachedPets,
     );
     final effectivePetId = _resolveSelectedPetId(pets);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -65,12 +67,17 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
         child: Stack(
           children: [
             ListView(
-              padding: const EdgeInsets.fromLTRB(24, 18, 24, 132),
+              padding: EdgeInsets.fromLTRB(
+                16,
+                12,
+                16,
+                keyboardOpen ? 24 : 100,
+              ),
               children: [
                 _AddHealthHeader(
                   onBack: () => PawMateNavigation.backOrGo(context, '/health'),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 8),
                 _SectionHeader(
                   title: 'Chọn thú cưng',
                   trailing: syncedPetsState.isLoading
@@ -81,7 +88,7 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
                         )
                       : null,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
                 if (pets.isEmpty)
                   _EmptyPetNotice(
                     onCreatePet: () => context.push(
@@ -97,23 +104,20 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
                       '/pets/create?returnTo=%2Fhealth%2Fevents%2Fnew',
                     ),
                   ),
-                const SizedBox(height: 42),
+                const SizedBox(height: 32),
                 _SectionHeader(
                   title: 'Loại sự kiện',
                   trailing: Text(
                     '* Bắt buộc',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: AppTextStyles.captionStrong(color: AppColors.error),
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 _EventTypeGrid(
                   selectedType: _selectedType,
                   onSelected: (type) => setState(() => _selectedType = type),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final isNarrow = constraints.maxWidth < 340;
@@ -128,7 +132,7 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
                             icon: Icons.calendar_month_outlined,
                             onTap: _pickDate,
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 14),
                           _PickerField(
                             key: const Key('add-health-time-field'),
                             label: 'Giờ',
@@ -167,7 +171,7 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
                 ),
                 const SizedBox(height: 28),
                 _FieldLabel('Phòng khám (Tùy chọn)'),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _TextInputShell(
                   child: TextField(
                     key: const Key('add-health-clinic-input'),
@@ -176,27 +180,34 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
                     decoration: const InputDecoration(
                       icon: Icon(Icons.search_rounded),
                       hintText: 'Tìm kiếm phòng khám...',
+                      isDense: true,
                       border: InputBorder.none,
                     ),
                   ),
                 ),
                 const SizedBox(height: 28),
                 _FieldLabel('Ghi chú sức khỏe'),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 _TextInputShell(
-                  minHeight: 184,
+                  minHeight: 128,
                   padding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
                   child: TextField(
                     key: const Key('add-health-note-input'),
                     controller: _noteController,
                     maxLines: 7,
                     minLines: 5,
+                    style: AppTextStyles.body(),
                     textInputAction: TextInputAction.newline,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText:
                           'Bé Mochi vừa tiêm nhắc lại mũi 5 bệnh. Cần theo dõi phản ứng trong 24h tới.',
+                      hintStyle: AppTextStyles.body(
+                        color: AppColors.textSecondary,
+                      ),
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 18),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -204,21 +215,33 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
                   const SizedBox(height: 16),
                   _SaveError(message: _saveError!),
                 ],
+                if (keyboardOpen) ...[
+                  const SizedBox(height: 16),
+                  _SaveButton(
+                    key: const Key('add-health-save-button'),
+                    isSaving: _isSaving,
+                    enabled: !_isSaving && effectivePetId != null,
+                    onPressed: effectivePetId == null
+                        ? null
+                        : () => _saveEvent(effectivePetId),
+                  ),
+                ],
               ],
             ),
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 18,
-              child: _SaveButton(
-                key: const Key('add-health-save-button'),
-                isSaving: _isSaving,
-                enabled: !_isSaving && effectivePetId != null,
-                onPressed: effectivePetId == null
-                    ? null
-                    : () => _saveEvent(effectivePetId),
+            if (!keyboardOpen)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 8,
+                child: _SaveButton(
+                  key: const Key('add-health-save-button'),
+                  isSaving: _isSaving,
+                  enabled: !_isSaving && effectivePetId != null,
+                  onPressed: effectivePetId == null
+                      ? null
+                      : () => _saveEvent(effectivePetId),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -320,7 +343,12 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Đã lưu sự kiện sức khỏe.')));
+      ).showSnackBar(
+        const SnackBar(
+          behavior: SnackBarBehavior.fixed,
+          content: Text('Đã lưu sự kiện sức khỏe.'),
+        ),
+      );
       PawMateNavigation.backOrGo(context, '/health');
     } catch (error) {
       if (!mounted) {
@@ -341,24 +369,35 @@ class _AddHealthHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Row(
       children: [
-        IconButton(
+        PawMateAdaptiveBackButton(
           key: const Key('add-health-back-button'),
-          tooltip: 'Quay lại',
           onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_rounded),
-          color: AppColors.primary500,
-          iconSize: 30,
         ),
-        const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            'Thêm sự kiện sức khỏe',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.appBarTitle(),
-          ),
+          child: usesExpandedTextLayout
+              ? Semantics(
+                  header: true,
+                  label: 'Thêm sự kiện sức khỏe',
+                  child: ExcludeSemantics(
+                    child: Text(
+                      'Thêm sự kiện',
+                      maxLines: null,
+                      overflow: TextOverflow.visible,
+                      style: AppTextStyles.appBarTitle(),
+                    ),
+                  ),
+                )
+              : Text(
+                  'Thêm sự kiện sức khỏe',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.appBarTitle(),
+                ),
         ),
       ],
     );
@@ -424,7 +463,7 @@ class _PetSelector extends StatelessWidget {
               selected: pet.id == selectedPetId,
               onTap: () => onSelect(pet.id),
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: 16),
           ],
           _AddPetOption(onTap: onCreatePet),
         ],
@@ -446,26 +485,30 @@ class _PetOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+    final optionWidth = usesExpandedTextLayout ? 132.0 : 64.0;
     return InkWell(
       key: Key('add-health-pet-${pet.id}'),
       borderRadius: BorderRadius.circular(56),
       onTap: onTap,
       child: SizedBox(
-        width: 96,
+        width: optionWidth,
         child: Column(
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 92,
-                  height: 92,
-                  padding: const EdgeInsets.all(4),
+                  width: 64,
+                  height: 64,
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: selected ? AppColors.primary500 : AppColors.border,
-                      width: selected ? 4 : 0,
+                      width: selected ? 2 : 1,
                     ),
                   ),
                   child: CircleAvatar(
@@ -482,35 +525,37 @@ class _PetOption extends StatelessWidget {
                 ),
                 if (selected)
                   Positioned(
-                    right: 0,
-                    bottom: 4,
+                    right: 1,
+                    bottom: 1,
                     child: Container(
-                      width: 34,
-                      height: 34,
+                      width: 24,
+                      height: 24,
                       decoration: BoxDecoration(
                         color: AppColors.deepGreen,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.white, width: 3),
+                        border: Border.all(color: AppColors.white, width: 2),
                       ),
                       child: const Icon(
                         Icons.check_rounded,
                         color: AppColors.white,
-                        size: 20,
+                        size: 15,
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Text(
               pet.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              maxLines: usesExpandedTextLayout ? null : 1,
+              overflow: usesExpandedTextLayout
+                  ? TextOverflow.visible
+                  : TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.label(
                 color: selected
                     ? AppColors.primary500
                     : AppColors.textSecondary,
-                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -532,29 +577,26 @@ class _AddPetOption extends StatelessWidget {
       borderRadius: BorderRadius.circular(56),
       onTap: onTap,
       child: SizedBox(
-        width: 96,
+        width: 64,
         child: Column(
           children: [
             Container(
-              width: 92,
-              height: 92,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border, width: 4),
+                border: Border.all(color: AppColors.border, width: 1.5),
               ),
               child: const Icon(
                 Icons.add_rounded,
                 color: AppColors.textMuted,
-                size: 38,
+                size: 28,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Text(
               'Thêm',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w700,
-              ),
+              style: AppTextStyles.label(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -620,6 +662,26 @@ class _EventTypeGrid extends StatelessWidget {
       HealthRecordType.deworming,
     ];
 
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+
+    if (usesExpandedTextLayout) {
+      return Column(
+        children: [
+          for (var i = 0; i < options.length; i++) ...[
+            _EventTypeCard(
+              type: options[i],
+              selected: selectedType == options[i],
+              onTap: () => onSelected(options[i]),
+              expandedTextLayout: true,
+            ),
+            if (i != options.length - 1) const SizedBox(height: 12),
+          ],
+        ],
+      );
+    }
+
     return Row(
       children: [
         for (var i = 0; i < options.length; i++) ...[
@@ -642,28 +704,30 @@ class _EventTypeCard extends StatelessWidget {
     required this.type,
     required this.selected,
     required this.onTap,
+    this.expandedTextLayout = false,
   });
 
   final HealthRecordType type;
   final bool selected;
   final VoidCallback onTap;
+  final bool expandedTextLayout;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       key: Key('add-health-event-type-${type.apiValue}'),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(12),
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        height: 124,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+        constraints: BoxConstraints(minHeight: expandedTextLayout ? 64 : 78),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: selected ? AppColors.primarySoft : AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? AppColors.deepGreen : Colors.transparent,
-            width: selected ? 2.5 : 1,
+            width: selected ? 1.5 : 1,
           ),
           boxShadow: selected
               ? const []
@@ -675,26 +739,40 @@ class _EventTypeCard extends StatelessWidget {
                   ),
                 ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(_eventIcon(type), color: AppColors.brown, size: 24),
-            const SizedBox(height: 8),
-            Flexible(
-              child: Text(
-                _eventLabel(type),
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w700,
-                  height: 1.12,
-                ),
+        child: expandedTextLayout
+            ? Row(
+                children: [
+                  Icon(_eventIcon(type), color: AppColors.brown, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _eventLabel(type),
+                      maxLines: null,
+                      overflow: TextOverflow.visible,
+                      style: AppTextStyles.captionStrong(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(_eventIcon(type), color: AppColors.brown, size: 24),
+                  const SizedBox(height: 6),
+                  Text(
+                    _eventLabel(type),
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.captionStrong(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -720,7 +798,7 @@ class _PickerField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _FieldLabel(label),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Material(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(18),
@@ -728,7 +806,7 @@ class _PickerField extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             onTap: onTap,
             child: Container(
-              height: 64,
+              constraints: const BoxConstraints(minHeight: 48),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
@@ -740,10 +818,7 @@ class _PickerField extends StatelessWidget {
                       value,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: AppTextStyles.bodyStrong(),
                     ),
                   ),
                   Icon(icon, color: AppColors.textMuted, size: 24),
@@ -760,8 +835,8 @@ class _PickerField extends StatelessWidget {
 class _TextInputShell extends StatelessWidget {
   const _TextInputShell({
     required this.child,
-    this.minHeight = 62,
-    this.padding = const EdgeInsets.symmetric(horizontal: 18),
+    this.minHeight = 48,
+    this.padding = const EdgeInsets.symmetric(horizontal: 14),
   });
 
   final Widget child;
@@ -830,33 +905,12 @@ class _SaveButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 72,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary500,
-          disabledBackgroundColor: AppColors.surfaceContainer,
-          foregroundColor: AppColors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-          ),
-          textStyle: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        onPressed: enabled ? onPressed : null,
-        icon: isSaving
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.white,
-                ),
-              )
-            : const Icon(Icons.save_rounded, size: 28),
-        label: Text(isSaving ? 'Đang lưu...' : 'Lưu sự kiện'),
-      ),
+    return PawMateButton(
+      label: isSaving ? 'Đang lưu...' : 'Lưu sự kiện',
+      onPressed: enabled ? onPressed : null,
+      isLoading: isSaving,
+      leadingIcon: isSaving ? null : Icons.save_rounded,
+      compact: true,
     );
   }
 }

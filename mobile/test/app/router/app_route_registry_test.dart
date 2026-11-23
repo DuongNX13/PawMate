@@ -13,12 +13,15 @@ void main() {
       '/health',
       '/health/events/new?petId=pet-1',
       '/health/reminders',
+      '/health/knowledge',
       '/notifications?returnTo=%2Fprofile',
       '/community',
       '/adoption',
+      '/adoption/requests',
       '/profile',
       '/profile/controls',
       '/profile/privacy',
+      '/profile/notifications',
       '/rescue',
       '/rescue/create',
       '/rescue/create/details',
@@ -38,6 +41,10 @@ void main() {
       '/pets/pet-1',
       '/pets/pet_1/edit?returnTo=%2Fpets%2Flist',
       '/vets/vet.alpha-1',
+      '/adoption/11111111-1111-4111-8111-111111111111',
+      '/adoption/22222222-2222-4222-8222-222222222222/request'
+          '?returnTo=%2Fadoption',
+      '/adoption/chat/33333333-3333-4333-8333-333333333333',
       '/rescue/case-1',
       '/rescue/case_1/comment',
       '/rescue/case.1/status',
@@ -65,9 +72,11 @@ void main() {
       '/pets/create/extra',
       '/rescue/case-1/unknown',
       '/adoption/pets/pet-1',
+      '/adoption/listing-1',
+      '/adoption/listing-1/unknown',
       '/adoption/requests/new',
       '/adoption/requests/request-1/chat',
-      '/adoption/requests',
+      '/adoption/chat/not-a-uuid',
       '/notifications/preferences',
       '/auth/login',
       '/launch',
@@ -95,13 +104,31 @@ void main() {
     ]);
     expect(AppRouteRegistry.shellBranchIndexForLocation('/pets/list'), 0);
     expect(AppRouteRegistry.shellBranchIndexForLocation('/adoption'), 0);
+    expect(
+      AppRouteRegistry.shellBranchIndexForLocation('/adoption/requests'),
+      0,
+    );
+    expect(
+      AppRouteRegistry.shellBranchIndexForLocation(
+        '/adoption/11111111-1111-4111-8111-111111111111',
+      ),
+      isNull,
+    );
     expect(AppRouteRegistry.shellBranchIndexForLocation('/vets/list'), 1);
     expect(
       AppRouteRegistry.shellBranchIndexForLocation('/health/reminders'),
       2,
     );
+    expect(
+      AppRouteRegistry.shellBranchIndexForLocation('/health/knowledge'),
+      2,
+    );
     expect(AppRouteRegistry.shellBranchIndexForLocation('/rescue/map'), 3);
     expect(AppRouteRegistry.shellBranchIndexForLocation('/notifications'), 4);
+    expect(
+      AppRouteRegistry.shellBranchIndexForLocation('/profile/notifications'),
+      4,
+    );
     expect(AppRouteRegistry.shellBranchIndexForLocation('/pets/pet-1'), isNull);
     expect(AppRouteRegistry.shellBranchIndexForLocation('/unknown'), isNull);
   });
@@ -109,13 +136,19 @@ void main() {
   group('AppFeatureAvailability', () {
     test('matches the selected compile-time deployment profile', () {
       const availability = AppFeatureAvailability.fromEnvironment();
-      const isDay39BrowseStaging = bool.fromEnvironment(
-        'PAWMATE_DAY39_RESCUE_BROWSE_STAGING',
+      const expectedBrowse = bool.fromEnvironment(
+        'PAWMATE_RESCUE_BROWSE_ENABLED',
         defaultValue: false,
       );
+      const expectedCreate =
+          expectedBrowse &&
+          bool.fromEnvironment(
+            'PAWMATE_RESCUE_CREATE_ENABLED',
+            defaultValue: false,
+          );
 
-      expect(availability.rescueBrowse, isDay39BrowseStaging);
-      expect(availability.rescueCreate, isFalse);
+      expect(availability.rescueBrowse, expectedBrowse);
+      expect(availability.rescueCreate, expectedCreate);
     });
 
     test('create cannot be enabled without browse', () {

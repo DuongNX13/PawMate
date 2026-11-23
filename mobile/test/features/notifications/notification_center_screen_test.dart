@@ -11,8 +11,57 @@ import 'package:pawmate_mobile/features/notifications/domain/pawmate_notificatio
 import 'package:pawmate_mobile/features/notifications/presentation/notification_center_screen.dart';
 
 import '../../test_support/ui_test_helpers.dart';
+import '../../test_support/day115_capture.dart';
 
 void main() {
+  for (final scale in [1.0, 1.3, 2.0]) {
+    testWidgets('D116 ST-02 P1-15 actual retry text$scale', (tester) async {
+      final api = _FakeNotificationApi(
+        const NotificationListResult(
+          items: [],
+          total: 0,
+          unreadCount: 0,
+          limit: 20,
+        ),
+      )..failList = true;
+      final router = await _pumpNotificationCenter(
+        tester,
+        api,
+        textScale: scale,
+        viewport: const Size(320, 568),
+        manualRetryOnly: true,
+      );
+      addTearDown(router.dispose);
+      await tester.scrollUntilVisible(
+        find.text('Thử lại'),
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Chưa tải được thông báo'), findsOneWidget);
+      expect(api.listCalls, 1);
+      final retry = find.widgetWithText(OutlinedButton, 'Thử lại');
+      expect(retry.hitTestable(), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+      await captureDay115(
+        tester,
+        'D116-ST02-P115-text${scale.toString().replaceAll('.', '-')}',
+      );
+      api.failList = false;
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Chưa có thông báo mới'),
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      expect(api.listCalls, 2);
+      expect(find.text('Chưa có thông báo mới'), findsOneWidget);
+      expect(find.text('Chưa tải được thông báo'), findsNothing);
+      expectNoFlutterOverflow(tester);
+    });
+  }
   testWidgets(
     'P1-15 notification center renders v0.27 shell and groups items',
     (tester) async {
@@ -58,10 +107,9 @@ void main() {
       expect(find.text('Cứu hộ'), findsOneWidget);
       expect(find.text('Đang trong giờ nghỉ (22:00 - 07:00)'), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('notification-unread-banner')),
+        find.byKey(const ValueKey('notification-unread-count')),
         findsOneWidget,
       );
-      expect(find.text('2 thông báo chưa đọc'), findsOneWidget);
       expect(find.text('HÔM NAY'), findsOneWidget);
       expect(find.textContaining('Nhắc nhở tiêm chủng'), findsOneWidget);
       for (final key in [
@@ -99,6 +147,66 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('P1-15 notification cards do not overflow at large text scale', (
+    tester,
+  ) async {
+    final api = _FakeNotificationApi(
+      NotificationListResult(
+        items: [
+          _notification(
+            id: 'large-text',
+            type: 'reminder_due',
+            title: 'Nhắc nhở tiêm chủng cho Mochi vào ngày mai',
+            body:
+                'Đừng quên lịch hẹn tiêm phòng định kỳ cho bé cưng. Hãy chuẩn bị sổ sức khỏe trước khi đến phòng khám.',
+            createdAt: DateTime.utc(2026, 8, 4, 8),
+          ),
+        ],
+        total: 1,
+        unreadCount: 1,
+        limit: 20,
+      ),
+    );
+
+    await _pumpNotificationCenter(tester, api, textScale: 2);
+
+    await tester.scrollUntilVisible(
+      find.textContaining('Nhắc nhở tiêm chủng'),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Nhắc nhở tiêm chủng'), findsOneWidget);
+    expectNoFlutterOverflow(tester);
+  });
+
+  testWidgets('P1-15 keeps the quiet-hours policy readable at large text', (
+    tester,
+  ) async {
+    final api = _FakeNotificationApi(
+      const NotificationListResult(
+        items: [],
+        total: 0,
+        unreadCount: 0,
+        limit: 20,
+      ),
+    );
+
+    await _pumpNotificationCenter(
+      tester,
+      api,
+      textScale: 2,
+      viewport: const Size(320, 568),
+    );
+
+    final policy = tester.widget<Text>(
+      find.text('Thông báo sẽ được chuyển đến im lặng để tránh làm phiền bạn.'),
+    );
+    expect(policy.maxLines, isNull);
+    expect(policy.overflow, isNull);
+    expectNoFlutterOverflow(tester);
+  });
 
   testWidgets('P1-15 filters notification items by category', (tester) async {
     final api = _FakeNotificationApi(
@@ -193,7 +301,10 @@ void main() {
 
     expect(find.text('HÔM NAY'), findsNothing);
     expect(find.text('TRƯỚC ĐÓ'), findsOneWidget);
-    expect(find.text('1 thông báo chưa đọc'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('notification-unread-count')),
+      findsOneWidget,
+    );
     await tester.tap(
       find.byKey(const ValueKey('notification-mark-all-read-button')),
     );
@@ -201,7 +312,7 @@ void main() {
 
     expect(api.markAllReadCount, 1);
     expect(
-      find.byKey(const ValueKey('notification-unread-banner')),
+      find.byKey(const ValueKey('notification-unread-count')),
       findsNothing,
     );
     expect(find.text('Đã đọc tất cả thông báo.'), findsOneWidget);
@@ -268,7 +379,7 @@ void main() {
     expect(api.dismissIds, ['dismiss-day28']);
     expect(find.text('Chưa có thông báo mới'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey('notification-unread-banner')),
+      find.byKey(const ValueKey('notification-unread-count')),
       findsNothing,
     );
   });
@@ -285,11 +396,24 @@ void main() {
       ),
     );
 
-    final router = await _pumpNotificationCenter(tester, api);
+    final router = await _pumpNotificationCenter(
+      tester,
+      api,
+      textScale: 2,
+      viewport: const Size(320, 568),
+    );
 
+    await tester.scrollUntilVisible(
+      find.text('Chưa có thông báo mới'),
+      260,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Chưa có thông báo mới'), findsOneWidget);
     expect(find.text('Quản lý thông báo'), findsOneWidget);
     expect(find.text('Về trang cá nhân'), findsOneWidget);
+    expectNoFlutterOverflow(tester);
+    await captureDay115(tester, 'ST-24-top');
 
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('notification-empty-profile-button')),
@@ -297,6 +421,7 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
+    await captureDay115(tester, 'ST-24');
     await tester.tap(
       find.byKey(const ValueKey('notification-empty-profile-button')),
     );
@@ -308,8 +433,11 @@ void main() {
 
 Future<GoRouter> _pumpNotificationCenter(
   WidgetTester tester,
-  _FakeNotificationApi api,
-) async {
+  _FakeNotificationApi api, {
+  double? textScale,
+  Size viewport = const Size(360, 800),
+  bool manualRetryOnly = false,
+}) async {
   final router = GoRouter(
     initialLocation: '/notifications',
     routes: [
@@ -352,17 +480,22 @@ Future<GoRouter> _pumpNotificationCenter(
     ],
   );
 
-  await setTestViewport(tester, size: const Size(360, 800));
+  await setTestViewport(tester, size: viewport);
 
   await tester.pumpWidget(
     ProviderScope(
+      retry: manualRetryOnly ? (_, _) => null : null,
       overrides: [
         notificationAccessTokenProvider.overrideWith(
           (ref) async => 'notification-token',
         ),
         notificationApiProvider.overrideWith((ref) => api),
       ],
-      child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
+      child: MaterialApp.router(
+        theme: AppTheme.light(),
+        builder: textScale == null ? null : testTextScaleBuilder(textScale),
+        routerConfig: router,
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -393,6 +526,8 @@ class _FakeNotificationApi extends NotificationApi {
   _FakeNotificationApi(this.result, {this.failMarkRead = false}) : super(Dio());
 
   NotificationListResult result;
+  bool failList = false;
+  int listCalls = 0;
   final bool failMarkRead;
   final List<String> markReadIds = [];
   final List<String> dismissIds = [];
@@ -414,6 +549,13 @@ class _FakeNotificationApi extends NotificationApi {
     bool unreadOnly = false,
   }) async {
     listAccessToken = accessToken;
+    listCalls++;
+    if (failList) {
+      throw const NotificationApiException(
+        'Máy chủ thông báo tạm thời chưa sẵn sàng.',
+        statusCode: 503,
+      );
+    }
     return result;
   }
 

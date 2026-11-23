@@ -19,17 +19,24 @@ abstract final class AppRouteRegistry {
     '/health',
     '/health/events/new',
     '/health/reminders',
+    '/health/knowledge',
     '/notifications',
     '/community',
     '/adoption',
+    '/adoption/requests',
     '/profile',
     '/profile/controls',
     '/profile/privacy',
+    '/profile/notifications',
     '/rescue',
     '/rescue/create',
     '/rescue/create/details',
     '/rescue/map',
   };
+  static final _uuidPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
 
   static bool isSupportedAuthenticatedUri(Uri uri) {
     if (uri.hasScheme || uri.hasAuthority || uri.fragment.isNotEmpty) {
@@ -45,6 +52,9 @@ abstract final class AppRouteRegistry {
       ['pets', final id] => _isSafeId(id),
       ['pets', final id, 'edit'] => _isSafeId(id),
       ['vets', final id] => _isSafeId(id),
+      ['adoption', final listingId] => _isUuid(listingId),
+      ['adoption', final listingId, 'request'] => _isUuid(listingId),
+      ['adoption', 'chat', final threadId] => _isUuid(threadId),
       ['rescue', final caseId] => _isSafeId(caseId),
       ['rescue', final caseId, final action]
           when const {'comment', 'status', 'discussion'}.contains(action) =>
@@ -62,15 +72,23 @@ abstract final class AppRouteRegistry {
     final uri = Uri.tryParse(location);
     if (uri == null) return null;
     final path = uri.path;
-    if (path == '/pets' || path == '/pets/list' || path == '/adoption') {
+    if (path == '/pets' ||
+        path == '/pets/list' ||
+        path == '/adoption' ||
+        path == '/adoption/requests') {
       return 0;
     }
     if (path == '/vets/map' || path == '/vets/list') return 1;
-    if (path == '/health' || path == '/health/reminders') return 2;
+    if (path == '/health' ||
+        path == '/health/reminders' ||
+        path == '/health/knowledge') {
+      return 2;
+    }
     if (path == '/rescue' || path == '/rescue/map') return 3;
     if (path == '/profile' ||
         path == '/profile/controls' ||
         path == '/profile/privacy' ||
+        path == '/profile/notifications' ||
         path == '/notifications') {
       return 4;
     }
@@ -92,5 +110,10 @@ abstract final class AppRouteRegistry {
   static bool _isSafeId(String value) {
     if (!_isSafeSegment(value)) return false;
     return RegExp(r'^[A-Za-z0-9][A-Za-z0-9._~-]*$').hasMatch(value);
+  }
+
+  static bool _isUuid(String value) {
+    if (!_isSafeSegment(value)) return false;
+    return _uuidPattern.hasMatch(value);
   }
 }

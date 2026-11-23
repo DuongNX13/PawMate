@@ -13,7 +13,10 @@ class PawMateTextField extends StatelessWidget {
     this.hintText,
     this.helperText,
     this.errorText,
+    this.counterText,
     this.labelTrailing,
+    this.labelStyle,
+    this.labelSpacing = AppSpacing.s8,
     this.fillColor,
     this.contentPadding,
     this.isRequired = false,
@@ -47,7 +50,10 @@ class PawMateTextField extends StatelessWidget {
   final String? hintText;
   final String? helperText;
   final String? errorText;
+  final String? counterText;
   final Widget? labelTrailing;
+  final TextStyle? labelStyle;
+  final double labelSpacing;
   final Color? fillColor;
   final EdgeInsetsGeometry? contentPadding;
   final bool isRequired;
@@ -98,6 +104,7 @@ class PawMateTextField extends StatelessWidget {
         hintText: hintText,
         helperText: helperText,
         errorText: errorText,
+        counterText: counterText,
         fillColor: fillColor,
         contentPadding: contentPadding,
         prefixIcon: prefixIcon,
@@ -125,38 +132,37 @@ class PawMateTextField extends StatelessWidget {
               ),
           ],
         ),
-        style: AppTextStyles.label(),
+        style: labelStyle ?? AppTextStyles.label(),
       ),
     );
 
-    return Semantics(
-      textField: true,
-      enabled: enabled,
-      readOnly: readOnly,
-      label: isRequired ? '$label, bắt buộc' : label,
-      value: errorText == null ? null : 'Lỗi: $errorText',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (labelTrailing == null)
-            labelText
-          else
-            Wrap(
-              alignment: WrapAlignment.spaceBetween,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: AppSpacing.s12,
-              runSpacing: AppSpacing.s4,
-              children: [labelText, labelTrailing!],
-            ),
-          const SizedBox(height: AppSpacing.s8),
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: AppControlSize.inputHeight,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (labelTrailing == null)
+          labelText
+        else
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.s12,
+            runSpacing: AppSpacing.s4,
+            children: [labelText, labelTrailing!],
+          ),
+        SizedBox(height: labelSpacing),
+        ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppControlSize.inputHeight,
+          ),
+          // Name the native editable surface, not a second text-field
+          // wrapper around the visible label and optional label action.
+          // Editing value, role and actions remain owned by TextFormField.
+          child: Semantics(
+            label: isRequired ? '$label, bắt buộc' : label,
             child: field,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

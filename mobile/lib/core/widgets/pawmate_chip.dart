@@ -29,18 +29,31 @@ class PawMateChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final interactive = enabled && onPressed != null;
     final colors = _resolveColors(context);
+    // Interactive filters/choices must keep their complete action label at
+    // accessibility scale. Passive metadata tags may remain compact because
+    // their full value is exposed by semantics and they own no action.
+    final allowWrap =
+        onPressed != null &&
+        MediaQuery.textScalerOf(context).scale(1) >
+            AppControlSize.compactButtonMaxTextScale;
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (leadingIcon != null) ...[
-          Icon(leadingIcon, size: 16, color: colors.foreground),
+          Icon(
+            leadingIcon,
+            size: AppControlSize.iconSmall,
+            color: colors.foreground,
+          ),
           const SizedBox(width: AppSpacing.s4),
         ],
         Flexible(
           child: Text(
             label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            maxLines: allowWrap ? null : 1,
+            overflow: allowWrap ? null : TextOverflow.ellipsis,
+            softWrap: allowWrap,
+            textAlign: TextAlign.center,
             style: AppTextStyles.micro(color: colors.foreground),
           ),
         ),
@@ -53,35 +66,39 @@ class PawMateChip extends StatelessWidget {
       selected: selected,
       label: semanticLabel ?? label,
       child: ExcludeSemantics(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: AppControlSize.minTouchTarget,
-            minWidth: AppControlSize.minTouchTarget,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: InkWell(
-              onTap: interactive ? onPressed : null,
+        child: IntrinsicWidth(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppControlSize.minTouchTarget,
+              minWidth: AppControlSize.minTouchTarget,
+            ),
+            child: Material(
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(AppRadius.pill),
-              child: Center(
-                child: AnimatedContainer(
-                  duration: AppMotion.fast,
-                  curve: AppMotion.standardCurve,
-                  constraints: const BoxConstraints(
-                    minHeight: AppControlSize.chipHeight,
-                    minWidth: AppControlSize.chipHeight,
+              child: InkWell(
+                onTap: interactive ? onPressed : null,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: AnimatedContainer(
+                    duration: AppMotion.fast,
+                    curve: AppMotion.standardCurve,
+                    constraints: const BoxConstraints(
+                      minHeight: AppControlSize.chipHeight,
+                      minWidth: AppControlSize.chipHeight,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.s12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.background,
+                      border: Border.all(color: colors.border),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    alignment: Alignment.center,
+                    child: content,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.s12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.background,
-                    border: Border.all(color: colors.border),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  alignment: Alignment.center,
-                  child: content,
                 ),
               ),
             ),

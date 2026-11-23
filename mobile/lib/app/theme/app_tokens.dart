@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 
-/// Canonical PawMate v0.31 light-only Chocomint visual tokens.
+/// Canonical PawMate Calm Cartographic light design tokens.
 ///
 /// The semantic names below are the implementation contract for the compact
 /// Figma baseline. Legacy names are intentionally kept as aliases while the
 /// feature screens migrate, so a palette change cannot silently split the UI
 /// into two themes.
 class AppColors {
-  // Chocomint source colours (Figma v0.29/v0.30).
+  // Approved five-anchor palette (2026-08-12).
   static const mint = Color(0xFF95D5B2);
+  // Mint at 30% opacity over Light Beige. P1-01 and other approved soft input
+  // surfaces use this token while keeping the full Mint value for outlines.
+  static const mintField = Color(0x4D95D5B2);
   static const brown = Color(0xFF5C3C25);
-  static const lightBeige = Color(0xFFE9F5DB);
-  static const deepGreen = Color(0xFF2D6A4F);
+  static const warmIvory = Color(0xFFF8F3EA);
+  static const deepTeal = Color(0xFF155E63);
+  static const deepTealPressed = Color(0xFF0F4B4F);
   static const white = Color(0xFFFFFFFF);
+
+  // Source-compatible aliases retained while feature files migrate.
+  static const lightBeige = warmIvory;
+  static const deepGreen = deepTeal;
 
   // Semantic action/surface mapping.
   static const primary500 = deepGreen;
@@ -20,24 +28,26 @@ class AppColors {
   static const primaryAccent = mint;
   static const primarySoft = lightBeige;
 
-  static const background = lightBeige;
+  static const background = warmIvory;
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceMuted = Color(0xFFF4FAEF);
-  static const surfaceContainer = Color(0xFFDFF0D5);
-  static const surfaceVariant = lightBeige;
-  static const border = mint;
-  static const borderStrong = deepGreen;
+  static const surfaceMuted = Color(0xFFFBF8F2);
+  static const surfaceContainer = Color(0xFFE5F2EC);
+  static const surfaceVariant = Color(0xFFF1EEE8);
+  static const border = Color(0x29155E63);
+  static const divider = Color(0x1F155E63);
+  static const borderStrong = deepTeal;
 
-  static const textPrimary = brown;
-  static const textSecondary = brown;
-  // Derived accessible muted brown for small copy on Light Beige/White.
-  static const textMuted = Color(0xFF80654F);
-  static const label = brown;
-  static const icon = brown;
+  static const textPrimary = Color(0xFF153D3D);
+  static const textSecondary = Color(0xFF5C6662);
+  static const textMuted = Color(0xFF6F7975);
+  static const label = textPrimary;
+  static const icon = deepTeal;
 
   static const navActive = deepGreen;
-  static const navInactiveIcon = brown;
+  static const navInactiveIcon = cocoa;
   static const navInactiveLabel = textSecondary;
+
+  static const cocoa = brown;
 
   static const careGreen = deepGreen;
   static const careGreenStrong = deepGreen;
@@ -51,25 +61,39 @@ class AppColors {
   @Deprecated('Use AppColors.careGreenSoft.')
   static const secondarySoft = careGreenSoft;
 
-  static const success = deepGreen;
-  // Deep green on mint does not reach 4.5:1 for small status copy. Keep mint
-  // as an accent and use the lighter container for semantic success surfaces.
-  static const successSoft = surfaceContainer;
-  static const warning = brown;
-  static const warningSoft = lightBeige;
+  static const success = Color(0xFF2D7A55);
+  static const successSoft = Color(0xFFF0F8F3);
+  // Dark semantic foregrounds are used on their pale containers; the brighter
+  // anchor orange/red remain available for non-text accents only.
+  static const warning = Color(0xFF8A5A16);
+  static const warningAccent = Color(0xFFD88A1D);
+  static const warningSoft = Color(0xFFFFF1D6);
 
   @Deprecated('Use AppColors.warningSoft.')
   static const tertiarySoft = warningSoft;
 
   // Error remains a semantic signal with sufficient contrast; the supporting
   // surface stays inside the Chocomint family.
-  static const error = Color(0xFF8A3D2F);
-  static const errorSoft = Color(0xFFF4D8CF);
+  static const dangerAccent = Color(0xFFB34A42);
+  static const error = Color(0xFF8A3D36);
+  static const errorSoft = Color(0xFFFCEDEA);
+  static const info = deepTeal;
+  static const infoSoft = Color(0xFFE0F0F1);
+  static const mapLand = Color(0xFFF2EDE3);
+  static const mapGrid = Color(0xFFC7D9D1);
+  static const mapWater = Color(0xFFDDEEEF);
+  static const mapRoute = Color(0xFF9C765C);
+  static const offline = textSecondary;
+  static const disabledContent = textSecondary;
+  static const disabledContainer = Color(0xFFEEECE7);
 
-  static const shadow = Color(0x140F172A);
-  static const pressedOverlay = Color(0x145C3C25);
-  static const focusOverlay = Color(0x1F2D6A4F);
+  static const shadow = Color(0x1A153D3D);
+  static const pressedOverlay = Color(0x1A155E63);
+  static const focusOverlay = Color(0x24155E63);
   static const scrim = Color(0x52000000);
+  static const scrimSoft = Color(0x14000000);
+  static const scrimMedia = Color(0x66000000);
+  static const cocoaOverlay = Color(0xAA5C3C25);
 }
 
 /// Semantic state palette used by status, feedback and accessibility surfaces.
@@ -97,21 +121,21 @@ class PawMateStatusColors extends ThemeExtension<PawMateStatusColors> {
   });
 
   static const light = PawMateStatusColors(
-    success: AppColors.deepGreen,
-    successContainer: AppColors.surfaceContainer,
-    warning: AppColors.brown,
-    warningContainer: AppColors.lightBeige,
+    success: AppColors.success,
+    successContainer: AppColors.successSoft,
+    warning: AppColors.warning,
+    warningContainer: AppColors.warningSoft,
     error: AppColors.error,
     errorContainer: AppColors.errorSoft,
-    info: AppColors.deepGreen,
-    infoContainer: AppColors.surfaceContainer,
-    offline: AppColors.brown,
-    disabledContent: AppColors.textMuted,
-    disabledContainer: AppColors.surfaceVariant,
-    focusRing: AppColors.deepGreen,
+    info: AppColors.info,
+    infoContainer: AppColors.infoSoft,
+    offline: AppColors.offline,
+    disabledContent: AppColors.disabledContent,
+    disabledContainer: AppColors.disabledContainer,
+    focusRing: AppColors.deepTeal,
     scrim: AppColors.scrim,
-    divider: AppColors.mint,
-    outline: AppColors.deepGreen,
+    divider: AppColors.divider,
+    outline: AppColors.deepTeal,
   );
 
   final Color success;
@@ -218,9 +242,12 @@ class AppRadius {
   static const checkbox = 4.0;
   static const sm = 8.0;
   static const md = 12.0;
-  static const lg = 16.0;
-  static const navActive = 22.0;
+  static const control = 18.0;
+  static const lg = 18.0;
+  static const card = 22.0;
+  static const navActive = 24.0;
   static const xl = 24.0;
+  static const navShell = 28.0;
   static const mapPreview = 32.0;
   static const pill = 999.0;
 
@@ -231,12 +258,20 @@ class AppRadius {
 
 class AppControlSize {
   static const minTouchTarget = 48.0;
-  static const buttonHeight = 48.0;
+  static const buttonHeight = 52.0;
   static const compactButtonVisualHeight = 36.0;
   static const compactButtonMaxTextScale = 1.3;
-  static const inputHeight = 48.0;
+  static const inputHeight = 52.0;
   static const chipHeight = 32.0;
+  static const iconSmall = 16.0;
+  static const progressIndicator = 18.0;
+  static const iconCompact = 20.0;
   static const icon = 24.0;
+  static const avatar = 48.0;
+  static const mediaPlaceholderIcon = 40.0;
+  static const mediaAspectRatio = 4 / 3;
+  static const stateIllustration = 112.0;
+  static const stateIcon = 48.0;
 
   /// Compact shell and icon metrics from the v0.29/v0.30 handoff.
   static const bottomNavHeight = 70.0;
@@ -266,7 +301,7 @@ class AppMotion {
 
 class AppShadows {
   static const soft = [
-    BoxShadow(color: AppColors.shadow, blurRadius: 10, offset: Offset(0, 4)),
+    BoxShadow(color: AppColors.shadow, blurRadius: 14, offset: Offset(0, 6)),
   ];
 
   static const raised = [
@@ -281,13 +316,13 @@ class AppGradients {
   static const primary = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [AppColors.primary500, AppColors.primaryAccent],
+    colors: [AppColors.primary500, AppColors.primary500],
   );
 
   static const hero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [AppColors.surfaceMuted, AppColors.primarySoft],
+    colors: [AppColors.surfaceMuted, AppColors.warmIvory],
   );
 
   static const adoption = LinearGradient(

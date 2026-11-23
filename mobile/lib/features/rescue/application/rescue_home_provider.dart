@@ -222,6 +222,56 @@ class RescueHomeNotifier extends Notifier<RescueHomeState> {
     }
   }
 
+  void applyStatusUpdate(RescueCaseDetail detail) {
+    final updatedItems = [
+      for (final item in state.items)
+        if (item.caseId == detail.caseId)
+          item.copyWith(status: detail.status, updatedAt: detail.updatedAt)
+        else
+          item,
+    ];
+    final filteredItems =
+        state.filter.status == null || state.filter.status == detail.status
+        ? updatedItems
+        : [
+            for (final item in updatedItems)
+              if (item.caseId != detail.caseId) item,
+          ];
+    state = state.copyWith(
+      items: filteredItems,
+      status: filteredItems.isEmpty
+          ? RescueHomeLoadStatus.empty
+          : RescueHomeLoadStatus.ready,
+      lastUpdatedAt: detail.updatedAt,
+      clearMessage: true,
+    );
+  }
+
+  void applyPublishedCase(RescueCaseDetail detail) {
+    final matchesFilter =
+        (state.filter.status == null || state.filter.status == detail.status) &&
+        (state.filter.species == null ||
+            state.filter.species == detail.species);
+    final withoutPublished = [
+      for (final item in state.items)
+        if (item.caseId != detail.caseId) item,
+    ];
+    final items = matchesFilter
+        ? <RescueCaseSummary>[
+            detail,
+            ...withoutPublished,
+          ].take(pageSize).toList(growable: false)
+        : withoutPublished;
+    state = state.copyWith(
+      items: items,
+      status: items.isEmpty
+          ? RescueHomeLoadStatus.empty
+          : RescueHomeLoadStatus.ready,
+      lastUpdatedAt: detail.updatedAt,
+      clearMessage: true,
+    );
+  }
+
   void clear() {
     ++_requestGeneration;
     state = const RescueHomeState();

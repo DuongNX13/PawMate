@@ -13,12 +13,14 @@ class AuthApiException implements Exception {
     this.code,
     this.field,
     this.statusCode,
+    this.retryAfterSeconds,
   });
 
   final String message;
   final String? code;
   final String? field;
   final int? statusCode;
+  final int? retryAfterSeconds;
 
   @override
   String toString() => message;
@@ -280,11 +282,16 @@ class AuthApi {
     if (payload is Map<String, dynamic>) {
       final errorMap = payload['error'];
       if (errorMap is Map<String, dynamic>) {
+        final code = errorMap['code']?.toString();
+        final retryAfterSeconds = _readRetryAfter(response?.headers);
+        final serverMessage =
+            errorMap['message']?.toString() ?? _fallbackMessage(error);
         return AuthApiException(
-          errorMap['message']?.toString() ?? _fallbackMessage(error),
-          code: errorMap['code']?.toString(),
+          _withRetryTime(serverMessage, code, retryAfterSeconds),
+          code: code,
           field: errorMap['field']?.toString(),
           statusCode: response?.statusCode,
+          retryAfterSeconds: retryAfterSeconds,
         );
       }
     }
@@ -293,6 +300,19 @@ class AuthApi {
       _fallbackMessage(error),
       statusCode: response?.statusCode,
     );
+  }
+
+  int? _readRetryAfter(Headers? headers) {
+    final value = headers?.value('retry-after');
+    final seconds = value == null ? null : int.tryParse(value.trim());
+    return seconds != null && seconds >= 0 ? seconds : null;
+  }
+
+  String _withRetryTime(String message, String? code, int? seconds) {
+    if (seconds == null || (code != 'SEC_001' && code != 'SEC_002')) {
+      return message;
+    }
+    return '$message Thử lại sau $seconds giây.';
   }
 
   String _fallbackMessage(DioException error) {

@@ -9,7 +9,13 @@ import 'package:pawmate_mobile/features/rescue/presentation/rescue_home_screen.d
 import '../test_support/ui_test_helpers.dart';
 
 const _goldenKey = Key('ui-v031-rescue-staged-golden-root');
-const _viewports = [Size(360, 844), Size(390, 844), Size(430, 932)];
+const _viewports = [
+  Size(360, 800),
+  Size(360, 844),
+  Size(390, 844),
+  Size(412, 915),
+  Size(430, 932),
+];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

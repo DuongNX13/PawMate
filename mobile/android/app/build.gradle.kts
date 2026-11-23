@@ -5,6 +5,28 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val pawmateReleaseSigning = mapOf(
+    "storeFile" to System.getenv("PAWMATE_ANDROID_KEYSTORE_PATH"),
+    "storePassword" to System.getenv("PAWMATE_ANDROID_STORE_PASSWORD"),
+    "keyAlias" to System.getenv("PAWMATE_ANDROID_KEY_ALIAS"),
+    "keyPassword" to System.getenv("PAWMATE_ANDROID_KEY_PASSWORD"),
+)
+val pawmateReleaseTaskRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+val pawmateReleaseSigningComplete = pawmateReleaseSigning.values.all {
+    !it.isNullOrBlank()
+}
+
+if (pawmateReleaseTaskRequested && !pawmateReleaseSigningComplete) {
+    throw GradleException(
+        "PawMate Android release signing is not configured. " +
+            "Set PAWMATE_ANDROID_KEYSTORE_PATH, PAWMATE_ANDROID_STORE_PASSWORD, " +
+            "PAWMATE_ANDROID_KEY_ALIAS and PAWMATE_ANDROID_KEY_PASSWORD. " +
+            "Release builds never fall back to the Android debug key.",
+    )
+}
+
 android {
     namespace = "com.pawmate.pawmate_mobile"
     compileSdk = flutter.compileSdkVersion
@@ -30,11 +52,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (pawmateReleaseSigningComplete) {
+            create("pawmateRelease") {
+                storeFile = file(pawmateReleaseSigning.getValue("storeFile")!!)
+                storePassword = pawmateReleaseSigning.getValue("storePassword")!!
+                keyAlias = pawmateReleaseSigning.getValue("keyAlias")!!
+                keyPassword = pawmateReleaseSigning.getValue("keyPassword")!!
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (pawmateReleaseSigningComplete) {
+                signingConfig = signingConfigs.getByName("pawmateRelease")
+            }
         }
     }
 }

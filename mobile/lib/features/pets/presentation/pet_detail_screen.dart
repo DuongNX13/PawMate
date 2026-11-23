@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../app/router/app_navigation.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_badge.dart';
 import '../../../core/widgets/pawmate_button.dart';
 import '../../../core/widgets/pawmate_card.dart';
 import '../../../core/widgets/pawmate_skeleton.dart';
@@ -60,21 +60,39 @@ class PetDetailScreen extends ConsumerWidget {
           message: backendPetsState.hasError
               ? 'Kiểm tra kết nối rồi thử tải lại hồ sơ.'
               : 'Hồ sơ có thể đã được xóa hoặc không còn khả dụng.',
-          primaryActionLabel: backendPetsState.hasError ? 'Thử lại' : null,
+          primaryActionLabel: backendPetsState.hasError
+              ? 'Thử lại'
+              : 'Quay lại danh sách',
           onPrimaryAction: backendPetsState.hasError
               ? () => ref.invalidate(petBackendListProvider)
+              : () => context.go('/pets/list'),
+          secondaryActionLabel: backendPetsState.hasError
+              ? 'Quay lại danh sách'
+              : null,
+          onSecondaryAction: backendPetsState.hasError
+              ? () => context.go('/pets/list')
               : null,
         ),
       );
     }
 
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          pet.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.appBarTitle(),
+        title: Semantics(
+          header: true,
+          label: 'Hồ sơ thú cưng của ${pet.name}',
+          child: ExcludeSemantics(
+            child: Text(
+              usesExpandedTextLayout ? 'Hồ sơ' : 'Hồ sơ thú cưng',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.appBarTitle(),
+            ),
+          ),
         ),
         actions: [
           IconButton(
@@ -90,80 +108,73 @@ class PetDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.s24,
-          AppSpacing.s16,
-          AppSpacing.s24,
-          AppSpacing.s32,
-        ),
-        children: [
-          Center(
-            child: ClipOval(
-              child: SizedBox.square(
-                key: const Key('pet-detail-avatar'),
-                dimension: 100,
-                child: PetAvatarMedia(
-                  source: pet.avatarPath,
-                  fit: BoxFit.cover,
-                  semanticLabel: 'Ảnh của ${pet.name}',
-                  fallback: const ColoredBox(
-                    color: AppColors.careGreenSoft,
-                    child: Center(
-                      child: Icon(
-                        Icons.pets_rounded,
-                        color: AppColors.careGreen,
-                        size: 40,
-                      ),
-                    ),
-                  ),
+      backgroundColor: AppColors.background,
+      body: LayoutBuilder(
+        builder: (context, constraints) => ListView(
+          padding: EdgeInsets.fromLTRB(
+            constraints.maxWidth < 360 ? AppSpacing.s16 : AppSpacing.s24,
+            AppSpacing.s12,
+            constraints.maxWidth < 360 ? AppSpacing.s16 : AppSpacing.s24,
+            AppSpacing.s32 + MediaQuery.paddingOf(context).bottom,
+          ),
+          children: [
+            _PetIdentityCard(
+              pet: pet,
+              species: _toDisplaySpecies(pet.species),
+              healthStatus: _toDisplayHealthStatus(pet.healthStatus),
+            ),
+            const SizedBox(height: AppSpacing.s16),
+            Text('Thông tin cơ bản', style: AppTextStyles.h3()),
+            const SizedBox(height: AppSpacing.s12),
+            _PetInfoGrid(
+              items: [
+                _PetInfo(
+                  icon: Icons.transgender_rounded,
+                  label: 'Giới tính',
+                  value: _toDisplayGender(pet.gender),
                 ),
-              ),
+                _PetInfo(
+                  icon: Icons.cake_outlined,
+                  label: 'Ngày sinh',
+                  value: pet.dateOfBirth == null
+                      ? 'Chưa cập nhật'
+                      : '${pet.dateOfBirth!.day.toString().padLeft(2, '0')}/${pet.dateOfBirth!.month.toString().padLeft(2, '0')}/${pet.dateOfBirth!.year}',
+                ),
+                _PetInfo(
+                  icon: Icons.monitor_weight_outlined,
+                  label: 'Cân nặng',
+                  value: pet.weightKg == null
+                      ? 'Chưa cập nhật'
+                      : '${pet.weightKg!.toStringAsFixed(1)} kg',
+                ),
+                if (pet.color != null)
+                  _PetInfo(
+                    icon: Icons.palette_outlined,
+                    label: 'Màu lông',
+                    value: pet.color!,
+                  ),
+                if (pet.microchip != null)
+                  _PetInfo(
+                    icon: Icons.memory_rounded,
+                    label: 'Microchip',
+                    value: pet.microchip!,
+                  ),
+                _PetInfo(
+                  icon: Icons.health_and_safety_outlined,
+                  label: 'Triệt sản',
+                  value: pet.isNeutered ? 'Đã triệt sản' : 'Chưa triệt sản',
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: Text(
-              '${_toDisplaySpecies(pet.species)} • ${pet.breed}',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyStrong(),
+            const SizedBox(height: AppSpacing.s24),
+            PawMateButton(
+              label: 'Quay lại danh sách',
+              onPressed: () => context.go('/pets/list'),
+              variant: PawMateButtonVariant.secondary,
+              leadingIcon: Icons.arrow_back_rounded,
             ),
-          ),
-          const SizedBox(height: 24),
-          _InfoTile(label: 'Giới tính', value: _toDisplayGender(pet.gender)),
-          _InfoTile(
-            label: 'Ngày sinh',
-            value: pet.dateOfBirth == null
-                ? 'Chưa cập nhật'
-                : '${pet.dateOfBirth!.day}/${pet.dateOfBirth!.month}/${pet.dateOfBirth!.year}',
-          ),
-          _InfoTile(
-            label: 'Cân nặng',
-            value: pet.weightKg == null
-                ? 'Chưa cập nhật'
-                : '${pet.weightKg!.toStringAsFixed(1)} kg',
-          ),
-          _InfoTile(
-            label: 'Tình trạng sức khỏe',
-            value: _toDisplayHealthStatus(pet.healthStatus),
-          ),
-          if (pet.color != null) _InfoTile(label: 'Màu sắc', value: pet.color!),
-          if (pet.microchip != null)
-            _InfoTile(label: 'Microchip', value: pet.microchip!),
-          _InfoTile(
-            label: 'Trạng thái triệt sản',
-            value: pet.isNeutered ? 'Đã triệt sản' : 'Chưa triệt sản',
-          ),
-          const SizedBox(height: 24),
-          PawMateButton(
-            label: 'Quay lại danh sách',
-            onPressed: () => PawMateNavigation.backOrGo(context, '/pets/list'),
-            variant: PawMateButtonVariant.secondary,
-            leadingIcon: Icons.arrow_back_rounded,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -219,28 +230,180 @@ PetProfile? _findPetById(List<PetProfile> pets, String petId) {
   return null;
 }
 
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.label, required this.value});
+class _PetIdentityCard extends StatelessWidget {
+  const _PetIdentityCard({
+    required this.pet,
+    required this.species,
+    required this.healthStatus,
+  });
 
-  final String label;
-  final String value;
+  final PetProfile pet;
+  final String species;
+  final String healthStatus;
 
   @override
   Widget build(BuildContext context) {
     return PawMateCard(
-      margin: const EdgeInsets.only(bottom: AppSpacing.s12),
+      key: const Key('pet-detail-identity-card'),
+      variant: PawMateCardVariant.raised,
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useRow =
+              constraints.maxWidth >= 270 &&
+              MediaQuery.textScalerOf(context).scale(1) <= 1.3;
+          final avatar = Container(
+            width: 116,
+            height: 116,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.surface,
+              border: Border.all(color: AppColors.mint, width: 2),
+            ),
+            child: ClipOval(
+              child: SizedBox.expand(
+                key: const Key('pet-detail-avatar'),
+                child: PetAvatarMedia(
+                  source: pet.avatarPath,
+                  fit: BoxFit.cover,
+                  semanticLabel: 'Ảnh của ${pet.name}',
+                  fallback: const ColoredBox(
+                    color: AppColors.surfaceContainer,
+                    child: Center(
+                      child: Icon(
+                        Icons.pets_rounded,
+                        color: AppColors.primary700,
+                        size: 44,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          final identity = Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: useRow
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
+            children: [
+              Text(
+                pet.name,
+                textAlign: useRow ? TextAlign.start : TextAlign.center,
+                style: AppTextStyles.h2(),
+              ),
+              const SizedBox(height: AppSpacing.s4),
+              Text(
+                '$species • ${pet.breed}',
+                textAlign: useRow ? TextAlign.start : TextAlign.center,
+                style: AppTextStyles.body(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.s12),
+              PawMateBadge(
+                label: healthStatus,
+                variant: PawMateBadgeVariant.success,
+                icon: Icons.favorite_rounded,
+              ),
+            ],
+          );
+          if (!useRow) {
+            return Column(
+              children: [
+                avatar,
+                const SizedBox(height: AppSpacing.s16),
+                identity,
+              ],
+            );
+          }
+          return Row(
+            children: [
+              avatar,
+              const SizedBox(width: AppSpacing.s16),
+              Expanded(child: identity),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PetInfo {
+  const _PetInfo({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+}
+
+class _PetInfoGrid extends StatelessWidget {
+  const _PetInfoGrid({required this.items});
+
+  final List<_PetInfo> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useTwoColumns =
+            constraints.maxWidth >= 300 &&
+            MediaQuery.textScalerOf(context).scale(1) <= 1.3;
+        final width = useTwoColumns
+            ? (constraints.maxWidth - AppSpacing.s12) / 2
+            : constraints.maxWidth;
+        return Wrap(
+          spacing: AppSpacing.s12,
+          runSpacing: AppSpacing.s12,
+          children: [
+            for (final item in items)
+              SizedBox(
+                width: width,
+                child: _PetInfoTile(item: item),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PetInfoTile extends StatelessWidget {
+  const _PetInfoTile({required this.item});
+
+  final _PetInfo item;
+
+  @override
+  Widget build(BuildContext context) {
+    return PawMateCard(
+      variant: PawMateCardVariant.task,
       padding: const EdgeInsets.all(AppSpacing.s16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTextStyles.captionStrong()),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            value,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: AppTextStyles.body(),
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(item.icon, size: 18, color: AppColors.primary700),
+              ),
+              const SizedBox(width: AppSpacing.s8),
+              Expanded(
+                child: Text(item.label, style: AppTextStyles.captionStrong()),
+              ),
+            ],
           ),
+          const SizedBox(height: AppSpacing.s8),
+          Text(item.value, style: AppTextStyles.body()),
         ],
       ),
     );

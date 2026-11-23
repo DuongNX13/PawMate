@@ -6,17 +6,23 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
 import '../../../core/widgets/pawmate_chip.dart';
+import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_skeleton.dart';
 import '../application/health_record_providers.dart';
 import '../data/health_record_api.dart';
 import '../domain/health_record.dart';
 import '../../pets/application/pet_list_provider.dart';
 import '../../pets/domain/pet_profile.dart';
+import '../../pets/presentation/widgets/pet_avatar_media.dart';
 import '../../reminders/application/reminder_providers.dart';
 import '../../reminders/data/reminder_api.dart';
 import '../../reminders/domain/reminder.dart';
 
 class HealthTimelineScreen extends ConsumerStatefulWidget {
-  const HealthTimelineScreen({super.key});
+  const HealthTimelineScreen({super.key, this.now});
+
+  /// Injectable clock keeps relative reminder labels deterministic in tests.
+  final DateTime Function()? now;
 
   @override
   ConsumerState<HealthTimelineScreen> createState() =>
@@ -85,31 +91,29 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
             ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 190),
+          key: const PageStorageKey('health-timeline-scroll'),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 190),
           children: [
             _HealthProfileHeader(
               selectedPet: selectedPet,
               pets: pets,
               selectedPetId: selectedPetId,
               onPetChanged: (value) => setState(() => _selectedPetId = value),
-              onSettings: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Cài đặt sức khỏe sẽ nối ở bước sau.'),
-                ),
-              ),
+              onSettings: () => context.push('/health/knowledge'),
               onNotifications: () =>
                   context.go('/notifications?returnTo=%2Fhealth'),
             ),
-            const SizedBox(height: 34),
+            const SizedBox(height: 14),
             Text('Sức khỏe', style: AppTextStyles.pageTitle()),
-            const SizedBox(height: 28),
+            const SizedBox(height: 14),
             _ReminderHeroCard(
               reminder: primaryReminder,
               isLoading: upcomingRemindersState.isLoading,
               errorMessage: reminderErrorMessage,
+              now: widget.now?.call() ?? DateTime.now(),
               onTap: () => context.push('/health/reminders'),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
             if (syncedPetsState.isLoading) ...[
               const _TimelineStatusCard(
                 title: 'Đang tải hồ sơ thú cưng',
@@ -133,10 +137,14 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
               }),
               onShowAll: () => setState(() => _activeFilter = null),
             ),
-            const SizedBox(height: 30),
-            if (recordQuery == null || recordsState == null)
-              _EmptyTimeline(onAdd: () => _openAddEventScreen(selectedPetId))
-            else
+            const SizedBox(height: 16),
+            if (recordQuery == null || recordsState == null) ...[
+              if (!syncedPetsState.isLoading && !syncedPetsState.hasError)
+                _EmptyTimeline(
+                  isFirstPet: true,
+                  onAdd: () => context.push('/pets/create?returnTo=%2Fhealth'),
+                ),
+            ] else
               ..._buildTimelineCards(recordQuery, recordsState),
           ],
         ),
@@ -221,24 +229,21 @@ class _TimelineDateHeader extends StatelessWidget {
       header: true,
       child: Padding(
         key: Key('health-timeline-date-${_dateKey(date)}'),
-        padding: const EdgeInsets.fromLTRB(66, 0, 0, 14),
+        padding: const EdgeInsets.fromLTRB(58, 0, 0, 10),
         child: Row(
           children: [
             const Icon(
               Icons.calendar_month_outlined,
-              size: 18,
+              size: 16,
               color: AppColors.primary700,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             Expanded(
               child: Text(
                 _formatTimelineGroupDate(date),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary700,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppTextStyles.bodyStrong(color: AppColors.primary700),
               ),
             ),
           ],
@@ -267,7 +272,6 @@ class _HealthProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final pet = selectedPet;
     final petName = pet?.name ?? 'Chưa có thú cưng';
 
@@ -275,6 +279,7 @@ class _HealthProfileHeader extends StatelessWidget {
       children: [
         PopupMenuButton<String>(
           tooltip: 'Chọn thú cưng',
+          padding: EdgeInsets.zero,
           enabled: pets.isNotEmpty,
           initialValue: selectedPetId,
           onSelected: onPetChanged,
@@ -286,9 +291,19 @@ class _HealthProfileHeader extends StatelessWidget {
                 ),
               )
               .toList(),
-          child: _PetAvatar(name: petName, size: 58),
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: Center(
+              child: _PetAvatar(
+                name: petName,
+                avatarPath: pet?.avatarPath,
+                size: 40,
+              ),
+            ),
+          ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,36 +312,28 @@ class _HealthProfileHeader extends StatelessWidget {
                 petName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w700,
-                  height: 1.04,
-                ),
+                style: AppTextStyles.h4(),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 _healthStatusLabel(pet),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.caption(),
               ),
             ],
           ),
         ),
         IconButton(
-          tooltip: 'Cài đặt sức khỏe',
+          tooltip: 'Trung tâm sức khỏe',
           onPressed: onSettings,
-          icon: const Icon(Icons.settings_outlined, size: 30),
+          icon: const Icon(Icons.settings_outlined, size: 24),
           color: AppColors.textPrimary,
         ),
-        const SizedBox(width: 8),
         IconButton(
           tooltip: 'Thông báo',
           onPressed: onNotifications,
-          icon: const Icon(Icons.notifications_none_rounded, size: 30),
+          icon: const Icon(Icons.notifications_none_rounded, size: 24),
           color: AppColors.primary700,
         ),
       ],
@@ -335,9 +342,14 @@ class _HealthProfileHeader extends StatelessWidget {
 }
 
 class _PetAvatar extends StatelessWidget {
-  const _PetAvatar({required this.name, required this.size});
+  const _PetAvatar({
+    required this.name,
+    required this.avatarPath,
+    required this.size,
+  });
 
   final String name;
+  final String? avatarPath;
   final double size;
 
   @override
@@ -345,19 +357,24 @@ class _PetAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(2),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.surface,
-        border: Border.all(color: AppColors.primary500, width: 3),
+        border: Border.all(color: AppColors.primary500, width: 2),
       ),
-      child: CircleAvatar(
-        backgroundColor: AppColors.secondarySoft,
-        child: Text(
-          name.characters.first.toUpperCase(),
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: AppColors.primary700,
-            fontWeight: FontWeight.w700,
+      child: ClipOval(
+        child: PetAvatarMedia(
+          source: avatarPath,
+          semanticLabel: 'Ảnh của $name',
+          fallback: ColoredBox(
+            color: AppColors.secondarySoft,
+            child: Center(
+              child: Text(
+                name.characters.first.toUpperCase(),
+                style: AppTextStyles.label(color: AppColors.primary700),
+              ),
+            ),
           ),
         ),
       ),
@@ -370,94 +387,81 @@ class _ReminderHeroCard extends StatelessWidget {
     required this.reminder,
     required this.isLoading,
     required this.errorMessage,
+    required this.now,
     required this.onTap,
   });
 
   final Reminder? reminder;
   final bool isLoading;
   final String? errorMessage;
+  final DateTime now;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final compact = MediaQuery.sizeOf(context).width <= 360;
     final title = isLoading
         ? 'Đang tải lịch nhắc...'
         : errorMessage != null
         ? 'Chưa tải được lịch nhắc'
         : reminder == null
         ? 'Chưa có lịch nhắc sắp tới'
-        : '${reminder!.title} - ${_formatReminderHeroTime(reminder!.dueAt)}';
+        : '${reminder!.title} - ${_formatReminderHeroTime(reminder!.dueAt, now)}';
 
     return Material(
+      key: const Key('health-reminder-hero'),
       color: AppColors.primary500,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            compact ? 14 : 20,
-            22,
-            compact ? 14 : 20,
-            22,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: compact ? 52 : 62,
-                height: compact ? 52 : 62,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(22),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 88),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.alarm_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  Icons.alarm_rounded,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NHẮC NHỞ SẮP TỚI',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.captionStrong(color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.h4(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.chevron_right_rounded,
                   color: Colors.white,
-                  size: compact ? 28 : 32,
+                  size: 24,
                 ),
-              ),
-              SizedBox(width: compact ? 12 : 18),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'NHẮC NHỞ SẮP TỚI',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: compact
-                          ? AppTextStyles.captionStrong(color: Colors.white)
-                          : theme.textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.2,
-                            ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: compact
-                          ? AppTextStyles.h3(color: Colors.white)
-                          : theme.textTheme.headlineMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              height: 1.12,
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: compact ? 6 : 12),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white,
-                size: compact ? 28 : 34,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -550,7 +554,6 @@ class _HealthEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final compact = MediaQuery.sizeOf(context).width <= 360;
     final status = event.type == HealthRecordType.vaccination
         ? 'THÀNH CÔNG'
@@ -563,31 +566,32 @@ class _HealthEventCard extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 26),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 58,
+            width: 50,
             child: Column(
               children: [
                 _TimelineIcon(type: event.type),
                 Container(
                   width: 2,
-                  height: 82,
-                  margin: const EdgeInsets.only(top: 8),
+                  height: 54,
+                  margin: const EdgeInsets.only(top: 6),
                   color: AppColors.border.withValues(alpha: 0.55),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
+              key: Key('health-event-${event.id}'),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: AppColors.border.withValues(alpha: 0.65),
                 ),
@@ -611,19 +615,15 @@ class _HealthEventCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   if (event.displayNote.trim().isNotEmpty)
                     Text(
                       event.displayNote,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        height: 1.25,
-                      ),
+                      style: AppTextStyles.body(color: AppColors.textSecondary),
                     ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       const Icon(
@@ -637,12 +637,9 @@ class _HealthEventCard extends StatelessWidget {
                           _formatDateTime(event),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: compact
-                              ? AppTextStyles.bodyStrong(color: AppColors.label)
-                              : theme.textTheme.titleLarge?.copyWith(
-                                  color: AppColors.label,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                          style: AppTextStyles.captionStrong(
+                            color: AppColors.label,
+                          ),
                         ),
                       ),
                     ],
@@ -695,14 +692,14 @@ class _TimelineIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = type.accentColor;
     return Container(
-      width: 50,
-      height: 50,
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color.withValues(alpha: 0.16),
         boxShadow: AppShadows.soft,
       ),
-      child: Icon(type.icon, color: color, size: 26),
+      child: Icon(type.icon, color: color, size: 22),
     );
   }
 }
@@ -715,17 +712,14 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.mint,
         borderRadius: BorderRadius.circular(7),
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: AppColors.secondary500,
-          fontWeight: FontWeight.w700,
-        ),
+        style: AppTextStyles.micro(color: AppColors.secondary500),
       ),
     );
   }
@@ -780,55 +774,62 @@ class _TimelineStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.secondarySoft,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (showProgress) ...[
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.secondarySoft,
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                 ),
-                const SizedBox(width: 10),
               ],
-              Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+            if (showProgress) ...[
+              const SizedBox(height: 12),
+              const PawMateSkeleton(width: double.infinity, height: 18),
+              const SizedBox(height: 8),
+              const PawMateSkeleton(width: 160, height: 18),
+            ],
+            if (actionLabel != null && onAction != null) ...[
+              const SizedBox(height: 12),
+              PawMateButton(
+                label: actionLabel!,
+                onPressed: onAction,
+                fullWidth: false,
+                variant: PawMateButtonVariant.secondary,
               ),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            message,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-          ),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 12),
-            OutlinedButton(onPressed: onAction, child: Text(actionLabel!)),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
 class _EmptyTimeline extends StatelessWidget {
-  const _EmptyTimeline({required this.onAdd});
+  const _EmptyTimeline({required this.onAdd, this.isFirstPet = false});
 
   final VoidCallback onAdd;
+  final bool isFirstPet;
 
   @override
   Widget build(BuildContext context) {
@@ -842,21 +843,25 @@ class _EmptyTimeline extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Chưa có sự kiện',
+            isFirstPet ? 'Chưa có hồ sơ thú cưng' : 'Chưa có sự kiện',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 6),
           Text(
-            'Thêm lần tiêm phòng, tẩy giun hoặc khám bệnh đầu tiên.',
+            isFirstPet
+                ? 'Thêm thú cưng đầu tiên để theo dõi sức khỏe và lịch nhắc.'
+                : 'Thêm lần tiêm phòng, tẩy giun hoặc khám bệnh đầu tiên.',
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
-          OutlinedButton.icon(
+          PawMateButton(
             onPressed: onAdd,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Thêm sự kiện'),
+            leadingIcon: Icons.add_rounded,
+            fullWidth: false,
+            variant: PawMateButtonVariant.secondary,
+            label: isFirstPet ? 'Thêm hồ sơ thú cưng' : 'Thêm sự kiện',
           ),
         ],
       ),
@@ -947,10 +952,9 @@ String _healthStatusLabel(PetProfile? pet) {
   }
 }
 
-String _formatReminderHeroTime(DateTime value) {
+String _formatReminderHeroTime(DateTime value, DateTime now) {
   final hour = value.hour.toString().padLeft(2, '0');
   final minute = value.minute.toString().padLeft(2, '0');
-  final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final target = DateTime(value.year, value.month, value.day);
   final dayDelta = target.difference(today).inDays;

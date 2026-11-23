@@ -1,0 +1,6 @@
+{
+  "PAWMATE_API_BASE_URL": "https://pawmate-api-yteu.onrender.com",
+  "PAWMATE_RESCUE_BROWSE_ENABLED": "false",
+  "PAWMATE_RESCUE_CREATE_ENABLED": "false",
+  "PAWMATE_FEATURE_PROFILE": "day78-android-rc-production"
+}

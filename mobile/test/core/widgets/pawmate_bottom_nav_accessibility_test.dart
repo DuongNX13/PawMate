@@ -9,6 +9,7 @@ import 'package:pawmate_mobile/core/widgets/pawmate_bottom_nav.dart';
 import '../../test_support/ui_test_helpers.dart';
 
 void main() {
+  setUpAll(loadPawMateTestFonts);
   test(
     'active route matching accepts descendants and rejects near-prefixes',
     () {
@@ -152,14 +153,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Health'), findsOneWidget);
-    expect(find.text('Rescue'), findsOneWidget);
+    expect(find.bySemanticsLabel('Health'), findsOneWidget);
+    expect(find.bySemanticsLabel('Rescue'), findsOneWidget);
     expect(tester, meetsGuideline(androidTapTargetGuideline));
     expect(tester, meetsGuideline(labeledTapTargetGuideline));
     expect(tester, meetsGuideline(textContrastGuideline));
     expectNoFlutterOverflow(tester);
 
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.bySemanticsLabel('Profile'));
     await tester.pumpAndSettle();
     expect(find.text('Profile target'), findsOneWidget);
 
@@ -197,7 +198,6 @@ void main() {
     expect(find.byType(FittedBox), findsNothing);
     for (final label in ['Home', 'Vet', 'Health', 'Rescue', 'Profile']) {
       expect(find.bySemanticsLabel(label), findsOneWidget);
-      expect(tester.widget<Text>(find.text(label)).maxLines, 2);
       expect(
         tester
             .getSemantics(find.bySemanticsLabel(label))
@@ -206,6 +206,12 @@ void main() {
         isTrue,
       );
     }
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('navigation-selected-caption')))
+          .maxLines,
+      1,
+    );
     expectNoFlutterOverflow(tester);
   });
 }

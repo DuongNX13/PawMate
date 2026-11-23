@@ -1,17 +1,26 @@
+import 'dart:async';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/core/media/image_picker_service.dart';
+import 'package:pawmate_mobile/core/widgets/pawmate_button.dart';
 import 'package:pawmate_mobile/features/vets/application/vet_finder_session_provider.dart';
 import 'package:pawmate_mobile/features/vets/application/vet_providers.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
+import 'package:pawmate_mobile/features/vets/data/vet_share_service.dart';
 import 'package:pawmate_mobile/features/vets/domain/vet_models.dart';
 import 'package:pawmate_mobile/features/vets/presentation/vet_detail_screen.dart';
 import 'package:pawmate_mobile/features/vets/presentation/vet_list_screen.dart';
 
 import '../../test_support/ui_test_helpers.dart';
+import '../../test_support/day115_capture.dart';
 
 void main() {
   testWidgets('renders backend-backed vet list result', (tester) async {
@@ -60,6 +69,96 @@ void main() {
     expect(find.text('Tiêm phòng'), findsOneWidget);
     expect(find.text('(124 đánh giá)'), findsOneWidget);
     expect(find.text('Hà Nội • Quận 1'), findsOneWidget);
+  });
+
+  testWidgets('never labels a rendered fallback card as zero results', (
+    tester,
+  ) async {
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async => const VetSearchResult(
+        items: [
+          VetSummary(
+            id: 'fallback-vet',
+            name: 'Bệnh viện thú cưng Longkhanhpets.com',
+            city: 'Hà Nội',
+            district: 'Tây Hồ',
+            address: '83 Nghi Tàm',
+            phone: '02471069906',
+            services: ['Khám tổng quát'],
+            seedRank: 1,
+            reviewCount: 0,
+            isOpen: true,
+            readyForMap: false,
+          ),
+        ],
+        total: 0,
+        limit: 20,
+      ),
+      detailHandler: (_) async => throw UnimplementedError(),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+        child: const MaterialApp(home: VetListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 Phòng khám'), findsOneWidget);
+    expect(find.text('0 Phòng khám'), findsNothing);
+    await tester.scrollUntilVisible(
+      find.textContaining('Longkhanhpets'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.textContaining('Longkhanhpets'), findsOneWidget);
+  });
+
+  testWidgets('Vet List location settings opens the real permission flow', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(390, 844));
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async =>
+          const VetSearchResult(items: [], total: 0, limit: 20),
+      detailHandler: (_) async => throw UnimplementedError(),
+    );
+    final router = GoRouter(
+      initialLocation: '/vets/list',
+      routes: [
+        GoRoute(path: '/vets/list', builder: (_, _) => const VetListScreen()),
+        GoRoute(
+          path: '/vets/map',
+          builder: (_, _) => const Scaffold(
+            body: SizedBox(key: Key('vet-map-location-flow-target')),
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final enableLocation = find.byKey(const Key('vet-list-enable-location'));
+    await tester.ensureVisible(enableLocation);
+    await tester.pumpAndSettle();
+    await tester.tap(enableLocation);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('vet-map-location-flow-target')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('restores the shared map dataset when entering the vet list', (
@@ -158,6 +257,19 @@ void main() {
       expect(find.text('Xem trên bản đồ'), findsOneWidget);
       expect(find.text('12 Phòng khám'), findsOneWidget);
       expect(find.text('Đang cập nhật vị trí...'), findsOneWidget);
+      final searchShell = tester.getSize(
+        find.byKey(const Key('vet-list-search-shell')),
+      );
+      expect(searchShell.height, greaterThanOrEqualTo(48));
+      expect(searchShell.height, lessThanOrEqualTo(52));
+      final firstCard = tester.getSize(
+        find.byKey(const Key('vet-list-card-dr-minh-tran')),
+      );
+      expect(
+        firstCard.height,
+        lessThanOrEqualTo(256),
+        reason: 'The card may grow at text scale 1.1 but must stay compact.',
+      );
       expectNoFlutterOverflow(tester);
     },
   );
@@ -202,7 +314,7 @@ void main() {
         overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
         child: MaterialApp(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           home: const VetListScreen(),
         ),
       ),
@@ -210,11 +322,71 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(VetListScreen), findsOneWidget);
-    expect(find.textContaining('Longkhanhpets'), findsOneWidget);
+    final longClinic = find.textContaining('Longkhanhpets');
+    await tester.scrollUntilVisible(
+      longClinic,
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(longClinic, findsOneWidget);
     expectNoFlutterOverflow(tester);
   });
 
+  testWidgets(
+    'P1-09 keeps the real search field above the keyboard at narrow large text',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      final fakeApi = _FakeVetApi(
+        searchHandler: (_) async => const VetSearchResult(
+          items: [
+            VetSummary(
+              id: 'ime-vet',
+              name: 'Phòng khám PawMate',
+              city: 'TP Hồ Chí Minh',
+              district: 'Quận 1',
+              address: '1 Nguyễn Huệ',
+              phone: '0903000000',
+              services: ['Khám tổng quát'],
+              seedRank: 1,
+              reviewCount: 1,
+              isOpen: true,
+              readyForMap: false,
+            ),
+          ],
+          total: 1,
+          limit: 20,
+        ),
+        detailHandler: (_) async => throw UnimplementedError(),
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const VetListScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final searchField = find.byKey(const Key('vet-list-search-field'));
+      await tester.tap(searchField);
+      await setKeyboardInset(tester, bottom: 300);
+      await tester.enterText(searchField, 'PawMate');
+      await tester.pumpAndSettle();
+
+      final visibleBottom = 568 - 300;
+      final fieldRect = tester.getRect(searchField);
+      expect(fieldRect.bottom, lessThanOrEqualTo(visibleBottom));
+      expect(fieldRect.height, greaterThanOrEqualTo(48));
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
   testWidgets('renders empty state when search has no results', (tester) async {
+    await setTestViewport(tester, size: const Size(320, 568));
     final fakeApi = _FakeVetApi(
       searchHandler: (_) async =>
           const VetSearchResult(items: [], total: 0, limit: 20),
@@ -224,7 +396,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
-        child: const MaterialApp(home: VetListScreen()),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          home: const VetListScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -239,9 +415,11 @@ void main() {
       find.textContaining('Thử đổi từ khóa', findRichText: true),
       findsOneWidget,
     );
+    expectNoFlutterOverflow(tester);
   });
 
   testWidgets('renders error state when search request fails', (tester) async {
+    await setTestViewport(tester, size: const Size(320, 568));
     final fakeApi = _FakeVetApi(
       searchHandler: (_) async =>
           throw const VetApiException('Vet list failed'),
@@ -251,7 +429,11 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
-        child: const MaterialApp(home: VetListScreen()),
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          home: const VetListScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -267,6 +449,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(retryButton, findsOneWidget);
     expect(tester.getSize(retryButton).height, greaterThanOrEqualTo(48));
+    expectNoFlutterOverflow(tester);
   });
 
   testWidgets('renders vet detail with fallback opening note', (tester) async {
@@ -299,6 +482,85 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.textContaining('Danh sách kiểm duyệt PawMate'), findsOneWidget);
+  });
+
+  testWidgets('P1-10 opens one native share action for the public clinic', (
+    tester,
+  ) async {
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async =>
+          const VetSearchResult(items: [], total: 0, limit: 20),
+      detailHandler: (_) async => _sampleVetDetail(),
+      reviewHandler: (_) async => _reviewResult(),
+    );
+    final shareSource = _PendingVetShareSource();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetShareSourceProvider.overrideWithValue(shareSource),
+        ],
+        child: const MaterialApp(home: VetDetailScreen(vetId: 'mochi-vet')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('vet-detail-share')));
+    await tester.pump();
+
+    expect(shareSource.calls, 1);
+    expect(shareSource.lastVet?.id, 'mochi-vet');
+    expect(shareSource.lastOrigin, isNotNull);
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('vet-detail-share')))
+          .onPressed,
+      isNull,
+    );
+    expect(
+      find.text('Đã sao chép thông tin phòng khám để chia sẻ.'),
+      findsNothing,
+    );
+
+    shareSource.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('P1-10 recovers when the native share action fails', (
+    tester,
+  ) async {
+    final fakeApi = _FakeVetApi(
+      searchHandler: (_) async =>
+          const VetSearchResult(items: [], total: 0, limit: 20),
+      detailHandler: (_) async => _sampleVetDetail(),
+      reviewHandler: (_) async => _reviewResult(),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => fakeApi),
+          vetShareSourceProvider.overrideWithValue(_FailingVetShareSource()),
+        ],
+        child: const MaterialApp(home: VetDetailScreen(vetId: 'mochi-vet')),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('vet-detail-share')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Chưa thể mở bảng chia sẻ. Vui lòng thử lại.'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<IconButton>(find.byKey(const Key('vet-detail-share')))
+          .onPressed,
+      isNotNull,
+    );
   });
 
   testWidgets(
@@ -391,12 +653,31 @@ void main() {
         overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
         child: MaterialApp(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           home: const VetDetailScreen(vetId: 'long-clinic'),
         ),
       ),
     );
     await tester.pumpAndSettle();
+
+    final title = find.text(
+      'Longkhanhpets.com Specialist Hospital And Vaccination Center',
+    );
+    expect(title, findsOneWidget);
+    expect(
+      tester.renderObject<RenderParagraph>(title).didExceedMaxLines,
+      isFalse,
+      reason: 'Visible clinic title must not ellipsize at text scale 2.0',
+    );
+    final address = find.text(
+      '83 Nghi Tam, Tay Ho, Ha Noi, second floor reception\nHải Châu, Đà Nẵng',
+    );
+    expect(address, findsOneWidget);
+    expect(
+      tester.renderObject<RenderParagraph>(address).didExceedMaxLines,
+      isFalse,
+      reason: 'Visible clinic address must not ellipsize at text scale 2.0',
+    );
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('vet-detail-write-review-button')),
@@ -420,7 +701,8 @@ void main() {
     final fakeApi = _FakeVetApi(
       searchHandler: (_) async =>
           const VetSearchResult(items: [], total: 0, limit: 20),
-      detailHandler: (_) async => _sampleVetDetail(),
+      detailHandler: (_) async =>
+          _sampleVetDetail(services: const ['Tiêm phòng', 'Khám tổng quát']),
       reviewHandler: (_) async => _reviewResult(),
       createReviewHandler: (vetId, input, accessToken) async {
         submittedVetId = vetId;
@@ -465,14 +747,20 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('write-review-error')), findsOneWidget);
     expect(find.text('Vui lòng chọn số sao trước khi gửi.'), findsOneWidget);
+    expect(
+      find.text('Đánh giá của bạn sẽ được hiển thị công khai sau khi gửi.'),
+      findsOneWidget,
+    );
+    expect(find.text('Lý do thăm khám'), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const Key('write-review-star-5')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('write-review-star-5')));
-    await tester.enterText(
-      find.byKey(const Key('write-review-title-field')),
-      'Chăm sóc kỹ',
-    );
+    await tester.ensureVisible(find.byKey(const Key('write-review-submit')));
+    await tester.tap(find.byKey(const Key('write-review-submit')));
+    await tester.pump();
+    expect(find.text('Vui lòng nhập nội dung đánh giá.'), findsOneWidget);
+
     await tester.enterText(
       find.byKey(const Key('write-review-body-field')),
       'Bác sĩ tư vấn rất kỹ và theo dõi sau tiêm.',
@@ -485,7 +773,7 @@ void main() {
     expect(submittedVetId, 'mochi-vet');
     expect(submittedAccessToken, 'review-token');
     expect(submittedInput?.rating, 5);
-    expect(submittedInput?.title, 'Chăm sóc kỹ');
+    expect(submittedInput?.title, 'Khám tổng quát');
     expect(submittedInput?.body, 'Bác sĩ tư vấn rất kỹ và theo dõi sau tiêm.');
     expect(find.text('Đánh giá đã được gửi thành công.'), findsOneWidget);
   });
@@ -573,7 +861,7 @@ void main() {
   ) async {
     CreateVetReviewInput? submittedInput;
     String? submittedAccessToken;
-    await setTestViewport(tester, size: const Size(390, 844));
+    await setTestViewport(tester, size: const Size(320, 568));
     final fakeApi = _FakeVetApi(
       searchHandler: (_) async =>
           const VetSearchResult(items: [], total: 0, limit: 20),
@@ -596,7 +884,7 @@ void main() {
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           home: const VetDetailScreen(vetId: 'mochi-vet'),
         ),
       ),
@@ -614,15 +902,32 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('vet-detail-write-review-button')));
     await tester.pumpAndSettle();
-    await setKeyboardInset(tester, bottom: 300);
 
     await tester.ensureVisible(find.byKey(const Key('write-review-star-5')));
     await tester.tap(find.byKey(const Key('write-review-star-5')));
+    await tester.ensureVisible(
+      find.byKey(const Key('write-review-body-field')),
+    );
+    await tester.tap(find.byKey(const Key('write-review-body-field')));
+    await setKeyboardInset(tester, bottom: 300);
     await tester.enterText(
       find.byKey(const Key('write-review-body-field')),
       'Keyboard open review body remains scrollable.',
     );
     await tester.ensureVisible(find.byKey(const Key('write-review-submit')));
+    expect(find.byKey(const Key('write-review-public-warning')), findsNothing);
+    final semantics = tester.ensureSemantics();
+    expect(
+      find.bySemanticsLabel(
+        'Đánh giá của bạn sẽ được hiển thị công khai sau khi gửi.',
+      ),
+      findsOneWidget,
+    );
+    semantics.dispose();
+    expect(
+      tester.getSize(find.byKey(const Key('write-review-submit'))).height,
+      greaterThanOrEqualTo(48),
+    );
     expectNoFlutterOverflow(tester);
 
     await tester.tap(find.byKey(const Key('write-review-submit')));
@@ -635,6 +940,208 @@ void main() {
       'Keyboard open review body remains scrollable.',
     );
   });
+
+  testWidgets(
+    'ST-16 keeps a failed review photo retry-ready at narrow large text',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      await tester.runAsync(loadPawMateTestFonts);
+      var uploadAttempts = 0;
+      var failedFileAttempts = 0;
+      var createAttempts = 0;
+      final uploadedFileNames = <String>[];
+      CreateVetReviewInput? submittedReview;
+      final fakeApi = _FakeVetApi(
+        searchHandler: (_) async =>
+            const VetSearchResult(items: [], total: 0, limit: 20),
+        detailHandler: (_) async => _sampleVetDetail(),
+        reviewHandler: (_) async => _reviewResult(),
+        uploadReviewHandler: (_, input, _) async {
+          uploadAttempts += 1;
+          // XFile.name uses the host separator. Keep the fixture portable
+          // between Windows and POSIX runners instead of comparing a path.
+          final fileName = input.fileName.split(RegExp(r'[/\\]')).last;
+          uploadedFileNames.add(fileName);
+          if (fileName == 'login_vet_dog.png' && ++failedFileAttempts == 1) {
+            throw const VetApiException(
+              'Không thể tải ảnh đánh giá. Vui lòng thử lại.',
+              code: 'UPLOAD_RETRYABLE',
+              statusCode: 503,
+            );
+          }
+          return UploadReviewPhotoResult(
+            url: 'https://cdn.pawmate.test/reviews/$fileName',
+            path: 'reviews/$fileName',
+            contentType: 'image/png',
+            sizeBytes: 4,
+            storage: 'local',
+          );
+        },
+        createReviewHandler: (_, input, _) async {
+          createAttempts += 1;
+          submittedReview = input;
+          return _sampleReview(id: 'retry-review', rating: input.rating);
+        },
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            vetApiProvider.overrideWith((ref) => fakeApi),
+            vetReviewAccessTokenProvider.overrideWith(
+              (ref) async => 'review-token',
+            ),
+            imagePickerProvider.overrideWith(
+              (ref) => _SequenceFakeImagePicker([
+                XFile.fromData(
+                  Uint8List.fromList(const [137, 80, 78, 71]),
+                  mimeType: 'image/png',
+                  path: 'assets/images/auth/register_dog.png',
+                ),
+                XFile.fromData(
+                  Uint8List.fromList(const [137, 80, 78, 71]),
+                  mimeType: 'image/png',
+                  path: 'assets/images/auth/login_vet_dog.png',
+                ),
+              ]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const VetDetailScreen(vetId: 'mochi-vet'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final writeReview = find.byKey(
+        const Key('vet-detail-write-review-button'),
+      );
+      const safeTapBottom = 444.0;
+      await tester.scrollUntilVisible(
+        writeReview,
+        520,
+        maxScrolls: 20,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(writeReview);
+      await tester.pumpAndSettle();
+      if (tester.getRect(writeReview).bottom > safeTapBottom) {
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -360));
+        await tester.pumpAndSettle();
+      }
+      expect(
+        tester.getRect(writeReview).bottom,
+        lessThanOrEqualTo(safeTapBottom),
+      );
+      await tester.tap(writeReview);
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('write-review-star-5')));
+      tester
+          .widget<IconButton>(find.byKey(const Key('write-review-star-5')))
+          .onPressed!
+          .call();
+      await tester.pumpAndSettle();
+      final photoAction = find.byKey(const Key('write-review-add-photo'));
+      await tester.ensureVisible(photoAction);
+      await tester.tap(photoAction);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('write-review-remove-photo-0')),
+        findsOneWidget,
+      );
+      await tester.tap(photoAction);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('write-review-remove-photo-1')),
+        findsOneWidget,
+      );
+
+      final body = find.byKey(const Key('write-review-body-field'));
+      await tester.ensureVisible(body);
+      await tester.tap(body);
+      await tester.enterText(body, 'Ảnh đánh giá được giữ lại để tải lại.');
+      expect(
+        tester.widget<TextFormField>(body).controller?.text,
+        'Ảnh đánh giá được giữ lại để tải lại.',
+      );
+      await setKeyboardInset(tester, bottom: 300);
+      final submit = find.byKey(const Key('write-review-submit'));
+      await tester.ensureVisible(submit);
+      // PawMateButton exposes a VoidCallback, but the review submit handler
+      // is async. Await the concrete handler rather than relying on an
+      // arbitrary timer before asserting the error-recovery state.
+      final firstSubmit =
+          tester.widget<PawMateButton>(submit).onPressed!
+              as Future<void> Function();
+      await firstSubmit();
+      await tester.pump();
+
+      expect(find.byKey(const Key('write-review-error')), findsOneWidget);
+      expect(uploadAttempts, 2);
+      expect(uploadedFileNames, ['register_dog.png', 'login_vet_dog.png']);
+      expect(
+        find.text('Không thể tải ảnh đánh giá. Vui lòng thử lại.'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('write-review-remove-photo-0')),
+        findsOneWidget,
+      );
+      final semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel('Ảnh đánh giá tải lên lỗi'), findsOneWidget);
+      semantics.dispose();
+      expect(
+        find.byKey(const Key('write-review-replace-failed-photo')),
+        findsOneWidget,
+      );
+      expect(find.text('Tải lại ảnh và gửi đánh giá'), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+      await tester.ensureVisible(find.byKey(const Key('write-review-error')));
+      await tester.pumpAndSettle();
+      final errorRect = tester.getRect(
+        find.byKey(const Key('write-review-error')),
+      );
+      final submitRect = tester.getRect(submit);
+      expect(
+        find.byKey(const Key('write-review-error')).hitTestable(),
+        findsOneWidget,
+        reason:
+            'Error text must be painted inside the active visible scroll viewport',
+      );
+      expect(errorRect.top, greaterThanOrEqualTo(0));
+      expect(
+        errorRect.bottom,
+        lessThanOrEqualTo(submitRect.top),
+        reason:
+            'Error must be visible in the form viewport above the lifted footer, not hidden by duplicate IME padding',
+      );
+      await captureDay115(tester, 'ST-16');
+
+      await tester.ensureVisible(submit);
+      final retrySubmit =
+          tester.widget<PawMateButton>(submit).onPressed!
+              as Future<void> Function();
+      await retrySubmit();
+      await tester.pump();
+
+      // The first photo uploaded before the second failed. Retry must retain
+      // that completed URL and send only the failed image again.
+      expect(uploadAttempts, 3);
+      expect(uploadedFileNames, [
+        'register_dog.png',
+        'login_vet_dog.png',
+        'login_vet_dog.png',
+      ]);
+      expect(createAttempts, 1);
+      expect(submittedReview?.photoUrls, [
+        'https://cdn.pawmate.test/reviews/register_dog.png',
+        'https://cdn.pawmate.test/reviews/login_vet_dog.png',
+      ]);
+    },
+  );
 
   testWidgets('toggles helpful and reports latest review with auth token', (
     tester,
@@ -723,71 +1230,138 @@ void main() {
     expect(find.text('Báo cáo đã được gửi.'), findsOneWidget);
   });
 
-  testWidgets('report review sheet remains usable with keyboard open', (
+  testWidgets(
+    'report review sheet remains usable with large text and keyboard on a narrow phone',
+    (tester) async {
+      String? reportReason;
+      String? reportDescription;
+      await setTestViewport(tester, size: const Size(320, 568));
+      final fakeApi = _FakeVetApi(
+        searchHandler: (_) async =>
+            const VetSearchResult(items: [], total: 0, limit: 20),
+        detailHandler: (_) async => _sampleVetDetail(reviewCount: 1),
+        reviewHandler: (_) async =>
+            _reviewResult(items: [_sampleReview(helpfulCount: 2)]),
+        reportHandler: (_, reason, description, _) async {
+          reportReason = reason;
+          reportDescription = description;
+          return const VetReviewReportResult(
+            reportId: 'report-1',
+            reviewId: 'review-1',
+            reportCount: 1,
+            reviewStatus: 'visible',
+          );
+        },
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            vetApiProvider.overrideWith((ref) => fakeApi),
+            vetReviewAccessTokenProvider.overrideWith(
+              (ref) async => 'review-token',
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const VetDetailScreen(vetId: 'mochi-vet'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('review-report-button')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.byKey(const Key('review-report-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('review-report-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('report-reason-false_information')),
+      );
+      final descriptionField = find.byKey(
+        const Key('report-description-field'),
+      );
+      await tester.ensureVisible(descriptionField);
+      await tester.pumpAndSettle();
+      await tester.tap(descriptionField);
+      await setKeyboardInset(tester, bottom: 300);
+      await tester.enterText(
+        descriptionField,
+        'Keyboard open report remains scrollable.',
+      );
+      await tester.ensureVisible(find.byKey(const Key('report-review-submit')));
+      expectNoFlutterOverflow(tester);
+
+      await tester.tap(find.byKey(const Key('report-review-submit')));
+      await tester.pumpAndSettle();
+
+      expect(reportReason, 'false_information');
+      expect(reportDescription, 'Keyboard open report remains scrollable.');
+    },
+  );
+
+  testWidgets('D115 UX-27 empty reviews open creation without load more', (
     tester,
   ) async {
-    String? reportReason;
-    String? reportDescription;
-    await setTestViewport(tester, size: const Size(390, 844));
+    await setTestViewport(tester, size: const Size(320, 568));
+    await tester.runAsync(loadPawMateTestFonts);
     final fakeApi = _FakeVetApi(
       searchHandler: (_) async =>
           const VetSearchResult(items: [], total: 0, limit: 20),
-      detailHandler: (_) async => _sampleVetDetail(reviewCount: 1),
-      reviewHandler: (_) async =>
-          _reviewResult(items: [_sampleReview(helpfulCount: 2)]),
-      reportHandler: (_, reason, description, _) async {
-        reportReason = reason;
-        reportDescription = description;
-        return const VetReviewReportResult(
-          reportId: 'report-1',
-          reviewId: 'review-1',
-          reportCount: 1,
-          reviewStatus: 'visible',
-        );
-      },
+      detailHandler: (_) async => _sampleVetDetail(reviewCount: 0),
+      reviewRequestHandler: (_, request) async =>
+          _reviewResult(items: [], total: 0),
     );
-
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          vetApiProvider.overrideWith((ref) => fakeApi),
-          vetReviewAccessTokenProvider.overrideWith(
-            (ref) async => 'review-token',
-          ),
-        ],
+        overrides: [vetApiProvider.overrideWith((ref) => fakeApi)],
         child: MaterialApp(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(2)),
+            child: child!,
+          ),
           home: const VetDetailScreen(vetId: 'mochi-vet'),
         ),
       ),
     );
     await tester.pumpAndSettle();
-
+    final open = find.byKey(const Key('review-list-open-button'));
+    expect(find.byType(Scrollable), findsWidgets);
+    await tester.ensureVisible(
+      find.byKey(const Key('vet-detail-write-review-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(open, findsOneWidget);
     await tester.scrollUntilVisible(
-      find.byKey(const Key('review-report-button')),
-      200,
+      open,
+      220,
       scrollable: find.byType(Scrollable).first,
+      maxScrolls: 50,
     );
-    await tester.ensureVisible(find.byKey(const Key('review-report-button')));
+    await tester.ensureVisible(open);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('review-report-button')));
+    await tester.tap(open);
     await tester.pumpAndSettle();
-    await setKeyboardInset(tester, bottom: 300);
-
-    await tester.tap(find.byKey(const Key('report-reason-false_information')));
-    await tester.enterText(
-      find.byKey(const Key('report-description-field')),
-      'Keyboard open report remains scrollable.',
-    );
-    await tester.ensureVisible(find.byKey(const Key('report-review-submit')));
+    final create = find.widgetWithText(PawMateButton, 'Viết đánh giá đầu tiên');
+    expect(create, findsOneWidget);
+    expect(find.byKey(const Key('review-load-more-button')), findsNothing);
+    await captureDay115(tester, 'UX-27-top');
+    await tester.ensureVisible(create);
+    await tester.pumpAndSettle();
+    await captureDay115(tester, 'UX-27');
+    await tester.tap(create);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('write-review-body-field')), findsOneWidget);
     expectNoFlutterOverflow(tester);
-
-    await tester.tap(find.byKey(const Key('report-review-submit')));
-    await tester.pumpAndSettle();
-
-    expect(reportReason, 'false_information');
-    expect(reportDescription, 'Keyboard open report remains scrollable.');
   });
 
   testWidgets('opens review list sheet and loads next cursor page', (
@@ -865,6 +1439,12 @@ typedef _CreateReviewHandler =
       CreateVetReviewInput input,
       String accessToken,
     );
+typedef _UploadReviewPhotoHandler =
+    Future<UploadReviewPhotoResult> Function(
+      String vetId,
+      UploadReviewPhotoInput input,
+      String accessToken,
+    );
 typedef _HelpfulHandler =
     Future<VetReviewHelpfulResult> Function(
       String reviewId,
@@ -883,6 +1463,51 @@ typedef _ReviewRequestHandler =
       VetReviewListRequest request,
     );
 
+class _SequenceFakeImagePicker extends ImagePicker {
+  _SequenceFakeImagePicker(this.photos);
+
+  final List<XFile> photos;
+  var _nextPhotoIndex = 0;
+
+  @override
+  Future<XFile?> pickImage({
+    required ImageSource source,
+    double? maxWidth,
+    double? maxHeight,
+    int? imageQuality,
+    CameraDevice preferredCameraDevice = CameraDevice.rear,
+    bool requestFullMetadata = true,
+  }) async {
+    if (_nextPhotoIndex >= photos.length) {
+      return null;
+    }
+    return photos[_nextPhotoIndex++];
+  }
+}
+
+class _PendingVetShareSource implements VetShareSource {
+  final _completer = Completer<void>();
+  int calls = 0;
+  VetDetail? lastVet;
+  Rect? lastOrigin;
+
+  @override
+  Future<void> shareVet(VetDetail vet, {required Rect sharePositionOrigin}) {
+    calls += 1;
+    lastVet = vet;
+    lastOrigin = sharePositionOrigin;
+    return _completer.future;
+  }
+
+  void complete() => _completer.complete();
+}
+
+class _FailingVetShareSource implements VetShareSource {
+  @override
+  Future<void> shareVet(VetDetail vet, {required Rect sharePositionOrigin}) =>
+      Future<void>.error(StateError('Native sheet unavailable'));
+}
+
 class _FakeVetApi extends VetApi {
   _FakeVetApi({
     required this.searchHandler,
@@ -890,6 +1515,7 @@ class _FakeVetApi extends VetApi {
     Future<VetReviewResult> Function(String vetId)? reviewHandler,
     this.reviewRequestHandler,
     this.createReviewHandler,
+    this.uploadReviewHandler,
     this.helpfulHandler,
     this.reportHandler,
   }) : reviewHandler =
@@ -912,6 +1538,7 @@ class _FakeVetApi extends VetApi {
   final Future<VetReviewResult> Function(String vetId) reviewHandler;
   final _ReviewRequestHandler? reviewRequestHandler;
   final _CreateReviewHandler? createReviewHandler;
+  final _UploadReviewPhotoHandler? uploadReviewHandler;
   final _HelpfulHandler? helpfulHandler;
   final _ReportHandler? reportHandler;
 
@@ -958,7 +1585,11 @@ class _FakeVetApi extends VetApi {
     UploadReviewPhotoInput input, {
     required String accessToken,
   }) {
-    throw UnimplementedError('uploadReviewPhoto');
+    final handler = uploadReviewHandler;
+    if (handler == null) {
+      throw UnimplementedError('uploadReviewPhoto');
+    }
+    return handler(vetId, input, accessToken);
   }
 
   @override

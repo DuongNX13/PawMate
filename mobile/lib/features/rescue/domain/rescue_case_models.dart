@@ -174,12 +174,149 @@ class RescueCaseSummary {
   final String? ageLabel;
   final int? distanceMeters;
 
+  RescueCaseSummary copyWith({
+    RescueCaseStatus? status,
+    int? commentCount,
+    DateTime? updatedAt,
+  }) => RescueCaseSummary(
+    caseId: caseId,
+    petName: petName,
+    species: species,
+    status: status ?? this.status,
+    lostAt: lostAt,
+    publicLocation: publicLocation,
+    media: media,
+    commentCount: commentCount ?? this.commentCount,
+    createdAt: createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    breedOrColor: breedOrColor,
+    ageLabel: ageLabel,
+    distanceMeters: distanceMeters,
+  );
+
   RescuePublicMedia? get primaryImage {
     for (final item in media) {
       if (item.isImage) return item;
     }
     return null;
   }
+}
+
+@immutable
+class RescueViewerPermissions {
+  const RescueViewerPermissions({
+    required this.canComment,
+    required this.canUpdateStatus,
+    required this.canViewPrivateContact,
+  });
+
+  factory RescueViewerPermissions.fromJson(Map<String, dynamic> json) {
+    bool readBool(String field) {
+      final value = json[field];
+      if (value is! bool) {
+        throw FormatException('Invalid Rescue viewerPermissions.$field.');
+      }
+      return value;
+    }
+
+    return RescueViewerPermissions(
+      canComment: readBool('canComment'),
+      canUpdateStatus: readBool('canUpdateStatus'),
+      canViewPrivateContact: readBool('canViewPrivateContact'),
+    );
+  }
+
+  final bool canComment;
+  final bool canUpdateStatus;
+  final bool canViewPrivateContact;
+
+  static const none = RescueViewerPermissions(
+    canComment: false,
+    canUpdateStatus: false,
+    canViewPrivateContact: false,
+  );
+}
+
+@immutable
+class RescueCaseDetail extends RescueCaseSummary {
+  factory RescueCaseDetail.fromJson(Map<String, dynamic> json) {
+    final summary = RescueCaseSummary.fromJson(json);
+    return RescueCaseDetail(
+      caseId: summary.caseId,
+      petName: summary.petName,
+      species: summary.species,
+      status: summary.status,
+      version: _requiredInt(json, 'version', min: 1),
+      lostAt: summary.lostAt,
+      publicLocation: summary.publicLocation,
+      media: summary.media,
+      commentCount: summary.commentCount,
+      createdAt: summary.createdAt,
+      updatedAt: summary.updatedAt,
+      breedOrColor: summary.breedOrColor,
+      ageLabel: summary.ageLabel,
+      distanceMeters: summary.distanceMeters,
+      identifyingFeatures: _requiredString(json, 'identifyingFeatures'),
+      behaviorHint: _optionalString(json, 'behaviorHint'),
+      viewerPermissions: json['viewerPermissions'] == null
+          ? RescueViewerPermissions.none
+          : RescueViewerPermissions.fromJson(
+              _asMap(json['viewerPermissions'], 'viewerPermissions'),
+            ),
+    );
+  }
+
+  const RescueCaseDetail({
+    required super.caseId,
+    required super.petName,
+    required super.species,
+    required super.status,
+    required this.version,
+    required super.lostAt,
+    required super.publicLocation,
+    required super.media,
+    required super.commentCount,
+    required super.createdAt,
+    required super.updatedAt,
+    required this.identifyingFeatures,
+    required this.viewerPermissions,
+    super.breedOrColor,
+    super.ageLabel,
+    super.distanceMeters,
+    this.behaviorHint,
+  });
+
+  final String identifyingFeatures;
+  final int version;
+  final String? behaviorHint;
+  final RescueViewerPermissions viewerPermissions;
+
+  @override
+  RescueCaseDetail copyWith({
+    RescueCaseStatus? status,
+    int? version,
+    int? commentCount,
+    DateTime? updatedAt,
+    RescueViewerPermissions? viewerPermissions,
+  }) => RescueCaseDetail(
+    caseId: caseId,
+    petName: petName,
+    species: species,
+    status: status ?? this.status,
+    version: version ?? this.version,
+    lostAt: lostAt,
+    publicLocation: publicLocation,
+    media: media,
+    commentCount: commentCount ?? this.commentCount,
+    createdAt: createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    identifyingFeatures: identifyingFeatures,
+    viewerPermissions: viewerPermissions ?? this.viewerPermissions,
+    breedOrColor: breedOrColor,
+    ageLabel: ageLabel,
+    distanceMeters: distanceMeters,
+    behaviorHint: behaviorHint,
+  );
 }
 
 @immutable

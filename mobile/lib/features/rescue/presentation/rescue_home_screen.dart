@@ -23,10 +23,14 @@ class RescueHomeScreen extends StatelessWidget {
     super.key,
     this.browseEnabled = false,
     this.createEnabled = false,
+    this.mapPreviewAsset,
+    this.now,
   });
 
   final bool browseEnabled;
   final bool createEnabled;
+  final String? mapPreviewAsset;
+  final DateTime Function()? now;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +40,11 @@ class RescueHomeScreen extends StatelessWidget {
         createEnabled: createEnabled,
       );
     }
-    return _RescueLiveHomeScreen(createEnabled: createEnabled);
+    return _RescueLiveHomeScreen(
+      createEnabled: createEnabled,
+      mapPreviewAsset: mapPreviewAsset,
+      now: now,
+    );
   }
 }
 
@@ -52,6 +60,7 @@ class _RescueStagedHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PawMatePageScaffold(
+      layoutMode: PawMatePageLayoutMode.fullResponsive,
       topBar: PawMateTopBar(
         title: 'Cứu hộ thú cưng',
         subtitle: 'Triển khai theo từng giai đoạn',
@@ -101,17 +110,33 @@ class _RescueStagedHomeScreen extends StatelessWidget {
 }
 
 class _RescueLiveHomeScreen extends ConsumerStatefulWidget {
-  const _RescueLiveHomeScreen({required this.createEnabled});
+  const _RescueLiveHomeScreen({
+    required this.createEnabled,
+    required this.mapPreviewAsset,
+    required this.now,
+  });
 
   final bool createEnabled;
+  final String? mapPreviewAsset;
+  final DateTime Function()? now;
 
   @override
   ConsumerState<_RescueLiveHomeScreen> createState() =>
       _RescueLiveHomeScreenState();
 }
 
-class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
+class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen>
+    with RestorationMixin {
   late final RescueHomeNotifier _notifier;
+  final RestorableStringN _selectedCaseId = RestorableStringN(null);
+
+  @override
+  String get restorationId => 'rescue-home-selection';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_selectedCaseId, 'selected-case-id');
+  }
 
   @override
   void initState() {
@@ -124,16 +149,33 @@ class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
 
   @override
   void dispose() {
+    _selectedCaseId.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(rescueHomeProvider);
-    final now = ref.watch(rescueClockProvider)();
+    final now = widget.now?.call() ?? ref.watch(rescueClockProvider)();
     final notifier = _notifier;
+    RescueCaseSummary? selectedCase;
+    for (final item in state.items) {
+      if (item.caseId == _selectedCaseId.value) selectedCase = item;
+    }
+    final selectedCard = _selectedCaseId.value == null
+        ? null
+        : _RescueSelectedCaseCard(
+            item: selectedCase,
+            onClose: () => setState(() => _selectedCaseId.value = null),
+            onOpenDetails: selectedCase == null
+                ? null
+                : () => context.push(
+                    '/rescue/${Uri.encodeComponent(selectedCase!.caseId)}',
+                  ),
+          );
 
     return PawMatePageScaffold(
+      layoutMode: PawMatePageLayoutMode.fullResponsive,
       backgroundColor: AppColors.background,
       topBar: PawMateTopBar(
         title: 'PawMate',
@@ -169,7 +211,7 @@ class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.s16,
-            AppSpacing.s16,
+            AppSpacing.s24,
             AppSpacing.s16,
             AppSpacing.s32,
           ),
@@ -177,15 +219,19 @@ class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
             Text('Cứu hộ', style: AppTextStyles.pageTitle()),
             const SizedBox(height: AppSpacing.s4),
             Text(
-              'Danh sách chó mèo đi lạc gần đây',
+              'Danh sách chó mèo đi lạc quanh bạn',
               style: AppTextStyles.body(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: AppSpacing.s24),
+            const SizedBox(height: AppSpacing.s16),
             _RescueCreateCard(
               enabled: widget.createEnabled,
               onPressed: () => context.go('/rescue/create'),
             ),
-            const SizedBox(height: AppSpacing.s24),
+            const SizedBox(height: AppSpacing.s12),
+            if (selectedCard != null &&
+                (state.status == RescueHomeLoadStatus.empty ||
+                    state.status == RescueHomeLoadStatus.error))
+              selectedCard,
             if (state.status == RescueHomeLoadStatus.loading &&
                 state.items.isEmpty)
               const _RescueLoadingContent()
@@ -205,10 +251,14 @@ class _RescueLiveHomeScreenState extends ConsumerState<_RescueLiveHomeScreen> {
               _RescueReadyContent(
                 state: state,
                 now: now,
+                mapPreviewAsset: widget.mapPreviewAsset,
                 onOpenMap: () => context.go('/rescue/map'),
                 onOpenCase: (item) =>
-                    context.go('/rescue/${Uri.encodeComponent(item.caseId)}'),
-                onLoadMore: notifier.loadMore,
+                    context.push('/rescue/${Uri.encodeComponent(item.caseId)}'),
+                selectedCaseId: _selectedCaseId.value,
+                onSelectCase: (item) =>
+                    setState(() => _selectedCaseId.value = item.caseId),
+                selectedCard: selectedCard,
               ),
           ],
         ),
@@ -257,41 +307,49 @@ class _RescueCreateCard extends StatelessWidget {
       child: PawMateCard(
         key: const Key('rescue-create-entry'),
         onTap: onPressed,
-        padding: const EdgeInsets.all(AppSpacing.s16),
-        child: Row(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
-                shape: BoxShape.circle,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s16,
+          vertical: AppSpacing.s8,
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.pets_rounded,
+                  size: 24,
+                  color: AppColors.deepGreen,
+                ),
               ),
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.pets_rounded,
-                size: 30,
-                color: AppColors.deepGreen,
+              const SizedBox(width: AppSpacing.s16),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Báo mất', style: AppTextStyles.h4()),
+                    Text(
+                      enabled
+                          ? 'Gửi thông tin tìm kiếm thú cưng ngay'
+                          : 'Gửi thông tin tìm kiếm thú cưng',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.caption(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.s16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Báo mất', style: AppTextStyles.h4()),
-                  const SizedBox(height: AppSpacing.s4),
-                  Text(
-                    enabled
-                        ? 'Gửi thông tin tìm kiếm thú cưng ngay'
-                        : 'Gửi thông tin tìm kiếm thú cưng',
-                    style: AppTextStyles.bodyCompact(),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.brown),
-          ],
+              const Icon(Icons.chevron_right_rounded, color: AppColors.brown),
+            ],
+          ),
         ),
       ),
     );
@@ -302,55 +360,223 @@ class _RescueReadyContent extends StatelessWidget {
   const _RescueReadyContent({
     required this.state,
     required this.now,
+    required this.mapPreviewAsset,
     required this.onOpenMap,
     required this.onOpenCase,
-    required this.onLoadMore,
+    required this.selectedCaseId,
+    required this.onSelectCase,
+    required this.selectedCard,
   });
 
   final RescueHomeState state;
   final DateTime now;
+  final String? mapPreviewAsset;
   final VoidCallback onOpenMap;
   final ValueChanged<RescueCaseSummary> onOpenCase;
-  final VoidCallback onLoadMore;
+  final String? selectedCaseId;
+  final ValueChanged<RescueCaseSummary> onSelectCase;
+  final Widget? selectedCard;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RescueMapPreview(items: state.items, onOpenMap: onOpenMap),
-        const SizedBox(height: AppSpacing.s24),
+        RescueMapPreview(
+          items: state.items,
+          onOpenMap: onOpenMap,
+          backgroundAsset: mapPreviewAsset,
+          selectedCaseId: selectedCaseId,
+          onSelectCase: onSelectCase,
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        if (selectedCard != null) ...[
+          selectedCard!,
+          const SizedBox(height: AppSpacing.s12),
+        ],
         if (state.isStale && state.message != null)
           _StaleBanner(message: state.message!),
-        _RescueListCard(
-          state: state,
-          now: now,
-          onOpenCase: onOpenCase,
-          onLoadMore: onLoadMore,
-        ),
+        _RescueListCard(state: state, now: now, onOpenCase: onOpenCase),
       ],
     );
   }
 }
 
-class _RescueListCard extends StatelessWidget {
+class _RescueSelectedCaseCard extends StatelessWidget {
+  const _RescueSelectedCaseCard({
+    required this.item,
+    required this.onClose,
+    required this.onOpenDetails,
+  });
+
+  final RescueCaseSummary? item;
+  final VoidCallback onClose;
+  final VoidCallback? onOpenDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final value = item;
+    return PawMateCard(
+      key: Key(
+        value == null
+            ? 'rescue-selected-unavailable'
+            : 'rescue-selected-case-card',
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  value?.petName ?? 'Ca đã chọn không còn trong danh sách',
+                  style: AppTextStyles.h3(),
+                ),
+              ),
+              IconButton(
+                key: const Key('rescue-selected-close'),
+                tooltip: 'Đóng thông tin ca đã chọn',
+                onPressed: onClose,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          if (value == null)
+            Text(
+              'Tin báo có thể đã bị xóa hoặc không còn phù hợp bộ lọc. Hãy chọn một ca khác.',
+              style: AppTextStyles.body(),
+            )
+          else ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _RescueThumbnail(item: value, image: value.primaryImage),
+                const SizedBox(width: AppSpacing.s12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        [
+                          value.breedOrColor ?? value.species.label,
+                          if (value.ageLabel != null) value.ageLabel!,
+                        ].join(' · '),
+                        style: AppTextStyles.body(),
+                      ),
+                      Text(
+                        'Khu vực ước tính: ${value.publicLocation.areaLabel}',
+                        style: AppTextStyles.bodyCompact(),
+                      ),
+                      const SizedBox(height: AppSpacing.s8),
+                      _StatusChip(status: value.status),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s12),
+            FilledButton(
+              key: const Key('rescue-selected-details'),
+              onPressed: onOpenDetails,
+              child: const Text('Xem chi tiết'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RescueListCard extends StatefulWidget {
   const _RescueListCard({
     required this.state,
     required this.now,
     required this.onOpenCase,
-    required this.onLoadMore,
   });
 
   final RescueHomeState state;
   final DateTime now;
   final ValueChanged<RescueCaseSummary> onOpenCase;
-  final VoidCallback onLoadMore;
+
+  @override
+  State<_RescueListCard> createState() => _RescueListCardState();
+}
+
+class _RescueListCardState extends State<_RescueListCard>
+    with RestorationMixin {
+  final RestorableBool _isExpanded = RestorableBool(false);
+
+  void _toggleExpanded() =>
+      setState(() => _isExpanded.value = !_isExpanded.value);
+
+  @override
+  String? get restorationId => 'rescue-nearby-list';
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_isExpanded, 'expanded');
+  }
+
+  @override
+  void dispose() {
+    _isExpanded.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+    final mediaQuery = MediaQuery.of(context);
+    final reduceMotion =
+        mediaQuery.disableAnimations || mediaQuery.accessibleNavigation;
+    final state = widget.state;
+    final now = widget.now;
+    final nearbyItems = state.items.take(5).toList(growable: false);
+    final visibleItems = _isExpanded.value
+        ? nearbyItems
+        : nearbyItems.take(2).toList(growable: false);
+    final canToggle = nearbyItems.length > 2;
+    final caseRows = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final item in visibleItems)
+          _RescueCaseRow(
+            item: item,
+            now: now,
+            onTap: () => widget.onOpenCase(item),
+          ),
+      ],
+    );
     final updatedLabel = state.lastUpdatedAt == null
         ? 'ĐANG CẬP NHẬT'
         : 'CẬP NHẬT ${_relativeTime(state.lastUpdatedAt!, now)}';
+    final header = usesExpandedTextLayout
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('5 ca gần nhất', style: AppTextStyles.h3()),
+              const SizedBox(height: AppSpacing.s4),
+              Text(updatedLabel, style: AppTextStyles.captionStrong()),
+            ],
+          )
+        : Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Text('5 ca gần nhất', style: AppTextStyles.h3())),
+              const SizedBox(width: AppSpacing.s8),
+              Flexible(
+                child: Text(
+                  updatedLabel,
+                  textAlign: TextAlign.right,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.captionStrong(),
+                ),
+              ),
+            ],
+          );
     return PawMateCard(
       key: const Key('rescue-nearby-list'),
       padding: EdgeInsets.zero,
@@ -360,44 +586,48 @@ class _RescueListCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.s16,
-              AppSpacing.s16,
+              AppSpacing.s12,
               AppSpacing.s16,
               AppSpacing.s8,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text('5 ca gần nhất', style: AppTextStyles.h3()),
-                ),
-                const SizedBox(width: AppSpacing.s8),
-                Flexible(
-                  child: Text(
-                    updatedLabel,
-                    textAlign: TextAlign.right,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.captionStrong(),
+            child: header,
+          ),
+          if (reduceMotion)
+            KeyedSubtree(
+              key: const Key('rescue-nearby-animated-size'),
+              child: caseRows,
+            )
+          else
+            AnimatedSize(
+              key: const Key('rescue-nearby-animated-size'),
+              duration: AppMotion.standard,
+              curve: AppMotion.standardCurve,
+              alignment: Alignment.topCenter,
+              child: caseRows,
+            ),
+          if (canToggle)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s12,
+                AppSpacing.s4,
+                AppSpacing.s12,
+                AppSpacing.s8,
+              ),
+              child: Semantics(
+                key: const Key('rescue-nearby-toggle'),
+                button: true,
+                toggled: _isExpanded.value,
+                onTap: _toggleExpanded,
+                label: _isExpanded.value
+                    ? 'Thu gọn danh sách ca gần nhất'
+                    : 'Mở rộng 5 ca gần nhất',
+                child: ExcludeSemantics(
+                  child: OutlinedButton(
+                    key: const Key('rescue-load-more'),
+                    onPressed: _toggleExpanded,
+                    child: Text(_isExpanded.value ? 'Thu gọn' : 'Xem thêm'),
                   ),
                 ),
-              ],
-            ),
-          ),
-          for (final item in state.items)
-            _RescueCaseRow(item: item, now: now, onTap: () => onOpenCase(item)),
-          if (state.hasMore)
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.s12),
-              child: OutlinedButton(
-                key: const Key('rescue-load-more'),
-                onPressed: state.isLoadingMore ? null : onLoadMore,
-                child: state.isLoadingMore
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Xem thêm'),
               ),
             ),
         ],
@@ -420,6 +650,34 @@ class _RescueCaseRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = item.primaryImage;
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          item.petName,
+          maxLines: usesExpandedTextLayout ? null : 1,
+          overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
+          style: AppTextStyles.bodyStrong(),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          item.breedOrColor ?? item.species.label,
+          maxLines: usesExpandedTextLayout ? null : 1,
+          overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
+          style: AppTextStyles.bodyCompact(),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${item.publicLocation.areaLabel} · ${_caseTime(item.lostAt, now)}',
+          maxLines: usesExpandedTextLayout ? null : 2,
+          overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
+          style: AppTextStyles.caption(),
+        ),
+      ],
+    );
     return Semantics(
       button: true,
       label:
@@ -430,44 +688,37 @@ class _RescueCaseRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.s16,
-            vertical: AppSpacing.s12,
+            vertical: AppSpacing.s4,
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _RescueThumbnail(item: item, image: image),
-              const SizedBox(width: AppSpacing.s12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          child: usesExpandedTextLayout
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      item.petName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyStrong(),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _RescueThumbnail(item: item, image: image),
+                        const SizedBox(width: AppSpacing.s12),
+                        Expanded(child: details),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.breedOrColor ?? item.species.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodyCompact(),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${item.publicLocation.areaLabel} · ${_caseTime(item.lostAt, now)}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption(),
+                    const SizedBox(height: AppSpacing.s8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: _StatusChip(status: item.status),
                     ),
                   ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _RescueThumbnail(item: item, image: image),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(child: details),
+                    const SizedBox(width: AppSpacing.s8),
+                    _StatusChip(status: item.status),
+                  ],
                 ),
-              ),
-              const SizedBox(width: AppSpacing.s8),
-              _StatusChip(status: item.status),
-            ],
-          ),
         ),
       ),
     );
@@ -494,18 +745,32 @@ class _RescueThumbnail extends StatelessWidget {
       ),
     );
     if (image == null) {
-      return SizedBox(width: 56, height: 56, child: placeholder);
+      return SizedBox(width: 52, height: 52, child: placeholder);
+    }
+    if (image!.publicUrl.scheme == 'asset') {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Image.asset(
+          image!.publicUrl.path,
+          width: 52,
+          height: 52,
+          fit: BoxFit.cover,
+          semanticLabel: 'Ảnh minh họa ${item.petName}',
+          errorBuilder: (_, _, _) =>
+              SizedBox(width: 52, height: 52, child: placeholder),
+        ),
+      );
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.md),
       child: Image.network(
         image!.publicUrl.toString(),
-        width: 56,
-        height: 56,
+        width: 52,
+        height: 52,
         fit: BoxFit.cover,
         semanticLabel: 'Ảnh minh họa ${item.petName}',
         errorBuilder: (_, _, _) =>
-            SizedBox(width: 56, height: 56, child: placeholder),
+            SizedBox(width: 52, height: 52, child: placeholder),
       ),
     );
   }
@@ -519,18 +784,27 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final found = status == RescueCaseStatus.found;
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Container(
-      constraints: const BoxConstraints(minHeight: 32, maxWidth: 96),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
+      constraints: BoxConstraints(
+        minHeight: usesExpandedTextLayout ? AppControlSize.minTouchTarget : 32,
+        maxWidth: usesExpandedTextLayout ? double.infinity : 88,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.s12,
+        vertical: usesExpandedTextLayout ? AppSpacing.s4 : 0,
+      ),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: found ? AppColors.surfaceContainer : const Color(0xFFDCE9E2),
+        color: found ? AppColors.surfaceContainer : AppColors.surfaceVariant,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         status.label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        maxLines: usesExpandedTextLayout ? null : 1,
+        overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
         style: AppTextStyles.captionStrong(
           color: found ? AppColors.deepGreen : AppColors.deepGreen,
         ),
@@ -584,7 +858,7 @@ class _RescueLoadingContent extends StatelessWidget {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        PawMateSkeleton(width: double.infinity, height: 178, borderRadius: 32),
+        PawMateSkeleton(width: double.infinity, height: 193, borderRadius: 32),
         SizedBox(height: AppSpacing.s24),
         PawMateCard(
           padding: EdgeInsets.all(AppSpacing.s16),

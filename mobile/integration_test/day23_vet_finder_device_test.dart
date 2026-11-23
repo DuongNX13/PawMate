@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:pawmate_mobile/app/theme/pawmate_scroll_behavior.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_location_service.dart';
@@ -34,6 +36,16 @@ const _vet = VetSummary(
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  Future<bool> prepareScreenshot() async {
+    try {
+      await binding.convertFlutterSurfaceToImage();
+      return true;
+    } on MissingPluginException catch (error) {
+      debugPrint('ANDROID_SCREENSHOT_SKIPPED: $error');
+      return false;
+    }
+  }
 
   testWidgets('captures Day 23 Map on Android', (tester) async {
     await tester.pumpWidget(
@@ -79,10 +91,12 @@ void main() {
         ),
       ),
     );
-    await binding.convertFlutterSurfaceToImage();
+    final canTakeScreenshot = await prepareScreenshot();
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await binding.takeScreenshot('day23-vet-map-android');
+    if (canTakeScreenshot) {
+      await binding.takeScreenshot('day23-vet-map-android');
+    }
   });
 
   testWidgets('captures Day 23 List on Android', (tester) async {
@@ -96,11 +110,60 @@ void main() {
         ),
       ),
     );
-    await binding.convertFlutterSurfaceToImage();
+    final canTakeScreenshot = await prepareScreenshot();
     await tester.pumpAndSettle();
     expect(find.text('PetCare Elite'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await binding.takeScreenshot('day23-vet-list-android');
+    if (canTakeScreenshot) {
+      await binding.takeScreenshot('day23-vet-list-android');
+    }
+  });
+
+  testWidgets('renders Day 23 Map at Android large text without overflow', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => _FakeVetApi()),
+          vetLocationServiceProvider.overrideWith(
+            (ref) => _FakeLocationService(),
+          ),
+          vetMapCanvasBuilderProvider.overrideWith(
+            (ref) =>
+                (
+                  VetMapLocation center,
+                  List<VetSummary> items,
+                  VetMapStyle style,
+                  ValueChanged<String> onMarkerTap,
+                  ValueChanged<Object> onMapUnavailable,
+                ) => const ColoredBox(color: Color(0xFFEDE6DA)),
+          ),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          scrollBehavior: const PawMateScrollBehavior(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(2)),
+            child: child ?? const SizedBox.shrink(),
+          ),
+          home: const VetMapScreen(),
+        ),
+      ),
+    );
+    final canTakeScreenshot = await prepareScreenshot();
+    await tester.pumpAndSettle();
+
+    expect(find.bySemanticsLabel('PawMate'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    if (canTakeScreenshot) {
+      await binding.takeScreenshot('day23-vet-map-large-text-android');
+    }
+    semantics.dispose();
   });
 }
 

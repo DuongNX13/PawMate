@@ -9,12 +9,15 @@ final vetSearchProvider =
       return ref.watch(vetApiProvider).search(request);
     });
 
-final vetDetailProvider = FutureProvider.family<VetDetail, String>((
-  ref,
-  vetId,
-) {
-  return ref.watch(vetApiProvider).getDetail(vetId);
-});
+final vetDetailProvider = FutureProvider.family<VetDetail, String>(
+  (ref, vetId) {
+    return ref.watch(vetApiProvider).getDetail(vetId);
+  },
+  retry: (retryCount, error) {
+    if (error is VetApiException && error.statusCode == 404) return null;
+    return ProviderContainer.defaultRetry(retryCount, error);
+  },
+);
 
 final vetReviewListProvider = FutureProvider.family<VetReviewResult, String>((
   ref,

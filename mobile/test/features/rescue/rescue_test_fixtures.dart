@@ -3,12 +3,19 @@ import 'package:pawmate_mobile/features/rescue/data/rescue_api.dart';
 import 'package:pawmate_mobile/features/rescue/domain/rescue_case_models.dart';
 
 class FakeRescueSource implements RescueCaseSource {
-  FakeRescueSource({List<RescueCasePage>? pages, this.delay = Duration.zero})
-    : pages = [...?pages];
+  FakeRescueSource({
+    List<RescueCasePage>? pages,
+    this.detail,
+    this.detailError,
+    this.delay = Duration.zero,
+  }) : pages = [...?pages];
 
   final List<RescueCasePage> pages;
+  final RescueCaseDetail? detail;
+  final Object? detailError;
   final Duration delay;
   final List<RescueCaseQuery> queries = [];
+  final List<String> detailCaseIds = [];
   int callCount = 0;
 
   @override
@@ -19,6 +26,14 @@ class FakeRescueSource implements RescueCaseSource {
     if (pages.isEmpty) return emptyPage();
     if (callCount <= pages.length) return pages[callCount - 1];
     return pages.last;
+  }
+
+  @override
+  Future<RescueCaseDetail> getCase(String caseId) async {
+    detailCaseIds.add(caseId);
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
+    if (detailError case final Object error) throw error;
+    return detail ?? sampleCaseDetail(caseId: caseId);
   }
 }
 
@@ -126,6 +141,49 @@ RescueCaseSummary rescueCase({
     breedOrColor: breedOrColor,
     ageLabel: '2 tuổi',
     distanceMeters: distanceMeters,
+  );
+}
+
+RescueCaseDetail sampleCaseDetail({
+  String caseId = '11111111-1111-4111-8111-111111111111',
+  bool canComment = true,
+  bool canUpdateStatus = false,
+  bool canViewPrivateContact = false,
+  String? behaviorHint = 'Hơi nhút nhát, không nên đuổi theo.',
+  bool includeImage = false,
+  int version = 1,
+}) {
+  final summary = rescueCase(
+    caseId: caseId,
+    petName: 'LuLu',
+    species: RescueSpecies.dog,
+    status: RescueCaseStatus.missing,
+    areaLabel: 'Q. Tân Bình',
+    breedOrColor: 'Poodle màu nâu',
+    distanceMeters: 1200,
+  );
+  return RescueCaseDetail(
+    caseId: summary.caseId,
+    petName: summary.petName,
+    species: summary.species,
+    status: summary.status,
+    version: version,
+    lostAt: summary.lostAt,
+    publicLocation: summary.publicLocation,
+    media: includeImage ? summary.media : const [],
+    commentCount: 3,
+    createdAt: summary.createdAt,
+    updatedAt: summary.updatedAt,
+    breedOrColor: summary.breedOrColor,
+    ageLabel: summary.ageLabel,
+    distanceMeters: summary.distanceMeters,
+    identifyingFeatures: 'Đeo vòng cổ màu xanh, có đốm trắng ở ngực.',
+    behaviorHint: behaviorHint,
+    viewerPermissions: RescueViewerPermissions(
+      canComment: canComment,
+      canUpdateStatus: canUpdateStatus,
+      canViewPrivateContact: canViewPrivateContact,
+    ),
   );
 }
 

@@ -17,7 +17,7 @@ class AppTheme {
     systemNavigationBarDividerColor: AppColors.border,
   );
 
-  /// PawMate v0.31 intentionally ships a single light Chocomint theme.
+  /// PawMate intentionally ships one Calm Cartographic light theme.
   static ThemeData light() {
     const status = PawMateStatusColors.light;
     final colorScheme =
@@ -111,7 +111,7 @@ class AppTheme {
             color: AppColors.border,
             width: AppBorderWidth.hairline,
           ),
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -123,7 +123,7 @@ class AppTheme {
         highlightElevation: AppElevation.none,
         extendedTextStyle: AppTextStyles.buttonCompact(color: AppColors.white),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.control),
         ),
       ),
       appBarTheme: AppBarTheme(
@@ -178,7 +178,7 @@ class AppTheme {
         titleTextStyle: AppTextStyles.h4(),
         contentTextStyle: AppTextStyles.body(),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -191,7 +191,7 @@ class AppTheme {
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl),
+            top: Radius.circular(AppRadius.navShell),
           ),
         ),
       ),
@@ -207,7 +207,7 @@ class AppTheme {
           disabledBackgroundColor: status.disabledContainer,
           textStyle: AppTextStyles.button(),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
         ),
       ),
@@ -225,7 +225,7 @@ class AppTheme {
           ),
           textStyle: AppTextStyles.button(color: AppColors.primary700),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
         ),
       ),
@@ -332,7 +332,7 @@ class AppTheme {
     Color color, {
     double width = AppBorderWidth.hairline,
   }) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(AppRadius.md),
+    borderRadius: BorderRadius.circular(AppRadius.control),
     borderSide: BorderSide(color: color, width: width),
   );
 

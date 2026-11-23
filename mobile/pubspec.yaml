@@ -26,6 +26,7 @@ dependencies:
   pin_code_fields: ^8.0.1
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
+  share_plus: 11.1.0
 
 dev_dependencies:
   flutter_test:
@@ -41,8 +42,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/icons/navigation/
+    - assets/images/adoption/
     - assets/images/auth/
+    - assets/images/profile/
     - assets/images/pets/
+    - assets/images/brand/
+    # Rescue canonical assets include P2-01 browse through P2-08 Case Discussion.
+    - assets/images/rescue/
   fonts:
     - family: BeVietnamPro
       fonts:

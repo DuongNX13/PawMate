@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_adaptive.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
 import '../../../core/widgets/pawmate_button.dart';
 import '../../auth/application/auth_session_coordinator.dart';
@@ -14,11 +15,23 @@ import '../../pets/presentation/widgets/pet_avatar_media.dart';
 
 final profileSessionProvider = authSessionSnapshotProvider;
 
-class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends ConsumerStatefulWidget {
+  const ProfileScreen({super.key, this.avatarAsset});
+
+  /// Optional deterministic asset used by the canonical visual harness.
+  /// Production sessions continue to use the initials fallback until the
+  /// account avatar contract is available from the backend.
+  final String? avatarAsset;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _logoutInProgress = false;
+
+  @override
+  Widget build(BuildContext context) {
     final sessionState = ref.watch(profileSessionProvider);
     final petsState = ref.watch(petBackendListProvider);
     final cachedPets = ref.watch(petListProvider);
@@ -39,18 +52,20 @@ class ProfileScreen extends ConsumerWidget {
               onNotifications: () =>
                   context.go('/notifications?returnTo=%2Fprofile'),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
             sessionState.when(
-              loading: () => const _ProfileHeroCard(
+              loading: () => _ProfileHeroCard(
                 email: 'Đang tải tài khoản',
                 displayName: 'PawMate',
                 verified: false,
+                avatarAsset: widget.avatarAsset,
                 onEdit: null,
               ),
               error: (_, _) => _ProfileHeroCard(
                 email: 'Chưa xác định',
                 displayName: 'Người dùng PawMate',
                 verified: false,
+                avatarAsset: widget.avatarAsset,
                 onEdit: () => context.push('/profile/controls'),
               ),
               data: (session) => _ProfileHeroCard(
@@ -60,12 +75,37 @@ class ProfileScreen extends ConsumerWidget {
                     ? session!.user.displayName!
                     : 'Người dùng PawMate',
                 verified: session?.user.emailVerified ?? false,
+                avatarAsset: widget.avatarAsset,
                 onEdit: () => context.push('/profile/controls'),
               ),
             ),
-            const SizedBox(height: 28),
-            Text('Thú cưng của tôi', style: AppTextStyles.h4()),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
+            if (MediaQuery.textScalerOf(context).scale(1) > 1.3)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Thú cưng của tôi', style: AppTextStyles.h4()),
+                  TextButton(
+                    key: const Key('profile-view-all-pets'),
+                    onPressed: () => context.go('/pets'),
+                    child: const Text('Xem tất cả'),
+                  ),
+                ],
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Thú cưng của tôi', style: AppTextStyles.h4()),
+                  ),
+                  TextButton(
+                    key: const Key('profile-view-all-pets'),
+                    onPressed: () => context.go('/pets'),
+                    child: const Text('Xem tất cả'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 6),
             if (pets.isEmpty && petsState.isLoading)
               const _PetPreviewStatus(
                 key: Key('profile-pets-loading-state'),
@@ -90,12 +130,12 @@ class ProfileScreen extends ConsumerWidget {
                   context.push('/pets/${pet.id}');
                 },
               ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 12),
             Text(
               'CÀI ĐẶT HỆ THỐNG',
               style: AppTextStyles.label(color: AppColors.textMuted),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 8),
             _SettingsGroup(
               children: [
                 _ProfileActionTile(
@@ -129,7 +169,7 @@ class ProfileScreen extends ConsumerWidget {
                   title: 'Đăng xuất tài khoản',
                   subtitle: 'Kết thúc phiên trên tất cả thiết bị',
                   danger: true,
-                  onTap: () => _logout(context, ref),
+                  onTap: _confirmLogout,
                 ),
               ],
             ),
@@ -139,17 +179,48 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmLogout() async {
+    if (_logoutInProgress) return;
+    _logoutInProgress = true;
+    try {
+      final confirmed = await showPawMateAdaptiveDialog<bool>(
+        context: context,
+        dialogKey: const Key('profile-logout-confirmation'),
+        title: 'Đăng xuất tài khoản?',
+        message: 'Bạn cần đăng nhập lại để tiếp tục sử dụng tài khoản PawMate.',
+        actions: const [
+          PawMateAdaptiveAction<bool>(
+            key: Key('profile-logout-cancel'),
+            label: 'Hủy',
+            isDefaultAction: true,
+          ),
+          PawMateAdaptiveAction<bool>(
+            key: Key('profile-logout-confirm'),
+            label: 'Đăng xuất',
+            value: true,
+            isDestructiveAction: true,
+          ),
+        ],
+      );
+      if (confirmed == true && mounted) {
+        await _logout();
+      }
+    } finally {
+      _logoutInProgress = false;
+    }
+  }
+
+  Future<void> _logout() async {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(authSessionCoordinatorProvider).logout();
       ref.invalidate(authSessionSnapshotProvider);
       ref.invalidate(petBackendListProvider);
-      if (context.mounted) {
+      if (mounted) {
         context.go('/auth/login');
       }
     } on AuthApiException catch (error) {
-      if (context.mounted) {
+      if (mounted) {
         messenger.showSnackBar(
           SnackBar(
             content: Text('Chưa thể đăng xuất an toàn. ${error.message}'),
@@ -157,7 +228,7 @@ class ProfileScreen extends ConsumerWidget {
         );
       }
     } on Object {
-      if (context.mounted) {
+      if (mounted) {
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Chưa thể đăng xuất an toàn. Vui lòng thử lại.'),
@@ -214,110 +285,176 @@ class _ProfileHeroCard extends StatelessWidget {
     required this.displayName,
     required this.verified,
     required this.onEdit,
+    this.avatarAsset,
   });
 
   final String email;
   final String displayName;
   final bool verified;
   final VoidCallback? onEdit;
+  final String? avatarAsset;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 254),
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.45)),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              CircleAvatar(
-                radius: 44,
-                backgroundColor: AppColors.primarySoft,
-                child: Text(
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    final avatar = Stack(
+      clipBehavior: Clip.none,
+      children: [
+        CircleAvatar(
+          radius: 38,
+          backgroundColor: AppColors.primarySoft,
+          child: avatarAsset == null
+              ? Text(
                   _profileInitials(displayName),
                   style: AppTextStyles.h2(color: AppColors.primary700),
+                )
+              : ClipOval(
+                  child: Image.asset(
+                    avatarAsset!,
+                    width: 76,
+                    height: 76,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.center,
+                    errorBuilder: (context, error, stackTrace) => Text(
+                      _profileInitials(displayName),
+                      style: AppTextStyles.h2(color: AppColors.primary700),
+                    ),
+                  ),
                 ),
-              ),
-              if (onEdit != null)
-                Positioned(
-                  right: -8,
-                  bottom: -8,
-                  child: Material(
-                    color: AppColors.primary500,
-                    shape: const CircleBorder(),
-                    child: IconButton(
-                      key: const Key('profile-edit-action'),
-                      tooltip: 'Chỉnh sửa hồ sơ',
-                      onPressed: onEdit,
-                      constraints: const BoxConstraints.tightFor(
-                        width: AppControlSize.minTouchTarget,
-                        height: AppControlSize.minTouchTarget,
-                      ),
-                      icon: const Icon(
-                        Icons.edit_rounded,
-                        color: AppColors.white,
-                        size: 18,
+        ),
+        if (onEdit != null)
+          Positioned(
+            right: -10,
+            bottom: -10,
+            child: Semantics(
+              button: true,
+              label: 'Chỉnh sửa hồ sơ',
+              child: SizedBox(
+                width: AppControlSize.minTouchTarget,
+                height: AppControlSize.minTouchTarget,
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    key: const Key('profile-edit-action'),
+                    customBorder: const CircleBorder(),
+                    onTap: onEdit,
+                    child: Center(
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary500,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: AppColors.white,
+                          size: 15,
+                        ),
                       ),
                     ),
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
-          const SizedBox(height: 18),
-          Text(
-            displayName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.h2(),
-          ),
-          const SizedBox(height: 2),
+      ],
+    );
+    final details = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: usesExpandedTextLayout
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          displayName,
+          maxLines: usesExpandedTextLayout ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: usesExpandedTextLayout ? TextAlign.center : TextAlign.left,
+          style: AppTextStyles.h3(),
+        ),
+        const SizedBox(height: 2),
+        if (usesExpandedTextLayout)
           Text(
             email,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyCompact(),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.careGreenSoft,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
+          )
+        else
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              email,
+              maxLines: 1,
+              softWrap: false,
+              style: AppTextStyles.bodyCompact(),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  verified ? Icons.verified_rounded : Icons.schedule_rounded,
-                  size: 14,
-                  color: AppColors.careGreen,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    verified ? 'Verified Owner' : 'Chờ xác minh',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.captionStrong(
-                      color: AppColors.careGreen,
-                    ),
+          ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.careGreenSoft,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                verified ? Icons.verified_rounded : Icons.schedule_rounded,
+                size: 14,
+                color: AppColors.careGreen,
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  verified ? 'Verified Owner' : 'Chờ xác minh',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.captionStrong(
+                    color: AppColors.careGreen,
                   ),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    return Container(
+      constraints: BoxConstraints(
+        minHeight: usesExpandedTextLayout ? 214 : 124,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.s16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.45)),
+        boxShadow: AppShadows.soft,
+      ),
+      child: usesExpandedTextLayout
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                avatar,
+                const SizedBox(height: AppSpacing.s16),
+                details,
+              ],
+            )
+          : Row(
+              children: [
+                avatar,
+                const SizedBox(width: 22),
+                Expanded(child: details),
+                const Icon(Icons.chevron_right_rounded, color: AppColors.brown),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -410,11 +547,7 @@ class _PetPreviewGrid extends StatelessWidget {
     final visiblePets = pets.take(2).toList();
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = visiblePets.length == 1
-            ? constraints.maxWidth.clamp(120.0, 160.0).toDouble()
-            : ((constraints.maxWidth - AppSpacing.s16) / 2)
-                  .clamp(120.0, 160.0)
-                  .toDouble();
+        const cardWidth = 120.0;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -450,6 +583,8 @@ class _PetPreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Material(
       color: AppColors.surface,
       borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -458,8 +593,8 @@ class _PetPreviewCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          height: 145,
-          padding: const EdgeInsets.fromLTRB(10, 14, 10, 8),
+          height: usesExpandedTextLayout ? null : 128,
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
@@ -473,8 +608,8 @@ class _PetPreviewCard extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 64,
-                    height: 64,
+                    width: 56,
+                    height: 56,
                     decoration: const BoxDecoration(
                       color: AppColors.careGreenSoft,
                       shape: BoxShape.circle,
@@ -504,7 +639,7 @@ class _PetPreviewCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 pet.name,
                 maxLines: 1,
@@ -622,33 +757,38 @@ class _ProfileActionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = danger ? AppColors.error : AppColors.primary700;
     final background = danger ? AppColors.errorSoft : AppColors.primarySoft;
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 13, 12, 13),
+          padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: background,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(icon, color: accent, size: 22),
+                child: Icon(icon, color: accent, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: usesExpandedTextLayout ? null : 1,
+                      overflow: usesExpandedTextLayout
+                          ? null
+                          : TextOverflow.ellipsis,
                       style: AppTextStyles.label(
                         color: danger ? AppColors.error : AppColors.textPrimary,
                       ),
@@ -656,15 +796,17 @@ class _ProfileActionTile extends StatelessWidget {
                     const SizedBox(height: 1),
                     Text(
                       subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: usesExpandedTextLayout ? null : 2,
+                      overflow: usesExpandedTextLayout
+                          ? null
+                          : TextOverflow.ellipsis,
                       style: AppTextStyles.caption(),
                     ),
                   ],
                 ),
               ),
               if (showAlertDot) ...[
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 Container(
                   width: 8,
                   height: 8,
@@ -674,7 +816,7 @@ class _ProfileActionTile extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Icon(
                 Icons.chevron_right_rounded,
                 color: danger ? AppColors.error : AppColors.primary500,

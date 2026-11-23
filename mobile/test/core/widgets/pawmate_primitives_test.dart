@@ -135,6 +135,47 @@ void main() {
     });
   }
 
+  testWidgets(
+    'non-full-width compact CTA wraps safely when its parent is narrow',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          home: const Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 160,
+                child: PawMateButton(
+                  key: Key('narrow-non-full-width-cta'),
+                  label: 'Xem hồ sơ nhận nuôi của bé',
+                  onPressed: _noOp,
+                  leadingIcon: Icons.visibility_outlined,
+                  compact: true,
+                  fullWidth: false,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final button = find.byKey(const Key('narrow-non-full-width-cta'));
+      final text = tester.widget<Text>(
+        find.descendant(
+          of: button,
+          matching: find.text('Xem hồ sơ nhận nuôi của bé'),
+        ),
+      );
+      expect(tester.getSize(button).width, lessThanOrEqualTo(160));
+      expect(text.maxLines, isNull);
+      expect(text.overflow, isNull);
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
   testWidgets('action cluster stacks for long labels and accessibility text', (
     tester,
   ) async {
@@ -281,11 +322,51 @@ void main() {
       tester.getSize(find.byKey(const Key('compact-chip'))).height,
       greaterThanOrEqualTo(AppControlSize.minTouchTarget),
     );
+    expect(
+      tester.getSize(find.byKey(const Key('compact-chip'))).width,
+      lessThan(160),
+    );
     expect(find.text('Chưa thấy'), findsOneWidget);
     expect(
       find.bySemanticsLabel('Trạng thái tìm kiếm: Chưa thấy'),
       findsOneWidget,
     );
+    expectNoFlutterOverflow(tester);
+  });
+
+  testWidgets('chip grows safely inside a narrow parent at large text', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(320, 568));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        builder: testTextScaleBuilder(2),
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 144,
+              child: PawMateChip(
+                key: const Key('narrow-large-text-chip'),
+                label: 'Lịch chăm sóc định kỳ hằng tháng',
+                leadingIcon: Icons.calendar_month_outlined,
+                onPressed: _noOp,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chip = find.byKey(const Key('narrow-large-text-chip'));
+    expect(tester.getSize(chip).width, lessThanOrEqualTo(144));
+    final label = tester.widget<Text>(
+      find.descendant(of: chip, matching: find.byType(Text)),
+    );
+    expect(tester.getSize(chip).height, greaterThan(48));
+    expect(label.maxLines, isNull);
+    expect(label.overflow, isNull);
     expectNoFlutterOverflow(tester);
   });
 
@@ -485,3 +566,5 @@ Widget _app(Widget child) {
     ),
   );
 }
+
+void _noOp() {}

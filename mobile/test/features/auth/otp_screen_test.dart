@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,9 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../test_support/ui_test_helpers.dart';
+import '../../test_support/day114_capture.dart';
+import '../../test_support/day115_capture.dart';
+import '../../test_support/day116_capture.dart';
 
 void main() {
   late DateTime now;
@@ -35,8 +39,40 @@ void main() {
     expect(find.textContaining('hộp thư'), findsOneWidget);
     expect(find.text('HỆ THỐNG ĐANG SẴN SÀNG'), findsOneWidget);
     expect(_otpButton(tester).onPressed, isNull);
+    await captureDay114(tester, 'ST-09');
     expectNoFlutterOverflow(tester);
   });
+
+  testWidgets(
+    'OTP keeps its heading and system note readable at accessibility text size',
+    (tester) async {
+      await _pumpOtp(
+        tester,
+        api: _FakeAuthApi(),
+        store: _FakeAuthSessionStore(),
+        now: () => now,
+        viewport: const Size(320, 568),
+        textScale: 2,
+      );
+
+      for (final label in ['Xác minh tài khoản', 'HỆ THỐNG ĐANG SẴN SÀNG']) {
+        expect(find.bySemanticsLabel(label), findsOneWidget);
+      }
+
+      for (final finder in [
+        find.text('Xác minh').first,
+        find.text('SẴN SÀNG'),
+      ]) {
+        expect(finder, findsOneWidget);
+        expect(
+          tester.renderObject<RenderParagraph>(finder).didExceedMaxLines,
+          isFalse,
+          reason: 'Visible OTP copy must remain readable.',
+        );
+      }
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets(
     'OTP resend copy is canonical at 57, 9, and 0 seconds without overlap',
@@ -48,7 +84,7 @@ void main() {
         now: () => now,
         resendAt: now.add(const Duration(seconds: 57)),
         viewport: const Size(320, 568),
-        textScale: 1.3,
+        textScale: 2,
       );
 
       final resendButton = find.byKey(const ValueKey('otp-resend-button'));
@@ -84,6 +120,36 @@ void main() {
     },
   );
 
+  testWidgets(
+    'OTP entry and verification CTA remain reachable with large text and keyboard',
+    (tester) async {
+      await _pumpOtp(
+        tester,
+        api: _FakeAuthApi(),
+        store: _FakeAuthSessionStore(),
+        now: () => now,
+        viewport: const Size(320, 568),
+        textScale: 2,
+      );
+
+      final otpField = find.byType(PinCodeTextField);
+      // PinCodeTextField autofocuses the editable child. Tapping its wrapper
+      // is not a reliable hit-test target in widget tests.
+      await setKeyboardInset(tester, bottom: 300);
+      await tester.enterText(otpField, '123456');
+      // The package schedules a 300ms input animation after editing.
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.ensureVisible(otpField);
+      expect(tester.getBottomRight(otpField).dy, lessThanOrEqualTo(268));
+      final confirm = find.byKey(const ValueKey('otp-confirm-button'));
+      await tester.ensureVisible(confirm);
+      expect(tester.getBottomRight(confirm).dy, lessThanOrEqualTo(268));
+      expect(_otpButton(tester).onPressed, isNotNull);
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
   testWidgets('OTP success persists session atomically and routes to Home', (
     tester,
   ) async {
@@ -103,7 +169,7 @@ void main() {
     await tester.pump();
     expect(_otpButton(tester).onPressed, isNotNull);
     await tester.tap(find.byKey(const ValueKey('otp-confirm-button')));
-    await tester.pumpAndSettle();
+    await _pumpUntilFound(tester, find.text('Home target'));
 
     expect(fakeApi.verifyCalls, 1);
     expect(fakeApi.lastToken, '123456');
@@ -137,7 +203,7 @@ void main() {
     await tester.enterText(find.byType(PinCodeTextField), '123456');
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('otp-confirm-button')));
-    await tester.pumpAndSettle();
+    await _pumpUntilFound(tester, find.text('Vet target: 24h'));
 
     expect(find.text('Vet target: 24h'), findsOneWidget);
   });
@@ -217,6 +283,8 @@ void main() {
       now: () => now,
       expiresAt: now.add(const Duration(minutes: 5)),
       resendAt: now.add(const Duration(seconds: 60)),
+      viewport: const Size(320, 568),
+      textScale: 2,
     );
 
     now = now.add(const Duration(minutes: 5, seconds: 1));
@@ -225,6 +293,14 @@ void main() {
     expect(find.byKey(const ValueKey('otp-expired-state')), findsOneWidget);
     expect(find.text('Mã xác thực đã hết hạn'), findsOneWidget);
     expect(fakeApi.verifyCalls, 0);
+    final resend = find.byKey(const ValueKey('otp-resend-expired-button'));
+    await tester.ensureVisible(resend);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(resend).height, greaterThanOrEqualTo(48));
+    final changeEmail = find.byKey(const ValueKey('otp-change-email-button'));
+    await tester.ensureVisible(changeEmail);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(changeEmail).height, greaterThanOrEqualTo(48));
     expectNoFlutterOverflow(tester);
   });
 
@@ -312,8 +388,8 @@ void main() {
   ) async {
     final fakeApi = _FakeAuthApi(
       resendError: const AuthApiException(
-        'Không thể gửi lại mã lúc này. Vui lòng thử lại.',
-        code: 'AUTH_016',
+        'Không thể kết nối tới máy chủ PawMate.',
+        code: 'NET_001',
       ),
     );
     await _pumpOtp(
@@ -322,17 +398,41 @@ void main() {
       store: _FakeAuthSessionStore(),
       now: () => now,
       resendAt: now,
+      viewport: const Size(320, 568),
+      textScale: 2,
     );
 
-    await tester.tap(find.byKey(const ValueKey('otp-resend-button')));
+    final resend = find.byKey(const ValueKey('otp-resend-button'));
+    await tester.ensureVisible(resend);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(resend.hitTestable(), findsOneWidget);
+    await tester.tap(resend);
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(fakeApi.resendCalls, 1);
-    expect(
-      find.text('Không thể gửi lại mã lúc này. Vui lòng thử lại.'),
-      findsOneWidget,
-    );
+    expect(find.text('Không thể kết nối tới máy chủ PawMate.'), findsOneWidget);
     expect(find.text('Xác minh mã OTP'), findsOneWidget);
+    expect(_otpText(tester), isEmpty);
+    await tester.ensureVisible(
+      find.text('Không thể kết nối tới máy chủ PawMate.'),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await captureDay116(tester, 'D116-ST02-P104-error');
+    fakeApi.resendError = null;
+    await tester.ensureVisible(resend);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(resend.hitTestable(), findsOneWidget);
+    await tester.tap(resend);
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(fakeApi.resendCalls, 2);
+    expect(find.text('Đã gửi lại email xác minh'), findsOneWidget);
+    expect(find.text('Gửi lại mã (60s)'), findsOneWidget);
+    // The first post-response pump starts _OtpErrorArea's 160ms outgoing
+    // animation. Observe its completion, rather than asserting on that frame.
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(find.text('Không thể kết nối tới máy chủ PawMate.'), findsNothing);
+    expect(find.text('Xác minh mã OTP'), findsOneWidget);
+    expectNoFlutterOverflow(tester);
   });
 
   testWidgets('Expired OTP can resend and return to normal verification', (
@@ -354,6 +454,7 @@ void main() {
       resendAt: now.subtract(const Duration(seconds: 1)),
     );
 
+    await captureDay115(tester, 'ST-17');
     await tester.tap(find.byKey(const ValueKey('otp-resend-expired-button')));
     await tester.pump(const Duration(milliseconds: 400));
 
@@ -461,6 +562,19 @@ PawMateButton _otpButton(WidgetTester tester) {
   );
 }
 
+Future<void> _pumpUntilFound(
+  WidgetTester tester,
+  Finder finder, {
+  int maxFrames = 20,
+}) async {
+  for (var frame = 0; frame < maxFrames && finder.evaluate().isEmpty; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  // pin_code_fields schedules a final 300ms input animation; flush it after
+  // navigation so the disposed field cannot leave a pending test timer.
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
 String _otpText(WidgetTester tester) {
   return tester
       .widget<EditableText>(find.byType(EditableText).first)
@@ -479,7 +593,7 @@ class _FakeAuthApi extends AuthApi {
   final VerifyEmailResponse? verifyResponse;
   final AuthApiException? verifyError;
   final ResendVerificationResponse? resendResponse;
-  final AuthApiException? resendError;
+  AuthApiException? resendError;
   int verifyCalls = 0;
   int resendCalls = 0;
   String? lastToken;
@@ -554,7 +668,7 @@ AuthSession _sampleSession() {
     ),
     accessToken: 'access-token',
     refreshToken: 'refresh-token',
-    accessTokenExpiresAt: '2026-07-08T10:00:00Z',
-    refreshTokenExpiresAt: '2026-08-08T10:00:00Z',
+    accessTokenExpiresAt: '2099-07-08T10:00:00Z',
+    refreshTokenExpiresAt: '2099-08-08T10:00:00Z',
   );
 }

@@ -7,21 +7,23 @@ import 'package:pawmate_mobile/app/theme/app_tokens.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('PawMate Day 9 Chocomint color contract', () {
-    test('locks v0.29/v0.30 source colours and semantic mapping', () {
+  group('PawMate Calm Cartographic anchor color contract', () {
+    test('locks the approved five-anchor source colours and mapping', () {
       expect(AppColors.mint, const Color(0xFF95D5B2));
       expect(AppColors.brown, const Color(0xFF5C3C25));
-      expect(AppColors.lightBeige, const Color(0xFFE9F5DB));
-      expect(AppColors.deepGreen, const Color(0xFF2D6A4F));
+      expect(AppColors.warmIvory, const Color(0xFFF8F3EA));
+      expect(AppColors.deepTeal, const Color(0xFF155E63));
+      expect(AppColors.lightBeige, AppColors.warmIvory);
+      expect(AppColors.deepGreen, AppColors.deepTeal);
       expect(AppColors.white, const Color(0xFFFFFFFF));
-      expect(AppColors.primary500, AppColors.deepGreen);
+      expect(AppColors.primary500, AppColors.deepTeal);
       expect(AppColors.primaryAccent, AppColors.mint);
-      expect(AppColors.primarySoft, AppColors.lightBeige);
-      expect(AppColors.background, AppColors.lightBeige);
-      expect(AppColors.textPrimary, AppColors.brown);
-      expect(AppColors.navInactiveIcon, AppColors.brown);
-      expect(AppColors.careGreen, AppColors.deepGreen);
-      expect(AppColors.border, AppColors.mint);
+      expect(AppColors.primarySoft, AppColors.warmIvory);
+      expect(AppColors.background, AppColors.warmIvory);
+      expect(AppColors.textPrimary, const Color(0xFF153D3D));
+      expect(AppColors.navInactiveIcon, AppColors.cocoa);
+      expect(AppColors.careGreen, AppColors.deepTeal);
+      expect(AppColors.border, const Color(0x29155E63));
     });
 
     test('keeps action and small-label contrast accessible', () {
@@ -68,21 +70,21 @@ void main() {
 
       expect(theme.brightness, Brightness.light);
       expect(status, isNotNull);
-      expect(status!.success, AppColors.deepGreen);
-      expect(status.successContainer, AppColors.surfaceContainer);
-      expect(status.warning, AppColors.brown);
-      expect(status.warningContainer, AppColors.lightBeige);
+      expect(status!.success, AppColors.success);
+      expect(status.successContainer, AppColors.successSoft);
+      expect(status.warning, AppColors.warning);
+      expect(status.warningContainer, AppColors.warningSoft);
       expect(status.error, AppColors.error);
       expect(status.errorContainer, AppColors.errorSoft);
-      expect(status.info, AppColors.deepGreen);
-      expect(status.infoContainer, AppColors.surfaceContainer);
-      expect(status.offline, AppColors.brown);
-      expect(status.disabledContent, AppColors.textMuted);
-      expect(status.disabledContainer, AppColors.surfaceVariant);
-      expect(status.focusRing, AppColors.deepGreen);
+      expect(status.info, AppColors.info);
+      expect(status.infoContainer, AppColors.infoSoft);
+      expect(status.offline, AppColors.offline);
+      expect(status.disabledContent, AppColors.disabledContent);
+      expect(status.disabledContainer, AppColors.disabledContainer);
+      expect(status.focusRing, AppColors.deepTeal);
       expect(status.scrim, AppColors.scrim);
-      expect(status.divider, AppColors.mint);
-      expect(status.outline, AppColors.deepGreen);
+      expect(status.divider, AppColors.divider);
+      expect(status.outline, AppColors.deepTeal);
       expect(theme.colorScheme.scrim, status.scrim);
       expect(theme.colorScheme.outline, status.outline);
     });
@@ -179,9 +181,12 @@ void main() {
       expect(AppRadius.checkbox, 4);
       expect(AppRadius.sm, 8);
       expect(AppRadius.md, 12);
-      expect(AppRadius.lg, 16);
-      expect(AppRadius.navActive, 22);
+      expect(AppRadius.control, 18);
+      expect(AppRadius.lg, 18);
+      expect(AppRadius.card, 22);
+      expect(AppRadius.navActive, 24);
       expect(AppRadius.xl, 24);
+      expect(AppRadius.navShell, 28);
       expect(AppRadius.mapPreview, 32);
       expect(AppRadius.pill, 999);
     });
@@ -199,6 +204,14 @@ void main() {
         greaterThan(AppControlSize.compactButtonVisualHeight),
       );
       expect(AppControlSize.inputHeight, greaterThanOrEqualTo(48));
+      expect(AppControlSize.iconSmall, 16);
+      expect(AppControlSize.progressIndicator, 18);
+      expect(AppControlSize.iconCompact, 20);
+      expect(AppControlSize.avatar, 48);
+      expect(AppControlSize.mediaPlaceholderIcon, 40);
+      expect(AppControlSize.mediaAspectRatio, closeTo(4 / 3, 0.0001));
+      expect(AppControlSize.stateIllustration, 112);
+      expect(AppControlSize.stateIcon, 48);
     });
 
     test('locks border, elevation and motion behavior', () {
@@ -217,10 +230,10 @@ void main() {
       final soft = AppShadows.soft.single;
       final raised = AppShadows.raised.single;
 
-      expect(soft.color, const Color(0x140F172A));
-      expect(soft.blurRadius, 10);
-      expect(soft.offset, const Offset(0, 4));
-      expect(raised.color, const Color(0x140F172A));
+      expect(soft.color, AppColors.shadow);
+      expect(soft.blurRadius, 14);
+      expect(soft.offset, const Offset(0, 6));
+      expect(raised.color, AppColors.shadow);
       expect(raised.blurRadius, 24);
       expect(raised.offset, const Offset(0, 8));
     });
@@ -232,13 +245,13 @@ void main() {
       _expectStyle(AppTextStyles.h1(), 28, 36, FontWeight.w700);
       _expectStyle(AppTextStyles.h2(), 24, 32, FontWeight.w700);
       _expectStyle(AppTextStyles.h3(), 20, 28, FontWeight.w700);
-      _expectStyle(AppTextStyles.h4(), 18, 24, FontWeight.w600);
-      _expectStyle(AppTextStyles.body(), 14, 20, FontWeight.w400);
+      _expectStyle(AppTextStyles.h4(), 18, 26, FontWeight.w600);
+      _expectStyle(AppTextStyles.body(), 15, 23, FontWeight.w400);
       _expectStyle(AppTextStyles.bodyStrong(), 16, 24, FontWeight.w600);
       _expectStyle(AppTextStyles.label(), 14, 20, FontWeight.w600);
-      _expectStyle(AppTextStyles.button(), 16, 24, FontWeight.w600);
+      _expectStyle(AppTextStyles.button(), 16, 22, FontWeight.w700);
       _expectStyle(AppTextStyles.buttonCompact(), 14, 20, FontWeight.w600);
-      _expectStyle(AppTextStyles.caption(), 12, 16, FontWeight.w400);
+      _expectStyle(AppTextStyles.caption(), 12, 18, FontWeight.w500);
       _expectStyle(AppTextStyles.overline(), 11, 16, FontWeight.w700);
       _expectStyle(AppTextStyles.micro(), 10, 15, FontWeight.w700);
       _expectStyle(AppTextStyles.nav(), 13, 18, FontWeight.w500);
@@ -272,8 +285,8 @@ void main() {
       expect(theme.textTheme.headlineMedium?.fontSize, 24);
       expect(theme.textTheme.headlineSmall?.fontSize, 20);
       expect(theme.textTheme.titleLarge?.fontSize, 18);
-      expect(theme.textTheme.bodyLarge?.fontSize, 14);
-      expect(theme.textTheme.bodyMedium?.fontSize, 14);
+      expect(theme.textTheme.bodyLarge?.fontSize, 15);
+      expect(theme.textTheme.bodyMedium?.fontSize, 15);
       expect(theme.textTheme.bodySmall?.fontSize, 12);
       expect(theme.textTheme.bodyLarge?.fontFamily, 'BeVietnamPro');
       expect(
@@ -297,9 +310,12 @@ void main() {
       outlinedStyle.minimumSize?.resolve(states),
       const Size(AppControlSize.minTouchTarget, AppControlSize.buttonHeight),
     );
-    expect(_radiusOf(filledStyle.shape?.resolve(states)), AppRadius.md);
-    expect(_radiusOf(theme.inputDecorationTheme.enabledBorder), AppRadius.md);
-    expect(_radiusOf(theme.cardTheme.shape), AppRadius.md);
+    expect(_radiusOf(filledStyle.shape?.resolve(states)), AppRadius.control);
+    expect(
+      _radiusOf(theme.inputDecorationTheme.enabledBorder),
+      AppRadius.control,
+    );
+    expect(_radiusOf(theme.cardTheme.shape), AppRadius.card);
   });
 }
 

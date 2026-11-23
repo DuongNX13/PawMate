@@ -1,9 +1,14 @@
 export 'pawmate_adaptive.dart';
+export 'pawmate_avatar.dart';
+export 'pawmate_badge.dart';
 export 'pawmate_bottom_nav.dart';
 export 'pawmate_button.dart';
 export 'pawmate_card.dart';
 export 'pawmate_chip.dart';
 export 'pawmate_fixed_cta_bar.dart';
+export 'pawmate_icon_button.dart';
+export 'pawmate_layout.dart';
+export 'pawmate_media.dart';
 export 'pawmate_page_scaffold.dart';
 export 'pawmate_skeleton.dart';
 export 'pawmate_state_view.dart';

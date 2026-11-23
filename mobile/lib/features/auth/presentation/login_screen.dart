@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_auth_layout.dart';
 import '../../../core/widgets/pawmate_button.dart';
 import '../../../core/widgets/pawmate_text_field.dart';
 import '../application/auth_session_coordinator.dart';
@@ -252,6 +253,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final heroHeight = PawMateAuthLayout.heroHeight(
+      context,
+      widthFactor: 0.7,
+      min: 208,
+      max: 300,
+      keyboard: 120,
+    );
+    final titleGap = PawMateAuthLayout.sectionGap(
+      context,
+      regular: 18,
+      compact: 12,
+    );
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -261,33 +274,48 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const _AuthHero(
+              _AuthHero(
                 imageAsset: 'assets/images/auth/login_vet_dog.png',
-                height: 300,
+                height: heroHeight,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+                padding: const EdgeInsets.fromLTRB(24, 18, 24, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
                       'Mừng bạn đã trở lại',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.h1(color: AppColors.primary500),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Đăng nhập để theo dõi sức khỏe thú cưng của bạn.',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodyStrong(
-                        color: AppColors.textSecondary,
+                      style: AppTextStyles.h1().copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
+                    SizedBox(height: titleGap),
+                    Builder(
+                      builder: (context) {
+                        final subtitle = Text(
+                          'Đăng nhập để theo dõi sức khỏe thú cưng của bạn.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.field(
+                            color: AppColors.textSecondary,
+                          ),
+                        );
+                        if (MediaQuery.textScalerOf(context).scale(1) >
+                            AppControlSize.compactButtonMaxTextScale) {
+                          return subtitle;
+                        }
+                        return FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: subtitle,
+                        );
+                      },
+                    ),
                     if (_errorText != null) ...[
-                      const SizedBox(height: 40),
+                      const SizedBox(height: AppSpacing.s16),
                       _LoginErrorBanner(message: _errorText!),
+                      const SizedBox(height: AppSpacing.s16),
                     ] else
-                      const SizedBox(height: 40),
+                      const SizedBox(height: AppSpacing.s32),
                     Form(
                       key: _formKey,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -301,6 +329,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             hintText: 'example@gmail.com',
                             isRequired: true,
                             showRequiredIndicator: false,
+                            labelSpacing: AppSpacing.s4,
                             enabled: !_isSubmitting,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
@@ -309,7 +338,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               LengthLimitingTextInputFormatter(254),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: AppSpacing.s12),
                           PawMateTextField(
                             key: const Key('login-password-field'),
                             controller: _passwordController,
@@ -317,6 +346,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             hintText: '••••••••',
                             isRequired: true,
                             showRequiredIndicator: false,
+                            labelSpacing: AppSpacing.s4,
                             enabled: !_isSubmitting,
                             labelTrailing: TextButton(
                               key: const Key('login-forgot-password'),
@@ -369,14 +399,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 34),
+                    const SizedBox(height: AppSpacing.s12),
                     PawMateButton(
                       key: const Key('login-submit-button'),
-                      label: 'Đăng nhập',
+                      label: _errorText == null ? 'Đăng nhập' : 'Thử lại',
+                      semanticLabel: _errorText == null
+                          ? 'Đăng nhập'
+                          : 'Thử lại đăng nhập',
                       isLoading: _isSubmitting,
                       onPressed: _isSubmitting ? null : _submitLogin,
                     ),
-                    const SizedBox(height: 22),
                     TextButton(
                       key: const Key('login-register-cta'),
                       style: TextButton.styleFrom(
@@ -434,6 +466,7 @@ class _AuthHero extends StatelessWidget {
       label: semanticLabel,
       child: ExcludeSemantics(
         child: SizedBox(
+          key: const ValueKey('login-responsive-hero'),
           height: height,
           child: Image.asset(
             imageAsset,
@@ -467,23 +500,24 @@ class _LoginErrorBanner extends StatelessWidget {
       label: 'Lỗi đăng nhập: $message',
       child: ExcludeSemantics(
         child: Container(
+          key: const Key('login-error-banner'),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
             color: AppColors.errorSoft,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.error),
+            border: Border.all(color: AppColors.error.withValues(alpha: 0.28)),
+            borderRadius: BorderRadius.circular(AppRadius.control),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info_outline_rounded, color: AppColors.error),
+              const Icon(Icons.error_rounded, size: 20, color: AppColors.error),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   message,
                   style: AppTextStyles.body(
                     color: AppColors.error,
-                  ).copyWith(fontWeight: FontWeight.w600),
+                  ).copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
             ],

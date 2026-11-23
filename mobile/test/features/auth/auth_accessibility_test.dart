@@ -8,7 +8,7 @@ import 'package:pawmate_mobile/features/auth/presentation/register_screen.dart';
 import '../../test_support/ui_test_helpers.dart';
 
 void main() {
-  testWidgets('Register remains usable at 1.3 text scale with a 48dp CTA', (
+  testWidgets('Register remains usable at 2.0 text scale with a 48dp CTA', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -17,7 +17,7 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           home: const RegisterScreen(),
         ),
       ),
@@ -40,7 +40,7 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('OTP remains usable at 1.3 text scale with a 48dp CTA', (
+  testWidgets('OTP remains usable at 2.0 text scale with a 48dp CTA', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -49,7 +49,7 @@ void main() {
       ProviderScope(
         child: MaterialApp(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           home: OtpScreen(
             email: 'nam@example.com',
             verificationExpiresAt: DateTime.now().add(

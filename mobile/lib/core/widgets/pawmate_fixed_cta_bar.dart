@@ -189,22 +189,32 @@ class PawMateFixedCtaBar extends StatelessWidget {
       AppSpacing.s16,
       AppSpacing.s12,
     ),
+    this.backgroundColor = AppColors.surface,
+    this.elevation = AppElevation.floating,
+    this.shadowColor = AppColors.shadow,
+    this.liftAboveIme = true,
   });
 
   final PawMateAction primaryAction;
   final PawMateAction? secondaryAction;
   final EdgeInsetsGeometry padding;
+  final Color backgroundColor;
+  final double elevation;
+  final Color shadowColor;
+  final bool liftAboveIme;
 
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.paddingOf(context).bottom;
     final imeBottom = MediaQuery.viewInsetsOf(context).bottom;
-    final imeSpacer = math.max(0.0, imeBottom - safeBottom).toDouble();
+    final imeSpacer = liftAboveIme
+        ? math.max(0.0, imeBottom - safeBottom).toDouble()
+        : 0.0;
 
     return Material(
-      color: AppColors.surface,
-      elevation: AppElevation.floating,
-      shadowColor: AppColors.shadow,
+      color: backgroundColor,
+      elevation: elevation,
+      shadowColor: shadowColor,
       child: SafeArea(
         top: false,
         minimum: EdgeInsets.zero,

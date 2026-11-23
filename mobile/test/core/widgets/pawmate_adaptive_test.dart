@@ -41,7 +41,10 @@ void main() {
         ),
       );
 
-      expect(tester.widget<IconButton>(find.byType(IconButton)).onPressed, isNull);
+      expect(
+        tester.widget<IconButton>(find.byType(IconButton)).onPressed,
+        isNull,
+      );
     });
 
     testWidgets('adaptive dialog uses native $platformName primitive', (
@@ -61,8 +64,12 @@ void main() {
                     title: 'Xóa lịch nhắc?',
                     message: 'Bạn có thể tạo lại lịch nhắc sau.',
                     actions: const [
-                      PawMateAdaptiveAction(label: 'Hủy'),
                       PawMateAdaptiveAction(
+                        key: Key('adaptive-dialog-cancel'),
+                        label: 'Hủy',
+                      ),
+                      PawMateAdaptiveAction(
+                        key: Key('adaptive-dialog-delete'),
                         label: 'Xóa',
                         value: 'delete',
                         isDestructiveAction: true,
@@ -85,7 +92,7 @@ void main() {
             : find.byType(AlertDialog),
         findsOneWidget,
       );
-      await tester.tap(find.text('Xóa'));
+      await tester.tap(find.byKey(const Key('adaptive-dialog-delete')));
       await tester.pumpAndSettle();
       expect(selected, 'delete');
       expectNoFlutterOverflow(tester);
@@ -127,11 +134,13 @@ void main() {
                         title: 'Chọn thao tác',
                         actions: const [
                           PawMateAdaptiveAction(
+                            key: Key('adaptive-sheet-edit'),
                             label: 'Chỉnh sửa',
                             value: 'edit',
                             icon: Icons.edit_outlined,
                           ),
                           PawMateAdaptiveAction(
+                            key: Key('adaptive-sheet-delete'),
                             label: 'Xóa',
                             value: 'delete',
                             icon: Icons.delete_outline,
@@ -178,6 +187,8 @@ void main() {
       } else {
         expect(find.byType(ListTile), findsNWidgets(2));
       }
+      expect(find.byKey(const Key('adaptive-sheet-edit')), findsOneWidget);
+      expect(find.byKey(const Key('adaptive-sheet-delete')), findsOneWidget);
       await tester.tap(find.text('Hủy'));
       await tester.pumpAndSettle();
       expectNoFlutterOverflow(tester);

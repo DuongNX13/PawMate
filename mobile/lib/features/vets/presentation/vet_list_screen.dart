@@ -255,7 +255,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
               _VetListHeader(
                 onBack: () => PawMateNavigation.backOrGo(context, '/vets/map'),
               ),
-              const SizedBox(height: AppSpacing.s12),
+              const SizedBox(height: AppSpacing.s8),
               _VetSearchField(
                 controller: _searchController,
                 onChanged: _handleSearchChanged,
@@ -315,10 +315,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
                 city: finder.selectedCity == 'Tất cả'
                     ? 'Quận 1'
                     : finder.selectedCity,
-                onSettingsTap: () => _showPlaceholder(
-                  context,
-                  'Quyền vị trí sẽ nối với thiết lập hệ thống ở bước tích hợp.',
-                ),
+                onSettingsTap: () => context.push('/vets/map'),
               ),
               const SizedBox(height: AppSpacing.s24),
               _ResultsHeader(
@@ -375,6 +372,21 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
                       Text(
                         'Thử đổi từ khóa, nới bộ lọc hoặc chuyển sang khu vực khác để tiếp tục tìm kiếm.',
                         style: AppTextStyles.bodyCompact(),
+                      ),
+                      const SizedBox(height: 16),
+                      PawMateButton(
+                        key: const Key('vet-list-clear-empty-filters'),
+                        label: 'Xóa bộ lọc',
+                        fullWidth: false,
+                        variant: PawMateButtonVariant.secondary,
+                        onPressed: () {
+                          _searchDebounce?.cancel();
+                          _searchController.clear();
+                          ref
+                              .read(vetFinderSessionProvider.notifier)
+                              .resetFilters();
+                          _syncRequestIfNeeded();
+                        },
                       ),
                     ],
                   ),
@@ -479,12 +491,6 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
     }
     PawMateNavigation.backOrGo(context, '/vets/map');
   }
-
-  static void _showPlaceholder(BuildContext context, String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
 }
 
 class _VetListHeader extends StatelessWidget {
@@ -514,8 +520,8 @@ class _VetListHeader extends StatelessWidget {
               image: true,
               label: 'Ảnh đại diện thú cưng Kem',
               child: Container(
-                width: 48,
-                height: 48,
+                width: 42,
+                height: 42,
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
@@ -567,7 +573,10 @@ class _VetSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 56),
+      key: const Key('vet-list-search-shell'),
+      constraints: const BoxConstraints(
+        minHeight: AppControlSize.minTouchTarget,
+      ),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -601,11 +610,12 @@ class _VetSearchField extends StatelessWidget {
           PopupMenuButton<String>(
             key: const Key('vet-list-filter-menu'),
             tooltip: 'Bộ lọc phòng khám',
+            padding: EdgeInsets.zero,
             onSelected: onFilterSelected,
             itemBuilder: (_) => filterItems,
             icon: Container(
-              width: 48,
-              height: 48,
+              width: AppControlSize.compactButtonVisualHeight,
+              height: AppControlSize.compactButtonVisualHeight,
               decoration: BoxDecoration(
                 color: AppColors.primary500,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -824,6 +834,7 @@ class _LocationPrompt extends StatelessWidget {
             ),
           ),
           TextButton(
+            key: const Key('vet-list-enable-location'),
             onPressed: onSettingsTap,
             style: TextButton.styleFrom(
               minimumSize: const Size(72, AppControlSize.minTouchTarget),
@@ -903,6 +914,7 @@ class _VetCard extends StatelessWidget {
       button: true,
       label: 'Mở ${vet.name}',
       child: InkWell(
+        key: Key('vet-list-card-${vet.id}'),
         borderRadius: BorderRadius.circular(AppRadius.xl),
         onTap: onTap,
         child: Ink(
@@ -934,20 +946,11 @@ class _VetCard extends StatelessWidget {
                               style: AppTextStyles.h4(color: titleColor),
                             ),
                           ),
-                          if (!isCompact) ...[
-                            const SizedBox(width: 10),
-                            ratingBadge,
-                          ],
+                          const SizedBox(width: 10),
+                          ratingBadge,
                         ],
                       ),
-                      if (isCompact) ...[
-                        const SizedBox(height: 6),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: ratingBadge,
-                        ),
-                      ],
-                      const SizedBox(height: 6),
+                      SizedBox(height: isCompact ? 2 : 6),
                       Text(
                         vet.address,
                         maxLines: 1,
@@ -956,7 +959,7 @@ class _VetCard extends StatelessWidget {
                           color: subtitleColor,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: isCompact ? 4 : 8),
                       Row(
                         children: [
                           Container(
@@ -987,7 +990,7 @@ class _VetCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: isCompact ? 6 : 10),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -1005,7 +1008,7 @@ class _VetCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: isCompact ? 6 : 10),
                       Row(
                         children: [
                           Icon(

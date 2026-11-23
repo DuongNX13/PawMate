@@ -91,9 +91,53 @@ void main() {
     expectNoFlutterOverflow(tester);
   });
 
+  testWidgets(
+    '[UI-A11Y] shared fixed CTA stays hit-testable at 320dp, scale 2.0 and IME',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          home: PawMatePageScaffold(
+            topBar: const PawMateTopBar(title: 'Biểu mẫu dài'),
+            fixedCtaBar: PawMateFixedCtaBar(
+              primaryAction: PawMateAction(label: 'Tiếp tục', onPressed: () {}),
+            ),
+            body: const SingleChildScrollView(
+              padding: EdgeInsets.all(16),
+              child: PawMateTextField(
+                label: 'Đặc điểm nhận dạng',
+                autofocus: true,
+                maxLines: 4,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await setKeyboardInset(tester, bottom: 300);
+      await tester.pumpAndSettle();
+
+      final cta = find.text('Tiếp tục');
+      final ctaRect = tester.getRect(cta);
+      expect(ctaRect.bottom, lessThanOrEqualTo(268));
+      final ctaButton = find.ancestor(
+        of: cta,
+        matching: find.byType(PawMateButton),
+      );
+      expect(tester.getSize(ctaButton).height, greaterThanOrEqualTo(48));
+      await tester.tap(cta);
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
   testWidgets('loading, disabled and error semantics expose exact state', (
     tester,
   ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(supportsAnnounce: false);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await setTestViewport(tester, size: const Size(390, 844));
     final semantics = tester.ensureSemantics();
     await tester.pumpWidget(
@@ -136,9 +180,18 @@ void main() {
     expect(disabled.label, 'Không khả dụng');
     expect(disabled.flagsCollection.isEnabled, Tristate.isFalse);
 
-    final invalid = tester.getSemantics(find.byKey(const Key('invalid-field')));
+    final invalid = tester.getSemantics(find.byType(EditableText));
     expect(invalid.label, 'Tên thú cưng, bắt buộc');
-    expect(invalid.value, 'Lỗi: Vui lòng nhập tên');
+    expect(invalid.value, isEmpty);
+    final error = tester.getSemantics(find.text('Vui lòng nhập tên'));
+    expect(error.label, contains('Vui lòng nhập tên'));
+    expect(
+      error.getSemanticsData().flagsCollection.isLiveRegion ||
+          (error.parent?.getSemanticsData().flagsCollection.isLiveRegion ??
+              false),
+      isTrue,
+      reason: error.parent?.toStringDeep(),
+    );
     expectNoFlutterOverflow(tester);
     semantics.dispose();
   });
@@ -179,6 +232,51 @@ void main() {
       expectNoFlutterOverflow(tester);
     }
     semantics.dispose();
+  });
+
+  testWidgets('state recovery action remains reachable at 320dp/text scale 2', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(320, 568));
+    var retries = 0;
+    var secondaryActions = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        builder: testTextScaleBuilder(2),
+        home: Scaffold(
+          bottomNavigationBar: const PawMateBottomNav(currentRoute: '/pets'),
+          body: PawMateStateView(
+            key: const Key('large-text-state'),
+            type: PawMateStateType.offline,
+            title: 'Không tải được dữ liệu',
+            message:
+                'Không thể đồng bộ hồ sơ thú cưng. Vui lòng kiểm tra kết nối và thử lại.',
+            primaryActionLabel: 'Thử lại',
+            onPrimaryAction: () => retries++,
+            secondaryActionLabel: 'Về trang chủ',
+            onSecondaryAction: () => secondaryActions++,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final retry = find.text('Thử lại');
+    await tester.ensureVisible(retry);
+    final retryRect = tester.getRect(retry);
+    expect(retryRect.top, greaterThanOrEqualTo(0));
+    expect(retryRect.bottom, lessThanOrEqualTo(568));
+    await tester.tap(retry);
+    expect(retries, 1);
+    final secondary = find.text('Về trang chủ');
+    await tester.ensureVisible(secondary);
+    final secondaryRect = tester.getRect(secondary);
+    expect(secondaryRect.top, greaterThanOrEqualTo(0));
+    expect(secondaryRect.bottom, lessThanOrEqualTo(568));
+    await tester.tap(secondary);
+    expect(secondaryActions, 1);
+    expectNoFlutterOverflow(tester);
   });
 
   testWidgets('top bar default back action pops current route', (tester) async {

@@ -75,20 +75,28 @@ class PawMateButton extends StatelessWidget {
         children: [
           if (isLoading)
             SizedBox.square(
-              dimension: 18,
+              dimension: AppControlSize.progressIndicator,
               child: CircularProgressIndicator(
                 strokeWidth: AppBorderWidth.focus,
                 color: colors.foreground,
               ),
             )
           else if (leadingIcon != null)
-            Icon(leadingIcon, size: 20, color: colors.foreground),
+            Icon(
+              leadingIcon,
+              size: AppControlSize.iconCompact,
+              color: colors.foreground,
+            ),
           if (isLoading || leadingIcon != null)
             const SizedBox(width: AppSpacing.s8),
           Flexible(fit: FlexFit.loose, child: labelText),
           if (!isLoading && trailingIcon != null) ...[
             const SizedBox(width: AppSpacing.s8),
-            Icon(trailingIcon, size: 20, color: colors.foreground),
+            Icon(
+              trailingIcon,
+              size: AppControlSize.iconCompact,
+              color: colors.foreground,
+            ),
           ],
         ],
       );
@@ -112,7 +120,7 @@ class PawMateButton extends StatelessWidget {
             color: colors.border,
             width: AppBorderWidth.hairline,
           ),
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           boxShadow: enabled && variant == PawMateButtonVariant.primary
               ? AppShadows.soft
               : null,
@@ -127,7 +135,7 @@ class PawMateButton extends StatelessWidget {
         ),
         child: Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(AppRadius.control),
           child: InkWell(
             onTap: enabled ? onPressed : null,
             focusNode: focusNode,
@@ -142,7 +150,7 @@ class PawMateButton extends StatelessWidget {
               }
               return Colors.transparent;
             }),
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: BorderRadius.circular(AppRadius.control),
             child: Center(child: visual),
           ),
         ),
@@ -175,7 +183,7 @@ class PawMateButton extends StatelessWidget {
       if (isLoading) Icons.hourglass_empty else leadingIcon,
       if (!isLoading) trailingIcon,
     ].whereType<IconData>().length;
-    final iconWidth = iconCount * 20.0;
+    final iconWidth = iconCount * AppControlSize.iconCompact;
     final gaps = iconCount * AppSpacing.s8;
     final horizontalPadding = (compact ? AppSpacing.s12 : AppSpacing.s16) * 2;
     return math

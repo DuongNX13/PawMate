@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
+import 'theme/pawmate_scroll_behavior.dart';
 
 class PawMateApp extends ConsumerWidget {
   const PawMateApp({super.key});
@@ -18,6 +19,7 @@ class PawMateApp extends ConsumerWidget {
       restorationScopeId: 'pawmate-app',
       theme: AppTheme.light(),
       themeMode: ThemeMode.light,
+      scrollBehavior: const PawMateScrollBehavior(),
       locale: const Locale('vi', 'VN'),
       supportedLocales: const [Locale('vi', 'VN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,

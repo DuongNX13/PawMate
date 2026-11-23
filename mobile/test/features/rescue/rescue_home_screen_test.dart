@@ -72,7 +72,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light(),
-        builder: testTextScaleBuilder(1.3),
+        builder: testTextScaleBuilder(2),
         home: const RescueHomeScreen(),
       ),
     );

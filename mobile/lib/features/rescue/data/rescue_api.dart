@@ -6,6 +6,7 @@ import '../domain/rescue_case_models.dart';
 
 abstract interface class RescueCaseSource {
   Future<RescueCasePage> listCases(RescueCaseQuery query);
+  Future<RescueCaseDetail> getCase(String caseId);
 }
 
 final rescueApiProvider = Provider<RescueCaseSource>((ref) {
@@ -45,6 +46,28 @@ class RescueApi implements RescueCaseSource {
     } on FormatException {
       throw const RescueApiException(
         'Máy chủ trả về dữ liệu cứu hộ không hợp lệ.',
+        code: 'INVALID_RESPONSE',
+      );
+    }
+  }
+
+  @override
+  Future<RescueCaseDetail> getCase(String caseId) async {
+    try {
+      final response = await _dio.get(
+        '/rescue/cases/$caseId',
+        options: Options(
+          headers: const {'Cache-Control': 'no-store'},
+          extra: const {'pawmate.cache': 'disabled'},
+        ),
+      );
+      final envelope = _readMap(response.data);
+      return RescueCaseDetail.fromJson(_readMap(envelope['data']));
+    } on DioException catch (error) {
+      throw _toException(error);
+    } on FormatException {
+      throw const RescueApiException(
+        'Máy chủ trả về dữ liệu chi tiết cứu hộ không hợp lệ.',
         code: 'INVALID_RESPONSE',
       );
     }

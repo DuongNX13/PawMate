@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,14 +8,15 @@ import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/media/image_picker_service.dart';
 import '../../../core/widgets/pawmate_button.dart';
-import '../../../core/widgets/pawmate_card.dart';
 import '../../../core/widgets/pawmate_fixed_cta_bar.dart';
 import '../../../core/widgets/pawmate_page_scaffold.dart';
 import '../../../core/widgets/pawmate_text_field.dart';
 import '../../../core/widgets/pawmate_top_bar.dart';
-import '../../../core/widgets/pawmate_upload_tile.dart';
+import '../../preferences/application/preference_providers.dart';
+import '../../preferences/application/privacy_surface_policy.dart';
 import '../application/rescue_create_provider.dart';
 import '../domain/rescue_draft_models.dart';
+import 'rescue_location_picker_sheet.dart';
 
 class RescueCreateScreen extends ConsumerStatefulWidget {
   const RescueCreateScreen({super.key});
@@ -53,15 +56,29 @@ class _RescueCreateScreenState extends ConsumerState<RescueCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     final state = ref.watch(rescueCreateProvider);
     final notifier = ref.read(rescueCreateProvider.notifier);
+    final privacyState = ref.watch(privacyDefaultsProvider);
+    final privacyDefaults =
+        privacyState.value ??
+        ref.read(privacyDefaultsProvider.notifier).lastSuccessful;
+    final privacyPolicy = privacyDefaults == null
+        ? PrivacySurfacePolicy.defaultSafe
+        : PrivacySurfacePolicy.fromDefaults(privacyDefaults);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) notifier.applyPrivacyPolicy(privacyPolicy);
+    });
     final draft = state.draft;
-    final firstMedia = draft.media.isEmpty ? null : draft.media.first;
 
     return PawMatePageScaffold(
       topBar: PawMateTopBar(
-        title: 'Tạo tin báo mất',
+        title: usesExpandedTextLayout ? 'Tạo tin' : 'Tạo tin báo mất',
+        semanticTitle: 'Tạo tin báo mất',
         showBackButton: true,
+        centerTitle: true,
         onBack: () => context.pop(),
       ),
       fixedCtaBar: PawMateFixedCtaBar(
@@ -85,82 +102,75 @@ class _RescueCreateScreenState extends ConsumerState<RescueCreateScreen> {
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.s16,
-          AppSpacing.s8,
+          0,
           AppSpacing.s16,
           AppSpacing.s32,
         ),
         children: [
-          const _FormIntro(
-            eyebrow: 'BƯỚC 1/2',
-            title: 'Giúp mọi người nhận ra bé',
-            message:
-                'Thêm thông tin rõ ràng để người nhìn thấy có thể liên hệ an toàn.',
-          ),
           if (state.errorMessage != null) ...[
-            const SizedBox(height: AppSpacing.s16),
             _FormError(message: state.errorMessage!),
+            const SizedBox(height: AppSpacing.s16),
           ],
-          const SizedBox(height: AppSpacing.s24),
-          Text('Ảnh thú cưng', style: AppTextStyles.h4()),
-          const SizedBox(height: AppSpacing.s8),
-          PawMateUploadTile(
-            key: const Key('rescue-create-media-upload'),
-            label: firstMedia == null ? 'Thêm ảnh đầu tiên' : 'Ảnh thú cưng',
-            acceptedMediaLabel: 'JPEG, PNG, WebP ≤10 MB · MP4 ≤50 MB',
-            state: firstMedia == null
-                ? PawMateUploadState.empty
-                : PawMateUploadState.uploaded,
-            preview: firstMedia == null
-                ? null
-                : _LocalMediaPreview(path: firstMedia.path),
-            onPick: () => _showMediaPicker(context, notifier),
-            onRemove: firstMedia == null
-                ? null
-                : () => notifier.removeMedia(firstMedia),
+          _MediaSection(
+            media: draft.media,
+            onAdd: () => _showMediaPicker(context, notifier),
+            onRemove: notifier.removeMedia,
           ),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            '${draft.media.length}/5 tệp · Ảnh sẽ được kiểm tra trước khi đăng',
-            style: AppTextStyles.caption(),
-          ),
-          const SizedBox(height: AppSpacing.s24),
+          const SizedBox(height: AppSpacing.s32),
           PawMateTextField(
             key: const Key('rescue-create-pet-name-field'),
             label: 'Tên thú cưng',
             controller: _nameController,
-            hintText: 'Ví dụ: Mochi',
+            hintText: 'VD: Mochi',
             isRequired: true,
+            showRequiredIndicator: false,
             textInputAction: TextInputAction.next,
             maxLength: 50,
+            counterText: '',
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.s16,
+              vertical: AppSpacing.s16,
+            ),
           ),
-          const SizedBox(height: AppSpacing.s16),
+          const SizedBox(height: 20),
           Text('Loài', style: AppTextStyles.label()),
           const SizedBox(height: AppSpacing.s8),
           _SpeciesSelector(
             value: draft.species,
             onChanged: notifier.setSpecies,
           ),
-          const SizedBox(height: AppSpacing.s16),
+          const SizedBox(height: 20),
           PawMateTextField(
             key: const Key('rescue-create-breed-field'),
             label: 'Giống / màu lông',
             controller: _breedController,
-            hintText: 'Ví dụ: Poodle, trắng kem',
+            hintText: 'VD: Poodle, trắng kem',
             isRequired: true,
+            showRequiredIndicator: false,
             textInputAction: TextInputAction.done,
             maxLength: 100,
+            counterText: '',
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.s16,
+              vertical: AppSpacing.s16,
+            ),
           ),
-          const SizedBox(height: AppSpacing.s24),
-          Text('Khu vực và thời gian thất lạc', style: AppTextStyles.h4()),
+          const SizedBox(height: 20),
+          Text('Khu vực mất', style: AppTextStyles.label()),
           const SizedBox(height: AppSpacing.s8),
           _LocationCard(
             location: draft.exactLocation,
             onTap: () => _pickLocation(context, notifier),
           ),
-          const SizedBox(height: AppSpacing.s12),
+          const SizedBox(height: AppSpacing.s24),
           _LostAtField(
             value: draft.lostAt,
             onTap: () => _pickLostAt(context, notifier),
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          _PrivacyDefaultsNotice(
+            hideHouseNumber: state.hideHouseNumber,
+            isFallback: privacyDefaults == null,
           ),
         ],
       ),
@@ -240,40 +250,273 @@ class _RescueCreateScreenState extends ConsumerState<RescueCreateScreen> {
     final location = await showModalBottomSheet<RescueDraftLocation>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface,
-      builder: (context) => const _LocationPickerSheet(),
+      useSafeArea: true,
+      backgroundColor: AppColors.background,
+      builder: (context) => RescueLocationPickerSheet(
+        initialLocation: notifier.draft.exactLocation,
+      ),
     );
-    if (location != null) notifier.setLocation(location);
+    if (mounted && location != null) notifier.setLocation(location);
   }
 }
 
-class _FormIntro extends StatelessWidget {
-  const _FormIntro({
-    required this.eyebrow,
-    required this.title,
-    required this.message,
+class _PrivacyDefaultsNotice extends StatelessWidget {
+  const _PrivacyDefaultsNotice({
+    required this.hideHouseNumber,
+    required this.isFallback,
   });
 
-  final String eyebrow;
-  final String title;
-  final String message;
+  final bool hideHouseNumber;
+  final bool isFallback;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        eyebrow,
-        style: AppTextStyles.caption(
-          color: AppColors.deepGreen,
-        ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    liveRegion: isFallback,
+    label:
+        'Quyền riêng tư đang áp dụng. Vị trí chính xác chỉ lưu riêng cho chủ tin. Cộng đồng chỉ thấy khu vực ước tính. Ảnh và video luôn được loại bỏ metadata vị trí.',
+    child: ExcludeSemantics(
+      child: Container(
+        key: const Key('rescue-create-privacy-defaults'),
+        padding: const EdgeInsets.all(AppSpacing.s12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.shield_outlined,
+              color: AppColors.deepGreen,
+              size: 20,
+            ),
+            const SizedBox(width: AppSpacing.s8),
+            Expanded(
+              child: Text(
+                '${hideHouseNumber ? 'Ưu tiên ẩn số nhà trong bản xem trước.' : 'Địa chỉ gợi nhớ chỉ được lưu ở vùng riêng tư của chủ tin.'} '
+                'Cộng đồng luôn chỉ thấy khu vực ước tính. '
+                'Metadata vị trí trong ảnh/video luôn được loại bỏ.'
+                '${isFallback ? ' Đang dùng mức bảo vệ an toàn trong lúc tải cài đặt.' : ''}',
+                style: AppTextStyles.caption(color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
       ),
-      const SizedBox(height: AppSpacing.s8),
-      Text(title, style: AppTextStyles.pageTitle()),
-      const SizedBox(height: AppSpacing.s4),
-      Text(message, style: AppTextStyles.body(color: AppColors.textSecondary)),
-    ],
+    ),
   );
+}
+
+class _MediaSection extends StatelessWidget {
+  const _MediaSection({
+    required this.media,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  final List<RescueDraftMedia> media;
+  final VoidCallback onAdd;
+  final ValueChanged<RescueDraftMedia> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final canAdd = media.length < RescueMediaPolicy.maxItems;
+    return Semantics(
+      container: true,
+      label:
+          'Ảnh hoặc video, ${media.length} trên ${RescueMediaPolicy.maxItems} tệp',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('Ảnh/Video', style: AppTextStyles.h4())),
+              PawMateButton(
+                label: 'Tải lên',
+                onPressed: canAdd ? onAdd : null,
+                leadingIcon: Icons.add_a_photo_outlined,
+                fullWidth: false,
+                compact: true,
+                semanticLabel: canAdd
+                    ? 'Tải ảnh hoặc video lên'
+                    : 'Đã đủ 5 ảnh hoặc video',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          SizedBox(
+            height: 112,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: media.length + (canAdd ? 1 : 0),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.s12),
+              itemBuilder: (context, index) {
+                if (index == media.length) {
+                  return _AddMediaTile(onTap: onAdd);
+                }
+                final item = media[index];
+                return _MediaPreviewTile(
+                  key: ValueKey('rescue-create-media-preview-$index'),
+                  media: item,
+                  onRemove: () => onRemove(item),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AddMediaTile extends StatelessWidget {
+  const _AddMediaTile({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconOnly = MediaQuery.textScalerOf(context).scale(1) > 1.3;
+    return Semantics(
+      button: true,
+      label: 'Thêm ảnh hoặc video',
+      onTap: onTap,
+      child: Material(
+        key: const Key('rescue-create-media-upload'),
+        color: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: SizedBox.square(
+            dimension: 112,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.brown,
+                  size: 28,
+                ),
+                if (!iconOnly) ...[
+                  const SizedBox(height: AppSpacing.s8),
+                  Text('Ảnh/Video', style: AppTextStyles.caption()),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MediaPreviewTile extends StatelessWidget {
+  const _MediaPreviewTile({
+    super.key,
+    required this.media,
+    required this.onRemove,
+  });
+
+  final RescueDraftMedia media;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final embeddedRemoveControl = media.path.startsWith('asset:');
+    return SizedBox.square(
+      dimension: 112,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: media.mimeType == 'video/mp4'
+                ? const ColoredBox(
+                    color: AppColors.surfaceContainer,
+                    child: Icon(
+                      Icons.play_circle_outline_rounded,
+                      color: AppColors.deepGreen,
+                      size: 42,
+                    ),
+                  )
+                : _DraftImage(path: media.path),
+          ),
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Semantics(
+              button: true,
+              label: 'Xóa ảnh hoặc video',
+              onTap: onRemove,
+              child: ExcludeSemantics(
+                child: SizedBox.square(
+                  dimension: AppControlSize.minTouchTarget,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onRemove,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      child: embeddedRemoveControl
+                          ? const SizedBox.expand()
+                          : Align(
+                              alignment: Alignment.topRight,
+                              child: Container(
+                                width: 30,
+                                height: 30,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.scrim,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  color: AppColors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DraftImage extends StatelessWidget {
+  const _DraftImage({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget fallback(BuildContext context, Object error, StackTrace? stack) =>
+        const ColoredBox(
+          color: AppColors.surfaceContainer,
+          child: Icon(
+            Icons.broken_image_outlined,
+            color: AppColors.deepGreen,
+            size: 36,
+          ),
+        );
+    final image = path.startsWith('asset:')
+        ? Image.asset(
+            path.substring('asset:'.length),
+            fit: BoxFit.cover,
+            errorBuilder: fallback,
+          )
+        : Image.file(File(path), fit: BoxFit.cover, errorBuilder: fallback);
+    return image;
+  }
 }
 
 class _FormError extends StatelessWidget {
@@ -314,26 +557,80 @@ class _SpeciesSelector extends StatelessWidget {
   final ValueChanged<RescueDraftSpecies> onChanged;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: AppSpacing.s8,
-    runSpacing: AppSpacing.s8,
+  Widget build(BuildContext context) => Row(
     children: [
-      for (final species in RescueDraftSpecies.values)
-        Semantics(
-          selected: value == species,
-          button: true,
-          label: species.label,
-          child: ChoiceChip(
-            label: Text(species.label),
-            selected: value == species,
-            onSelected: (_) => onChanged(species),
-            selectedColor: AppColors.mint,
-            labelStyle: AppTextStyles.label(
-              color: value == species ? AppColors.deepGreen : AppColors.brown,
-            ),
+      for (
+        var index = 0;
+        index < RescueDraftSpecies.values.length;
+        index++
+      ) ...[
+        if (index > 0) const SizedBox(width: AppSpacing.s8),
+        Expanded(
+          flex: value == RescueDraftSpecies.values[index] ? 2 : 1,
+          child: _SpeciesOption(
+            species: RescueDraftSpecies.values[index],
+            selected: value == RescueDraftSpecies.values[index],
+            onTap: () => onChanged(RescueDraftSpecies.values[index]),
           ),
         ),
+      ],
     ],
+  );
+}
+
+class _SpeciesOption extends StatelessWidget {
+  const _SpeciesOption({
+    required this.species,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final RescueDraftSpecies species;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    selected: selected,
+    button: true,
+    label: species.label,
+    onTap: onTap,
+    child: Material(
+      color: selected ? AppColors.deepGreen : AppColors.surface,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: selected ? AppColors.deepGreen : AppColors.border,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const StadiumBorder(),
+        child: SizedBox(
+          height: AppControlSize.minTouchTarget,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.pets_rounded,
+                size: 20,
+                color: selected ? AppColors.white : AppColors.deepGreen,
+              ),
+              const SizedBox(width: AppSpacing.s8),
+              Flexible(
+                child: Text(
+                  species.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.label(
+                    color: selected ? AppColors.white : AppColors.brown,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
 }
 
@@ -344,46 +641,61 @@ class _LocationCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => PawMateCard(
-    key: const Key('rescue-create-location-card'),
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: location == null
+        ? 'Chọn khu vực mất trên bản đồ'
+        : 'Đã chọn ${location!.formattedAddress ?? 'khu vực mất'}, chạm để thay đổi',
     onTap: onTap,
-    padding: const EdgeInsets.all(AppSpacing.s12),
-    child: Row(
-      children: [
-        Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainer,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.location_on_outlined,
-            color: AppColors.deepGreen,
-            size: 32,
+    child: Material(
+      key: const Key('rescue-create-location-card'),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: AspectRatio(
+          aspectRatio: 356 / 159,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/rescue/p2_02_map.png',
+                  fit: BoxFit.cover,
+                ),
+                if (location != null)
+                  Align(
+                    alignment: const Alignment(0, 0.65),
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        minHeight: AppControlSize.compactButtonVisualHeight,
+                        maxWidth: 220,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.s16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        'Đã chọn khu vực',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.buttonCompact(
+                          color: AppColors.deepGreen,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(width: AppSpacing.s12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                location == null ? 'Chọn trên bản đồ' : 'Đã chọn khu vực',
-                style: AppTextStyles.label(),
-              ),
-              const SizedBox(height: AppSpacing.s4),
-              Text(
-                location?.formattedAddress ??
-                    'Vị trí chính xác chỉ dùng cho người tạo tin',
-                style: AppTextStyles.bodyCompact(),
-              ),
-            ],
-          ),
-        ),
-        const Icon(Icons.chevron_right_rounded, color: AppColors.brown),
-      ],
+      ),
     ),
   );
 }
@@ -417,79 +729,6 @@ class _LostAtField extends StatelessWidget {
           ),
           const Icon(Icons.edit_calendar_outlined, color: AppColors.brown),
         ],
-      ),
-    ),
-  );
-}
-
-class _LocationPickerSheet extends StatelessWidget {
-  const _LocationPickerSheet();
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-    child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.s16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Chọn khu vực thất lạc', style: AppTextStyles.h3()),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            'PawMate chỉ hiển thị khu vực ước tính cho cộng đồng. Vị trí chính xác được giữ riêng trong bản nháp của bạn.',
-            style: AppTextStyles.body(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          Container(
-            height: 180,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.map_outlined,
-              size: 56,
-              color: AppColors.deepGreen,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s16),
-          PawMateButton(
-            label: 'Dùng khu vực hiện tại',
-            onPressed: () => Navigator.pop(
-              context,
-              const RescueDraftLocation(
-                latitude: 10.7769,
-                longitude: 106.7009,
-                formattedAddress: 'Khu vực Quận 1, TP. Hồ Chí Minh',
-              ),
-            ),
-            trailingIcon: Icons.check_rounded,
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _LocalMediaPreview extends StatelessWidget {
-  const _LocalMediaPreview({required this.path});
-
-  final String path;
-
-  @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(AppRadius.sm),
-    child: Image.asset(
-      'assets/images/pets/pet-golden.png',
-      height: 120,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => Container(
-        height: 120,
-        color: AppColors.surfaceContainer,
-        alignment: Alignment.center,
-        child: const Icon(Icons.image_outlined, size: 40),
       ),
     ),
   );

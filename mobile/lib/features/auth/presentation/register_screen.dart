@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_auth_layout.dart';
 import '../../../core/widgets/pawmate_adaptive.dart';
 import '../../../core/widgets/pawmate_button.dart';
 import '../../../core/widgets/pawmate_text_field.dart';
@@ -265,6 +266,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final heroHeight = PawMateAuthLayout.heroHeight(
+      context,
+      widthFactor: 0.55,
+      min: 176,
+      max: 224,
+      keyboard: 112,
+    );
+    final formGap = PawMateAuthLayout.sectionGap(
+      context,
+      regular: 36,
+      compact: 20,
+    );
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -275,7 +288,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
-                height: 224,
+                key: const ValueKey('register-responsive-hero'),
+                height: heroHeight,
                 child: Stack(
                   children: [
                     Positioned.fill(
@@ -304,7 +318,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                     Positioned(
                       left: 16,
-                      top: 16,
+                      top: MediaQuery.viewPaddingOf(context).top + 16,
                       child: IconButtonTheme(
                         data: IconButtonThemeData(
                           style: IconButton.styleFrom(
@@ -327,7 +341,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 16),
                 child: Form(
                   key: _formKey,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -335,14 +349,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text('Tạo tài khoản', style: AppTextStyles.h1()),
-                      const SizedBox(height: 8),
                       Text(
                         'Hãy cùng bắt đầu hành trình chăm sóc thú cưng của bạn',
-                        style: AppTextStyles.bodyStrong(
+                        style: AppTextStyles.field(
                           color: AppColors.textSecondary,
-                        ),
+                        ).copyWith(fontWeight: FontWeight.w500),
                       ),
-                      const SizedBox(height: 28),
+                      SizedBox(height: formGap),
                       PawMateTextField(
                         key: const ValueKey('register-email-field'),
                         label: 'Email',
@@ -353,10 +366,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         maxLength: 254,
+                        counterText: '',
+                        labelSpacing: AppSpacing.s4,
                         validator: _validateEmail,
                         onChanged: (_) => _onFieldChanged(email: true),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       PawMateTextField(
                         key: const ValueKey('register-phone-field'),
                         label: 'Số điện thoại',
@@ -367,13 +382,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
                         maxLength: 11,
+                        counterText: '',
+                        labelSpacing: AppSpacing.s4,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
                         validator: _validatePhone,
                         onChanged: (_) => _onFieldChanged(),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       PawMateTextField(
                         key: const ValueKey('register-password-field'),
                         label: 'Mật khẩu',
@@ -384,6 +401,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: _obscurePassword,
                         textInputAction: TextInputAction.next,
                         maxLength: 64,
+                        counterText: '',
+                        labelSpacing: AppSpacing.s4,
                         validator: _validatePassword,
                         suffixIcon: IconButton(
                           onPressed: _isSubmitting
@@ -402,7 +421,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         onChanged: (_) => _onFieldChanged(password: true),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 18),
                       PawMateTextField(
                         key: const ValueKey('register-confirm-password-field'),
                         label: 'Nhập lại mật khẩu',
@@ -413,6 +432,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         obscureText: _obscureConfirmPassword,
                         textInputAction: TextInputAction.done,
                         maxLength: 64,
+                        counterText: '',
+                        labelSpacing: AppSpacing.s4,
                         validator: _validateConfirmPassword,
                         suffixIcon: IconButton(
                           onPressed: _isSubmitting
@@ -459,7 +480,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       KeyedSubtree(
                         key: _recoveryCtaAnchorKey,
                         child: PawMateButton(
@@ -469,8 +490,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onPressed: _canSubmit ? _submit : null,
                         ),
                       ),
-                      const SizedBox(height: 12),
                       TextButton(
+                        key: const ValueKey('register-login-cta'),
                         style: TextButton.styleFrom(
                           minimumSize: const Size(
                             AppControlSize.minTouchTarget,

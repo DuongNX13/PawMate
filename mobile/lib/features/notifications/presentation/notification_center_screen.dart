@@ -6,7 +6,6 @@ import '../../../app/router/app_route_registry.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
-import '../../../core/widgets/pawmate_chip.dart';
 import '../application/notification_providers.dart';
 import '../data/notification_api.dart';
 import '../domain/pawmate_notification.dart';
@@ -55,18 +54,18 @@ class _NotificationCenterScreenState
             children: [
               _NotificationHeader(
                 onBack: _goBack,
-                onSettings: () => context.go('/profile'),
+                onSettings: () => context.push('/profile/notifications'),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 12),
               _NotificationFilterRow(
                 selectedFilter: _selectedFilter,
                 onChanged: (filter) {
                   setState(() => _selectedFilter = filter.id);
                 },
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 14),
               const _QuietHoursCard(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 14),
               ...notificationsState.when(
                 loading: () => const [
                   _NotificationStatusCard(
@@ -105,19 +104,8 @@ class _NotificationCenterScreenState
     }
 
     final filteredItems = result.items.where(_matchesCurrentFilter).toList();
-    final unreadSummary = result.unreadCount > 0
-        ? <Widget>[
-            _UnreadSummaryBanner(
-              unreadCount: result.unreadCount,
-              isBusy: _markingAllRead,
-              onMarkAllRead: _markAllRead,
-            ),
-            const SizedBox(height: 18),
-          ]
-        : const <Widget>[];
     if (filteredItems.isEmpty) {
       return [
-        ...unreadSummary,
         _NotificationStatusCard(
           title: 'Không có thông báo trong bộ lọc này',
           message: 'Đổi sang bộ lọc khác để xem các cập nhật còn lại.',
@@ -134,19 +122,33 @@ class _NotificationCenterScreenState
     final previousItems = filteredItems
         .where((item) => !_isToday(item))
         .toList();
-    final widgets = <Widget>[...unreadSummary];
+    final widgets = <Widget>[];
 
     if (todayItems.isNotEmpty) {
-      widgets.add(const _NotificationSectionHeader(title: 'HÔM NAY'));
+      widgets.add(
+        _NotificationSectionHeader(
+          title: 'HÔM NAY',
+          unreadCount: result.unreadCount,
+          isBusy: _markingAllRead,
+          onMarkAllRead: _markAllRead,
+        ),
+      );
       widgets.add(const SizedBox(height: 12));
       widgets.addAll(todayItems.map(_buildNotificationCard));
     }
 
     if (previousItems.isNotEmpty) {
       if (widgets.isNotEmpty) {
-        widgets.add(const SizedBox(height: 18));
+        widgets.add(const SizedBox(height: 11));
       }
-      widgets.add(const _NotificationSectionHeader(title: 'TRƯỚC ĐÓ'));
+      widgets.add(
+        _NotificationSectionHeader(
+          title: 'TRƯỚC ĐÓ',
+          unreadCount: todayItems.isEmpty ? result.unreadCount : 0,
+          isBusy: _markingAllRead,
+          onMarkAllRead: _markAllRead,
+        ),
+      );
       widgets.add(const SizedBox(height: 12));
       widgets.addAll(previousItems.map(_buildNotificationCard));
     }
@@ -364,7 +366,7 @@ class _NotificationFilterRow extends StatelessWidget {
               isSelected: selectedFilter == filter.id,
               onTap: () => onChanged(filter),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 16),
           ],
         ],
       ),
@@ -385,12 +387,46 @@ class _NotificationFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PawMateChip(
-      key: Key('notification-filter-${filter.id}'),
-      label: filter.label,
+    final foreground = isSelected ? AppColors.white : AppColors.textPrimary;
+    return Semantics(
+      button: true,
       selected: isSelected,
-      onPressed: onTap,
-      semanticLabel: '${filter.label}, ${isSelected ? 'đã chọn' : 'chưa chọn'}',
+      label: '${filter.label}, ${isSelected ? 'đã chọn' : 'chưa chọn'}',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          key: Key('notification-filter-${filter.id}'),
+          height: AppControlSize.minTouchTarget,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: Center(
+                child: AnimatedContainer(
+                  duration: AppMotion.fast,
+                  curve: AppMotion.standardCurve,
+                  height: 40,
+                  constraints: BoxConstraints(minWidth: isSelected ? 94 : 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary500
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    filter.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.label(color: foreground),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -400,46 +436,54 @@ class _QuietHoursCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      constraints: const BoxConstraints(minHeight: 86),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.soft,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
-              color: AppColors.primarySoft,
+              color: AppColors.lightBeige,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: const Icon(
               Icons.notifications_paused_outlined,
-              color: AppColors.primary500,
-              size: 22,
+              color: AppColors.brown,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Đang trong giờ nghỉ (22:00 - 07:00)',
-                  style: AppTextStyles.cardTitle(),
+                  style: AppTextStyles.body().copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 2),
                 Text(
                   'Thông báo sẽ được chuyển đến im lặng để tránh làm phiền bạn.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  maxLines: usesExpandedTextLayout ? null : 2,
+                  overflow: usesExpandedTextLayout
+                      ? null
+                      : TextOverflow.ellipsis,
+                  style: AppTextStyles.body(
                     color: AppColors.textSecondary,
-                    height: 1.3,
-                  ),
+                  ).copyWith(height: 1.3),
                 ),
               ],
             ),
@@ -451,82 +495,69 @@ class _QuietHoursCard extends StatelessWidget {
 }
 
 class _NotificationSectionHeader extends StatelessWidget {
-  const _NotificationSectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-        color: AppColors.textSecondary.withAlpha(170),
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-}
-
-class _UnreadSummaryBanner extends StatelessWidget {
-  const _UnreadSummaryBanner({
-    required this.unreadCount,
-    required this.isBusy,
-    required this.onMarkAllRead,
+  const _NotificationSectionHeader({
+    required this.title,
+    this.unreadCount = 0,
+    this.isBusy = false,
+    this.onMarkAllRead,
   });
 
+  final String title;
   final int unreadCount;
   final bool isBusy;
-  final VoidCallback onMarkAllRead;
+  final VoidCallback? onMarkAllRead;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('notification-unread-banner'),
-      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-      decoration: BoxDecoration(
-        color: AppColors.primarySoft.withAlpha(110),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.primary500.withAlpha(70)),
-      ),
+    return SizedBox(
+      height: 28,
       child: Row(
         children: [
-          Container(
-            constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.primary500,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              unreadCount > 99 ? '99+' : '$unreadCount',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              '$unreadCount thông báo chưa đọc',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
+              title,
+              style: AppTextStyles.overline(color: AppColors.textMuted),
             ),
           ),
-          TextButton(
-            key: const ValueKey('notification-mark-all-read-button'),
-            onPressed: isBusy ? null : onMarkAllRead,
-            child: isBusy
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Đọc hết'),
-          ),
+          if (unreadCount > 0 && onMarkAllRead != null) ...[
+            Semantics(
+              label: '$unreadCount thông báo chưa đọc',
+              child: Container(
+                key: const ValueKey('notification-unread-count'),
+                constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary500,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  unreadCount > 99 ? '99+' : '$unreadCount',
+                  style: AppTextStyles.micro(color: AppColors.white),
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            TextButton(
+              key: const ValueKey('notification-mark-all-read-button'),
+              onPressed: isBusy ? null : onMarkAllRead,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: isBusy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      'Đọc hết',
+                      style: AppTextStyles.label(color: AppColors.primary700),
+                    ),
+            ),
+          ],
         ],
       ),
     );
@@ -552,109 +583,118 @@ class _NotificationCard extends StatelessWidget {
     final category = _notificationCategory(notification);
     final categoryLabel = _NotificationFilter.byId(category).label;
     final isUnread = notification.isUnread;
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: isUnread
-            ? AppColors.primarySoft.withAlpha(92)
-            : AppColors.surface.withAlpha(245),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        color: AppColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: isUnread ? AppColors.border : AppColors.surfaceVariant,
+          color: isUnread ? AppColors.border : AppColors.border.withAlpha(80),
         ),
-        boxShadow: AppShadows.soft,
       ),
+      constraints: const BoxConstraints(minHeight: 170),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           onTap: isBusy ? null : onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 14, 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _NotificationIconTile(category: category),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              notification.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.cardTitle(),
-                            ),
-                          ),
-                          if (isUnread)
-                            Container(
-                              key: ValueKey(
-                                'notification-unread-${notification.id}',
-                              ),
-                              width: 8,
-                              height: 8,
-                              margin: const EdgeInsets.only(left: 8, top: 4),
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary500,
-                                shape: BoxShape.circle,
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
+            child: SizedBox(
+              height: usesExpandedTextLayout ? null : 144,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _NotificationIconTile(category: category),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: usesExpandedTextLayout
+                          ? MainAxisAlignment.start
+                          : MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                notification.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.cardTitle().copyWith(
+                                  height: 1.2,
+                                ),
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        notification.body,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.body(
-                          color: AppColors.textSecondary,
+                            if (isUnread)
+                              Container(
+                                key: ValueKey(
+                                  'notification-unread-${notification.id}',
+                                ),
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.only(left: 8, top: 4),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.primary500,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${_formatNotificationTime(notification.createdAt)} • $categoryLabel',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    color: AppColors.primary700,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ),
-                          IconButton(
-                            key: ValueKey(
-                              'notification-dismiss-${notification.id}',
-                            ),
-                            visualDensity: VisualDensity.compact,
-                            tooltip: 'Ẩn thông báo',
-                            onPressed: isBusy ? null : onDismiss,
-                            icon: isBusy
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Icons.close_rounded, size: 18),
+                        const SizedBox(height: 4),
+                        Text(
+                          notification.body,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.body(
                             color: AppColors.textSecondary,
-                          ),
-                        ],
-                      ),
-                    ],
+                          ).copyWith(height: 1.15),
+                        ),
+                        if (usesExpandedTextLayout)
+                          const SizedBox(height: AppSpacing.s8)
+                        else
+                          const Spacer(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${_formatNotificationTime(notification.createdAt)} • $categoryLabel',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.meta(
+                                  color: AppColors.primary700,
+                                ).copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            IconButton(
+                              key: ValueKey(
+                                'notification-dismiss-${notification.id}',
+                              ),
+                              visualDensity: VisualDensity.compact,
+                              tooltip: 'Ẩn thông báo',
+                              onPressed: isBusy ? null : onDismiss,
+                              icon: isBusy
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.close_rounded, size: 18),
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

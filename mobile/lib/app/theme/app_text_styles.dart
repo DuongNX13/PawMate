@@ -20,31 +20,31 @@ class AppTextStyles {
       _style(size: 20, lineHeight: 28, weight: FontWeight.w700, color: color);
 
   static TextStyle h4({Color color = AppColors.textPrimary}) =>
-      _style(size: 18, lineHeight: 24, weight: FontWeight.w600, color: color);
+      _style(size: 18, lineHeight: 26, weight: FontWeight.w600, color: color);
 
   static TextStyle body({Color color = AppColors.textPrimary}) =>
-      _style(size: 14, lineHeight: 20, weight: FontWeight.w400, color: color);
+      _style(size: 15, lineHeight: 23, weight: FontWeight.w400, color: color);
 
   static TextStyle bodyStrong({Color color = AppColors.textPrimary}) =>
       _style(size: 16, lineHeight: 24, weight: FontWeight.w600, color: color);
 
   static TextStyle bodyCompact({Color color = AppColors.textSecondary}) =>
-      _style(size: 14, lineHeight: 20, weight: FontWeight.w400, color: color);
+      _style(size: 15, lineHeight: 23, weight: FontWeight.w400, color: color);
 
   static TextStyle label({Color color = AppColors.label}) =>
       _style(size: 14, lineHeight: 20, weight: FontWeight.w600, color: color);
 
   static TextStyle button({Color color = Colors.white}) =>
-      _style(size: 16, lineHeight: 24, weight: FontWeight.w600, color: color);
+      _style(size: 16, lineHeight: 22, weight: FontWeight.w700, color: color);
 
   static TextStyle buttonCompact({Color color = Colors.white}) =>
       _style(size: 14, lineHeight: 20, weight: FontWeight.w600, color: color);
 
   static TextStyle caption({Color color = AppColors.textSecondary}) =>
-      _style(size: 12, lineHeight: 16, weight: FontWeight.w400, color: color);
+      _style(size: 12, lineHeight: 18, weight: FontWeight.w500, color: color);
 
   static TextStyle captionStrong({Color color = AppColors.label}) =>
-      _style(size: 12, lineHeight: 16, weight: FontWeight.w600, color: color);
+      _style(size: 12, lineHeight: 18, weight: FontWeight.w600, color: color);
 
   static TextStyle overline({Color color = AppColors.label}) =>
       _style(size: 11, lineHeight: 16, weight: FontWeight.w700, color: color);
@@ -64,10 +64,10 @@ class AppTextStyles {
       h1(color: color);
 
   static TextStyle sectionTitle({Color color = AppColors.textPrimary}) =>
-      h3(color: color);
+      _style(size: 18, lineHeight: 26, weight: FontWeight.w700, color: color);
 
   static TextStyle appBarTitle({Color color = AppColors.textPrimary}) =>
-      h4(color: color);
+      _style(size: 22, lineHeight: 28, weight: FontWeight.w700, color: color);
 
   static TextStyle cardTitle({Color color = AppColors.textPrimary}) =>
       bodyStrong(color: color);

@@ -42,69 +42,84 @@ class PawMateStateView extends StatelessWidget {
       explicitChildNodes: true,
       liveRegion: type != PawMateStateType.empty,
       label: '$title. $message',
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.s24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ExcludeSemantics(
-                  child:
-                      illustration ??
-                      Container(
-                        width: 112,
-                        height: 112,
-                        decoration: BoxDecoration(
-                          color: presentation.background,
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(
-                          presentation.icon,
-                          size: 48,
-                          color: presentation.foreground,
+      // A state can have a long recovery explanation and up to two actions.
+      // Keep the regular-size composition vertically centered, but let a
+      // narrow accessibility viewport scroll rather than clipping its retry
+      // action below a fixed bottom navigation bar.
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints.hasBoundedHeight
+                  ? constraints.maxHeight
+                  : 0,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.s24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ExcludeSemantics(
+                        child:
+                            illustration ??
+                            Container(
+                              width: AppControlSize.stateIllustration,
+                              height: AppControlSize.stateIllustration,
+                              decoration: BoxDecoration(
+                                color: presentation.background,
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(
+                                presentation.icon,
+                                size: AppControlSize.stateIcon,
+                                color: presentation.foreground,
+                              ),
+                            ),
+                      ),
+                      const SizedBox(height: AppSpacing.s24),
+                      ExcludeSemantics(
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.h3(),
                         ),
                       ),
-                ),
-                const SizedBox(height: AppSpacing.s24),
-                ExcludeSemantics(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.h3(),
+                      const SizedBox(height: AppSpacing.s8),
+                      ExcludeSemantics(
+                        child: Text(
+                          message,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyCompact(),
+                        ),
+                      ),
+                      if (primaryActionLabel != null) ...[
+                        const SizedBox(height: AppSpacing.s24),
+                        PawMateButton(
+                          label: primaryActionLabel!,
+                          onPressed: onPrimaryAction,
+                          leadingIcon:
+                              type == PawMateStateType.error ||
+                                  type == PawMateStateType.offline
+                              ? Icons.refresh
+                              : null,
+                        ),
+                      ],
+                      if (secondaryActionLabel != null) ...[
+                        const SizedBox(height: AppSpacing.s8),
+                        PawMateButton(
+                          label: secondaryActionLabel!,
+                          onPressed: onSecondaryAction,
+                          variant: PawMateButtonVariant.ghost,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.s8),
-                ExcludeSemantics(
-                  child: Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: AppTextStyles.bodyCompact(),
-                  ),
-                ),
-                if (primaryActionLabel != null) ...[
-                  const SizedBox(height: AppSpacing.s24),
-                  PawMateButton(
-                    label: primaryActionLabel!,
-                    onPressed: onPrimaryAction,
-                    leadingIcon:
-                        type == PawMateStateType.error ||
-                            type == PawMateStateType.offline
-                        ? Icons.refresh
-                        : null,
-                  ),
-                ],
-                if (secondaryActionLabel != null) ...[
-                  const SizedBox(height: AppSpacing.s8),
-                  PawMateButton(
-                    label: secondaryActionLabel!,
-                    onPressed: onSecondaryAction,
-                    variant: PawMateButtonVariant.ghost,
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),

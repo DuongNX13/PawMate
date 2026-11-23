@@ -11,6 +11,8 @@ import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
 import 'package:pawmate_mobile/features/auth/presentation/register_screen.dart';
 
 import '../../test_support/ui_test_helpers.dart';
+import '../../test_support/day114_capture.dart';
+import '../../test_support/day116_capture.dart';
 
 void main() {
   testWidgets('Register requires all SRS fields and enables CTA when valid', (
@@ -35,6 +37,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(Checkbox), findsNothing);
+    expect(find.text('0/254'), findsNothing);
+    expect(find.text('0/11'), findsNothing);
+    expect(find.text('0/64'), findsNothing);
     expect(_registerButton(tester).onPressed, isNull);
 
     await tester.enterText(_field('register-email-field'), 'nam@example.com');
@@ -124,6 +129,13 @@ void main() {
       'nam@example.com',
     );
     expect(find.textContaining('OTP target:'), findsNothing);
+    await tester.ensureVisible(find.text('Email đã được sử dụng.'));
+    await captureDay114(tester, 'ST-10');
+    await tester.enterText(_field('register-email-field'), 'nam2@example.com');
+    await tester.pump();
+    expect(find.text('Email đã được sử dụng.'), findsNothing);
+    expect(_registerButton(tester).onPressed, isNotNull);
+    expect(fakeApi.registerCalls, 1);
     expectNoFlutterOverflow(tester);
   });
 
@@ -136,7 +148,12 @@ void main() {
         code: 'NET_001',
       ),
     );
-    await _pumpRegister(tester, fakeApi, textScale: 1.3);
+    await _pumpRegister(
+      tester,
+      fakeApi,
+      viewport: const Size(320, 568),
+      textScale: 2,
+    );
     await _enterValidRegistration(tester);
 
     final submit = find.byKey(const ValueKey('register-submit-button'));
@@ -145,14 +162,82 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fakeApi.registerCalls, 1);
-    expect(find.text('Không thể kết nối tới máy chủ PawMate.'), findsOneWidget);
+    final errorMessage = find.text('Không thể kết nối tới máy chủ PawMate.');
+    expect(errorMessage, findsOneWidget);
+    await tester.ensureVisible(errorMessage);
+    await tester.pumpAndSettle();
     expect(_registerButton(tester).isLoading, isFalse);
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
     expect(tester.getSize(submit).height, greaterThanOrEqualTo(48));
     expect(tester.getTopLeft(submit).dy, greaterThanOrEqualTo(0));
-    expect(tester.getBottomRight(submit).dy, lessThanOrEqualTo(844));
+    expect(tester.getBottomRight(submit).dy, lessThanOrEqualTo(568));
     expect(find.textContaining('OTP target:'), findsNothing);
     expectNoFlutterOverflow(tester);
+    expect(
+      tester
+          .widget<TextFormField>(_field('register-email-field'))
+          .controller
+          ?.text,
+      'nam@example.com',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(_field('register-password-field'))
+          .controller
+          ?.text,
+      'secret123',
+    );
+    await captureDay116(tester, 'D116-ST02-P103-error');
+    fakeApi.error = null;
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    expect(submit.hitTestable(), findsOneWidget);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(fakeApi.registerCalls, 2);
+    expect(fakeApi.lastEmail, 'nam@example.com');
+    expect(fakeApi.lastPhone, '0901234567');
+    expect(find.text('OTP target: nam@example.com'), findsOneWidget);
+    expect(find.text('Registration: user-1'), findsOneWidget);
+    expect(errorMessage, findsNothing);
+    expectNoFlutterOverflow(tester);
   });
+
+  testWidgets(
+    'Register keeps the final field and CTA usable at text scale 2.0 with keyboard',
+    (tester) async {
+      final fakeApi = _FakeRegisterAuthApi();
+      await _pumpRegister(
+        tester,
+        fakeApi,
+        viewport: const Size(320, 568),
+        textScale: 2,
+      );
+
+      final confirmPassword = _field('register-confirm-password-field');
+      await tester.scrollUntilVisible(
+        confirmPassword,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(confirmPassword);
+      await tester.tap(confirmPassword);
+      await setKeyboardInset(tester, bottom: 300);
+      await tester.enterText(confirmPassword, 'secret123');
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('register-submit-button')),
+      );
+
+      final submit = find.byKey(const ValueKey('register-submit-button'));
+      final keyboardTop = 568 - 300.0;
+      final submitRect = tester.getRect(submit);
+      expect(submitRect.top, greaterThanOrEqualTo(0));
+      expect(submitRect.bottom, lessThanOrEqualTo(keyboardTop));
+      expect(tester.getSize(submit).height, greaterThanOrEqualTo(48));
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('Register loading state prevents duplicate requests', (
     tester,
@@ -185,8 +270,9 @@ Future<void> _pumpRegister(
   _FakeRegisterAuthApi fakeApi, {
   String? returnTo,
   double textScale = 1,
+  Size viewport = const Size(390, 844),
 }) async {
-  await setTestViewport(tester, size: const Size(390, 844));
+  await setTestViewport(tester, size: viewport);
   final router = _registerRouter(returnTo: returnTo);
   await tester.pumpWidget(
     ProviderScope(
@@ -245,16 +331,18 @@ GoRouter _registerRouter({String? returnTo}) {
       GoRoute(
         path: '/auth/otp',
         builder: (context, state) => Scaffold(
-          body: Column(
-            children: [
-              Text('OTP target: ${state.uri.queryParameters['email']}'),
-              Text(
-                'Registration: ${state.uri.queryParameters['registrationId']}',
-              ),
-              Text('Expires: ${state.uri.queryParameters['expiresAt']}'),
-              Text('Resend: ${state.uri.queryParameters['resendAt']}'),
-              Text('ReturnTo: ${state.uri.queryParameters['returnTo']}'),
-            ],
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Text('OTP target: ${state.uri.queryParameters['email']}'),
+                Text(
+                  'Registration: ${state.uri.queryParameters['registrationId']}',
+                ),
+                Text('Expires: ${state.uri.queryParameters['expiresAt']}'),
+                Text('Resend: ${state.uri.queryParameters['resendAt']}'),
+                Text('ReturnTo: ${state.uri.queryParameters['returnTo']}'),
+              ],
+            ),
           ),
         ),
       ),
@@ -267,7 +355,7 @@ class _FakeRegisterAuthApi extends AuthApi {
     : super(Dio());
 
   final RegisterResponse? response;
-  final AuthApiException? error;
+  AuthApiException? error;
   final Completer<RegisterResponse>? completer;
   int registerCalls = 0;
   String? lastEmail;

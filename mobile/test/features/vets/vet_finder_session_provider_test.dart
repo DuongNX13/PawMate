@@ -95,4 +95,40 @@ void main() {
     expect(state.selectedVetId, 'vet-1');
     expect(state.nextCursor, isNull);
   });
+
+  test('normalizes an impossible total below the rendered item count', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(vetFinderSessionProvider.notifier);
+
+    notifier.storeDataset(
+      items: const [vet],
+      total: 0,
+      source: VetFinderDatasetSource.search,
+    );
+    expect(container.read(vetFinderSessionProvider).total, 1);
+
+    notifier.appendSearchPage(
+      const VetSearchResult(
+        items: [
+          VetSummary(
+            id: 'vet-2',
+            name: 'Happy Paws',
+            city: 'Hà Nội',
+            district: 'Ba Đình',
+            address: '12 Tràng Thi',
+            phone: '0903222333',
+            services: ['Khám tổng quát'],
+            seedRank: 2,
+            reviewCount: 0,
+            isOpen: true,
+            readyForMap: true,
+          ),
+        ],
+        total: 0,
+        limit: 20,
+      ),
+    );
+    expect(container.read(vetFinderSessionProvider).total, 2);
+  });
 }

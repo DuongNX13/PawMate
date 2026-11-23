@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/core/widgets/pawmate_button.dart';
 import 'package:pawmate_mobile/features/health/application/health_record_providers.dart';
 import 'package:pawmate_mobile/features/health/data/health_record_api.dart';
 import 'package:pawmate_mobile/features/health/domain/health_record.dart';
@@ -138,87 +140,90 @@ void main() {
     expect(find.text('Profile target'), findsOneWidget);
   });
 
-  testWidgets('renders v0.27 health timeline shell without mobile overflow', (
-    tester,
-  ) async {
-    await setTestViewport(tester, size: const Size(360, 800));
-    final fakeApi = _FakeHealthRecordApi(
-      records: [
-        _sampleRecord(
-          id: 'vaccination',
-          title: 'Tiêm phòng dại',
-          note: 'Vaccine dại 3 năm (Rabies)',
-        ),
-        _sampleRecord(
-          id: 'weight',
-          type: HealthRecordType.checkup,
-          title: 'Kiểm tra cân nặng',
-          note: '+0.2kg',
-        ),
-      ],
-    );
-    final router = GoRouter(
-      initialLocation: '/health',
-      routes: [
-        GoRoute(
-          path: '/health',
-          builder: (context, state) => const HealthTimelineScreen(),
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          petBackendListProvider.overrideWith(
-            (ref) async => [_samplePet(name: 'Mochi')],
+  testWidgets(
+    'renders health timeline shell without mobile overflow at large text scale',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(360, 800));
+      final fakeApi = _FakeHealthRecordApi(
+        records: [
+          _sampleRecord(
+            id: 'vaccination',
+            title: 'Tiêm phòng dại',
+            note: 'Vaccine dại 3 năm (Rabies)',
           ),
-          healthRecordApiProvider.overrideWith((ref) => fakeApi),
-          healthRecordAccessTokenProvider.overrideWith(
-            (ref) async => 'health-token',
-          ),
-          upcomingRemindersProvider.overrideWith(
-            (ref) async => [_sampleReminder()],
+          _sampleRecord(
+            id: 'weight',
+            type: HealthRecordType.checkup,
+            title: 'Kiểm tra cân nặng',
+            note: '+0.2kg',
           ),
         ],
-        child: MaterialApp.router(
-          theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.1),
-          routerConfig: router,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      final router = GoRouter(
+        initialLocation: '/health',
+        routes: [
+          GoRoute(
+            path: '/health',
+            builder: (context, state) => const HealthTimelineScreen(),
+          ),
+        ],
+      );
 
-    expect(find.text('Mochi'), findsOneWidget);
-    expect(find.text('Sức khỏe'), findsWidgets);
-    expect(find.text('NHẮC NHỞ SẮP TỚI'), findsOneWidget);
-    expect(find.textContaining('Tiêm ngừa dại'), findsOneWidget);
-    expect(find.text('Tất cả'), findsOneWidget);
-    expect(find.text('Vaccine'), findsOneWidget);
-    expect(find.text('Cân nặng'), findsOneWidget);
-    expect(find.text('Tiêm phòng dại'), findsOneWidget);
-    expect(find.text('Health'), findsOneWidget);
-    expect(
-      tester.getSize(find.byKey(const ValueKey('health-filter-Tất cả'))).height,
-      greaterThanOrEqualTo(48),
-    );
-    expect(
-      MediaQuery.sizeOf(
-        tester.element(find.byType(HealthTimelineScreen)),
-      ).width,
-      360,
-    );
-    final addFab = tester.widget<FloatingActionButton>(
-      find.byType(FloatingActionButton),
-    );
-    expect(addFab.isExtended, isFalse);
-    expect(
-      tester.getSize(find.byType(FloatingActionButton)).width,
-      lessThanOrEqualTo(56),
-    );
-    expectNoFlutterOverflow(tester);
-  });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            petBackendListProvider.overrideWith(
+              (ref) async => [_samplePet(name: 'Mochi')],
+            ),
+            healthRecordApiProvider.overrideWith((ref) => fakeApi),
+            healthRecordAccessTokenProvider.overrideWith(
+              (ref) async => 'health-token',
+            ),
+            upcomingRemindersProvider.overrideWith(
+              (ref) async => [_sampleReminder()],
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mochi'), findsOneWidget);
+      expect(find.text('Sức khỏe'), findsWidgets);
+      expect(find.text('NHẮC NHỞ SẮP TỚI'), findsOneWidget);
+      expect(find.textContaining('Tiêm ngừa dại'), findsOneWidget);
+      expect(find.text('Tất cả'), findsOneWidget);
+      expect(find.text('Vaccine'), findsOneWidget);
+      expect(find.text('Cân nặng'), findsOneWidget);
+      expect(find.text('Tiêm phòng dại'), findsOneWidget);
+      expect(find.text('Health'), findsOneWidget);
+      expect(
+        tester
+            .getSize(find.byKey(const ValueKey('health-filter-Tất cả')))
+            .height,
+        greaterThanOrEqualTo(48),
+      );
+      expect(
+        MediaQuery.sizeOf(
+          tester.element(find.byType(HealthTimelineScreen)),
+        ).width,
+        360,
+      );
+      final addFab = tester.widget<FloatingActionButton>(
+        find.byType(FloatingActionButton),
+      );
+      expect(addFab.isExtended, isFalse);
+      expect(
+        tester.getSize(find.byType(FloatingActionButton)).width,
+        lessThanOrEqualTo(56),
+      );
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('health timeline shows auth error when token is missing', (
     tester,
@@ -376,7 +381,7 @@ void main() {
         ],
         child: MaterialApp.router(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           routerConfig: router,
         ),
       ),
@@ -386,24 +391,34 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    expect(find.text('Thêm sự kiện sức khỏe'), findsOneWidget);
+    expect(find.bySemanticsLabel('Thêm sự kiện sức khỏe'), findsOneWidget);
+    expect(find.text('Thêm sự kiện'), findsOneWidget);
 
+    await setKeyboardInset(tester, bottom: 300);
+    // A ListView may evict an offscreen child once the keyboard reduces this
+    // compact viewport. Re-locate the input after applying the inset so this
+    // exercises the same "keyboard open, then focus" path as a real device.
+    final noteInput = find.byKey(const Key('add-health-note-input'));
     await tester.scrollUntilVisible(
-      find.byKey(const Key('add-health-note-input')),
-      500,
+      noteInput,
+      200,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('add-health-note-input')));
-    await setKeyboardInset(tester, bottom: 300);
     await tester.enterText(
-      find.byKey(const Key('add-health-note-input')),
+      noteInput,
       'Keyboard open health note remains scrollable.',
     );
-    await tester.ensureVisible(find.byKey(const Key('add-health-save-button')));
+    final saveButton = find.byKey(const Key('add-health-save-button'));
+    await tester.scrollUntilVisible(
+      saveButton,
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     expectNoFlutterOverflow(tester);
 
-    await tester.tap(find.byKey(const Key('add-health-save-button')));
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(fakeApi.createdAccessToken, 'health-token');
@@ -412,6 +427,65 @@ void main() {
       'Keyboard open health note remains scrollable.',
     );
   });
+
+  testWidgets(
+    'P1-13 keeps accessibility-size header, pet and event labels readable',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      final pet = PetProfile(
+        id: 'long-name',
+        name: 'Bông Tuyết Golden Retriever Siêu Dễ Thương 2026',
+        species: 'dog',
+        breed: 'Golden Retriever',
+        gender: 'unknown',
+        dateOfBirth: DateTime(2022, 4, 12),
+        healthStatus: 'healthy',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            petBackendListProvider.overrideWith((ref) async => [pet]),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const AddHealthEventScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('Thêm sự kiện sức khỏe'), findsOneWidget);
+      final header = find.text('Thêm sự kiện');
+      expect(header, findsOneWidget);
+      expect(
+        tester.renderObject<RenderParagraph>(header).didExceedMaxLines,
+        isFalse,
+        reason: 'Add-health header must not ellipsize.',
+      );
+      final petName = find.text(pet.name);
+      expect(petName, findsOneWidget);
+      expect(
+        tester.renderObject<RenderParagraph>(petName).didExceedMaxLines,
+        isFalse,
+        reason: 'Selected pet name must not ellipsize.',
+      );
+      final eventLabel = find.text('Khám định kỳ');
+      await tester.scrollUntilVisible(
+        eventLabel,
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(eventLabel, findsOneWidget);
+      expect(
+        tester.renderObject<RenderParagraph>(eventLabel).didExceedMaxLines,
+        isFalse,
+        reason: 'Event label must not ellipsize.',
+      );
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   testWidgets('Day27 groups same-day records and filters by event type', (
     tester,
@@ -545,7 +619,7 @@ void main() {
   testWidgets(
     'Day27 keeps form draft and selected time after network failure',
     (tester) async {
-      await setTestViewport(tester, size: const Size(390, 844));
+      await setTestViewport(tester, size: const Size(320, 568));
       final fakeApi = _FakeHealthRecordApi(records: [], failCreate: true);
       final router = GoRouter(
         initialLocation: '/health/events/new?petId=milo',
@@ -575,6 +649,7 @@ void main() {
           ],
           child: MaterialApp.router(
             theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
             routerConfig: router,
           ),
         ),
@@ -642,10 +717,10 @@ void main() {
 
     expect(find.text('Chưa có thú cưng'), findsOneWidget);
     expect(find.text('Thêm thú cưng'), findsOneWidget);
-    final saveButton = tester.widget<FilledButton>(
+    final saveButton = tester.widget<PawMateButton>(
       find.descendant(
         of: find.byKey(const Key('add-health-save-button')),
-        matching: find.byType(FilledButton),
+        matching: find.byType(PawMateButton),
       ),
     );
     expect(saveButton.onPressed, isNull);

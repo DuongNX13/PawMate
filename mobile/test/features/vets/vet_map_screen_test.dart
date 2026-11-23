@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/features/vets/application/vet_map_provider.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_location_service.dart';
 import 'package:pawmate_mobile/features/vets/domain/vet_map_models.dart';
@@ -12,6 +14,7 @@ import 'package:pawmate_mobile/features/vets/presentation/vet_map_screen.dart';
 import 'package:pawmate_mobile/features/vets/presentation/vet_preview_sheet.dart';
 
 import '../../test_support/ui_test_helpers.dart';
+import '../../test_support/day115_capture.dart';
 
 void main() {
   testWidgets('shows permission denied state on map screen', (tester) async {
@@ -25,13 +28,17 @@ void main() {
             (ref) => _FakeLocationService.permissionDenied(),
           ),
         ],
-        child: const MaterialApp(home: VetMapScreen()),
+        child: MaterialApp(theme: AppTheme.light(), home: const VetMapScreen()),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Chưa có quyền vị trí'), findsOneWidget);
     expect(find.textContaining('quyền vị trí'), findsWidgets);
+    await captureDay115(tester, 'ST-15');
+    await tester.tap(find.widgetWithText(TextButton, 'Bật ngay'));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa có quyền vị trí'), findsOneWidget);
   });
 
   testWidgets('shows location disabled state on map screen', (tester) async {
@@ -241,7 +248,7 @@ void main() {
     expect(fakeApi.nearbyRequests.single.longitude, 105.8342);
   });
 
-  testWidgets('updates radius and forwards map type to map canvas', (
+  testWidgets('keeps the default map radius and forwards map type to canvas', (
     tester,
   ) async {
     await setTestViewport(tester, size: const Size(600, 900));
@@ -295,15 +302,8 @@ void main() {
     expect(find.text('fake-map-style:standard'), findsOneWidget);
     expect(fakeApi.nearbyRequests.single.radiusMeters, 3000);
 
-    await tester.drag(
-      find.byType(SingleChildScrollView).first,
-      const Offset(-180, 0),
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('vet-map-filter-5km')));
-    await tester.pumpAndSettle();
-
-    expect(fakeApi.nearbyRequests.last.radiusMeters, 5000);
+    expect(find.byKey(const Key('vet-map-filter-5km')), findsNothing);
+    expect(fakeApi.nearbyRequests.last.radiusMeters, 3000);
 
     await tester.tap(find.byKey(const Key('vet-map-style-toggle-button')));
     await tester.pumpAndSettle();
@@ -311,7 +311,7 @@ void main() {
     expect(find.text('fake-map-style:night'), findsOneWidget);
   });
 
-  testWidgets('nearby map filter chips update API query flags', (tester) async {
+  testWidgets('approved map anchor omits advanced filters', (tester) async {
     await setTestViewport(tester, size: const Size(600, 900));
 
     final fakeApi = _FakeVetApi(
@@ -365,22 +365,10 @@ void main() {
     expect(fakeApi.nearbyRequests.single.minRating, isNull);
     expect(find.textContaining('Day 3'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('vet-map-filter-24h')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('vet-map-filter-open-now')));
-    await tester.pumpAndSettle();
-    await tester.drag(
-      find.byType(SingleChildScrollView).first,
-      const Offset(-500, 0),
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('vet-map-filter-rating-4')));
-    await tester.pumpAndSettle();
-
-    final lastRequest = fakeApi.nearbyRequests.last;
-    expect(lastRequest.only24h, isTrue);
-    expect(lastRequest.openNow, isTrue);
-    expect(lastRequest.minRating, 4);
+    expect(find.byKey(const Key('vet-map-filter-24h')), findsNothing);
+    expect(find.byKey(const Key('vet-map-filter-open-now')), findsNothing);
+    expect(find.byKey(const Key('vet-map-filter-rating-4')), findsNothing);
+    expect(fakeApi.nearbyRequests, hasLength(1));
   });
 
   testWidgets(
@@ -423,6 +411,75 @@ void main() {
       expect(find.text('Bản đồ đang tạm gián đoạn'), findsOneWidget);
       expect(find.text('Không hiển thị được bản đồ'), findsOneWidget);
       expect(find.text('Xem dạng danh sách'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'ST-23 keeps map-unavailable recovery actions reachable at text scale 2.0',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            vetApiProvider.overrideWith(
+              (ref) => _FakeVetApi(nearbyItems: const []),
+            ),
+            vetLocationServiceProvider.overrideWith(
+              (ref) => _FakeLocationService.success(),
+            ),
+            vetMapCanvasBuilderProvider.overrideWith(
+              (ref) =>
+                  (
+                    VetMapLocation center,
+                    List<VetSummary> vets,
+                    VetMapStyle mapStyle,
+                    ValueChanged<String> onMarkerTap,
+                    ValueChanged<Object> onMapUnavailable,
+                  ) => const ColoredBox(color: Color(0xFFEDE6DA)),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const VetMapScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final providerContainer = ProviderScope.containerOf(
+        tester.element(find.byType(VetMapScreen)),
+      );
+      providerContainer.read(vetMapProvider.notifier).markMapUnavailable();
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('map-unavailable')),
+        220,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('vet-map-accessible-flow')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.byKey(const ValueKey('map-unavailable')), findsOneWidget);
+      await tester.ensureVisible(find.text('Tải lại bản đồ'));
+      await tester.ensureVisible(find.text('Xem dạng danh sách'));
+      expect(
+        tester.getSize(find.text('Tải lại bản đồ')).height,
+        greaterThan(0),
+      );
+      await captureDay115(tester, 'ST-23');
+      await tester.ensureVisible(find.text('Tải lại bản đồ'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tải lại bản đồ').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('Tải lại bản đồ'));
+      await tester.pumpAndSettle();
+      expect(providerContainer.read(vetMapProvider).mapUnavailable, isFalse);
+      expect(providerContainer.read(vetMapProvider).mapReloadToken, 1);
+      expectNoFlutterOverflow(tester);
     },
   );
 
@@ -483,10 +540,15 @@ void main() {
 
     expect(find.text('PawMate'), findsOneWidget);
     expect(find.text('Tìm phòng khám, bác sĩ...'), findsOneWidget);
-    expect(find.text('Gần nhất'), findsOneWidget);
+    expect(find.text('Gần nhất'), findsNothing);
     expect(find.byKey(const Key('vet-map-filter-5km')), findsNothing);
     expect(find.byKey(const Key('vet-map-filter-rating-4')), findsNothing);
     expect(find.text('Bật định vị để tìm phòng khám gần nhất'), findsOneWidget);
+    final searchShell = tester.getSize(
+      find.byKey(const Key('vet-map-search-shell')),
+    );
+    expect(searchShell.height, greaterThanOrEqualTo(48));
+    expect(searchShell.height, lessThanOrEqualTo(52));
     final enableLocation = find.widgetWithText(TextButton, 'Bật ngay');
     expect(enableLocation, findsOneWidget);
     expect(tester.getSize(enableLocation).height, greaterThanOrEqualTo(48));
@@ -494,14 +556,12 @@ void main() {
     expect(find.textContaining('PetHome Q7'), findsOneWidget);
     expect(find.text('Gọi ngay'), findsOneWidget);
     expect(find.text('Chỉ đường'), findsOneWidget);
-    expect(find.text('Chi tiết'), findsOneWidget);
-    for (final label in [
-      'Cấp cứu 24/7',
-      'Tiêm phòng',
-      'Gọi ngay',
-      'Chỉ đường',
-      'Chi tiết',
-    ]) {
+    expect(find.byKey(const Key('vet-map-info-button')), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Hình minh họa phòng khám thú y'),
+      findsOneWidget,
+    );
+    for (final label in ['Gọi ngay', 'Chỉ đường']) {
       final paragraph = tester.renderObject<RenderParagraph>(
         find.text(label).first,
       );
@@ -514,6 +574,93 @@ void main() {
     expect(find.text('Vet'), findsOneWidget);
     expectNoFlutterOverflow(tester);
   });
+
+  testWidgets(
+    'compact clinic card remains readable at accessibility text scale',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await setTestViewport(tester, size: const Size(390, 844));
+
+      const items = [
+        VetSummary(
+          id: 'vet-accessible-chip',
+          name: 'PetHome Q7',
+          city: 'TP Hồ Chí Minh',
+          district: 'Quận 7',
+          address: '120 Nguyễn Lương Bằng',
+          phone: '0903111222',
+          services: ['Cấp cứu 24/7', 'Tiêm phòng'],
+          seedRank: 1,
+          averageRating: 4.8,
+          reviewCount: 120,
+          is24h: true,
+          isOpen: true,
+          readyForMap: true,
+          latitude: 10.778,
+          longitude: 106.701,
+          distanceMeters: 1200,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            vetApiProvider.overrideWith(
+              (ref) => _FakeVetApi(nearbyItems: items),
+            ),
+            vetLocationServiceProvider.overrideWith(
+              (ref) => _FakeLocationService.success(),
+            ),
+            vetMapCanvasBuilderProvider.overrideWith(
+              (ref) =>
+                  (
+                    VetMapLocation center,
+                    List<VetSummary> vets,
+                    VetMapStyle mapStyle,
+                    ValueChanged<String> onMarkerTap,
+                    ValueChanged<Object> onMapUnavailable,
+                  ) => const ColoredBox(color: Color(0xFFEDE6DA)),
+            ),
+          ],
+          child: MaterialApp(
+            builder: testTextScaleBuilder(2),
+            home: const VetMapScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.bySemanticsLabel('PawMate'), findsOneWidget);
+      final locationBannerText = find.text(
+        'Bật định vị để tìm phòng khám gần nhất',
+      );
+      expect(locationBannerText, findsOneWidget);
+      expect(
+        tester
+            .renderObject<RenderParagraph>(locationBannerText)
+            .didExceedMaxLines,
+        isFalse,
+        reason:
+            'location-permission guidance must not be truncated at accessibility text sizes',
+      );
+      final locationBanner = find.byKey(const Key('vet-map-location-banner'));
+      final enableLocation = find.widgetWithText(TextButton, 'Bật ngay');
+      expect(tester.getSize(enableLocation).height, greaterThanOrEqualTo(48));
+      expect(
+        tester
+            .getRect(locationBanner)
+            .contains(tester.getRect(enableLocation).center),
+        isTrue,
+      );
+      expect(find.text('Google'), findsOneWidget);
+      expect(find.text('00:00–24:00'), findsOneWidget);
+      expect(find.byKey(const Key('vet-map-info-button')), findsOneWidget);
+      expect(find.text('Gọi ngay'), findsOneWidget);
+      expect(find.text('Chỉ đường'), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+      semantics.dispose();
+    },
+  );
 
   testWidgets('preview sheet action callbacks are individually tappable', (
     tester,
@@ -562,6 +709,101 @@ void main() {
     expect(directionsTapped, isTrue);
     expect(callTapped, isTrue);
   });
+
+  testWidgets(
+    'preview sheet keeps long clinic details and actions readable at text scale 2.0',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+
+      const longService =
+          'Diagnostics, inpatient treatment, and 24-hour emergency pet care service';
+      var directionsTapped = false;
+      var callTapped = false;
+
+      const clinicName = 'Bệnh viện thú y chăm sóc thú cưng chuyên sâu Sài Gòn';
+      const clinicAddress =
+          '123 Đường Nguyễn Văn Linh, Phường Tân Phong, Quận 7, Thành phố Hồ Chí Minh';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: testTextScaleBuilder(2),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: ElevatedButton(
+                  onPressed: () => showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    builder: (context) => VetPreviewSheet(
+                      vet: const VetSummary(
+                        id: 'vet-long',
+                        name: clinicName,
+                        city: 'Thành phố Hồ Chí Minh',
+                        district: 'Quận 7',
+                        address: clinicAddress,
+                        phone: '0903111222',
+                        services: <String>[
+                          longService,
+                          'Khám nội tổng quát',
+                          'Tiêm phòng định kỳ',
+                          'Cấp cứu thú cưng 24/7',
+                        ],
+                        seedRank: 1,
+                        averageRating: 4.9,
+                        reviewCount: 124,
+                        is24h: true,
+                        isOpen: true,
+                        readyForMap: true,
+                      ),
+                      onViewDetail: () {},
+                      onGetDirections: () => directionsTapped = true,
+                      onCallNow: () => callTapped = true,
+                    ),
+                  ),
+                  child: const Text('Mở xem nhanh'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Mở xem nhanh'));
+      await tester.pumpAndSettle();
+
+      for (final text in [clinicName, clinicAddress]) {
+        final finder = find.text(text);
+        expect(finder, findsOneWidget);
+        expect(
+          tester.renderObject<RenderParagraph>(finder).didExceedMaxLines,
+          isFalse,
+          reason: 'Long clinic data must remain readable at text scale 2.0.',
+        );
+      }
+
+      final serviceChip = find.text(longService);
+      expect(serviceChip, findsOneWidget);
+      expect(
+        tester.renderObject<RenderParagraph>(serviceChip).didExceedMaxLines,
+        isTrue,
+        reason: 'A non-action tag may truncate visually inside its chip.',
+      );
+      expect(find.bySemanticsLabel(longService), findsOneWidget);
+
+      await tester.scrollUntilVisible(find.bySemanticsLabel('Chỉ đường'), 240);
+      final directionsButton = find.bySemanticsLabel('Chỉ đường');
+      final callButton = find.bySemanticsLabel('Gọi ngay');
+      expect(tester.getSize(directionsButton).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(callButton).height, greaterThanOrEqualTo(48));
+      await tester.tap(directionsButton);
+      await tester.tap(callButton);
+      expect(directionsTapped, isTrue);
+      expect(callTapped, isTrue);
+
+      expectNoFlutterOverflow(tester);
+    },
+  );
 }
 
 class _FakeVetApi extends VetApi {

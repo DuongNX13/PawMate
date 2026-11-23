@@ -141,6 +141,15 @@ class VetFinderSessionNotifier extends Notifier<VetFinderSessionState> {
     );
   }
 
+  void activateEmergencySearch() {
+    state = state.copyWith(
+      only24h: true,
+      openNow: true,
+      sort: VetSortOption.curated,
+      radiusMeters: 3000,
+    );
+  }
+
   void setRadius(int radiusMeters) {
     state = state.copyWith(radiusMeters: radiusMeters);
   }
@@ -164,12 +173,13 @@ class VetFinderSessionNotifier extends Notifier<VetFinderSessionState> {
     String? nextCursor,
     VetMapLocation? mapCenter,
   }) {
+    final normalizedTotal = total < items.length ? items.length : total;
     final selectedStillExists =
         state.selectedVetId != null &&
         items.any((item) => item.vetId == state.selectedVetId);
     state = state.copyWith(
       items: List.unmodifiable(items),
-      total: total,
+      total: normalizedTotal,
       nextCursor: nextCursor,
       clearNextCursor: nextCursor == null,
       datasetSource: source,
@@ -184,9 +194,12 @@ class VetFinderSessionNotifier extends Notifier<VetFinderSessionState> {
       for (final item in state.items) item.vetId: item,
       for (final item in result.items) item.vetId: item,
     };
+    final normalizedTotal = result.total < merged.length
+        ? merged.length
+        : result.total;
     state = state.copyWith(
       items: List.unmodifiable(merged.values),
-      total: result.total,
+      total: normalizedTotal,
       nextCursor: result.nextCursor,
       clearNextCursor: result.nextCursor == null,
       datasetSource: VetFinderDatasetSource.search,

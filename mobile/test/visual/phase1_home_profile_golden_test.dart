@@ -18,11 +18,13 @@ const _goldenRootKey = Key('day19-home-profile-golden-root');
 const _viewport = Size(390, 844);
 const _homeResponsiveViewports = [
   Size(320, 568),
+  Size(360, 800),
   Size(360, 844),
   Size(412, 915),
   Size(430, 932),
 ];
 const _profileResponsiveViewports = [
+  Size(360, 800),
   Size(360, 844),
   Size(412, 915),
   Size(430, 932),
@@ -49,6 +51,14 @@ void main() {
   testWidgets('P1-16 Profile golden at 390x844', (tester) async {
     await _pumpProfile(tester, _viewport);
 
+    expect(
+      tester.getSize(find.byKey(const Key('profile-pet-mochi'))),
+      const Size(120, 128),
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('profile-edit-action'))),
+      const Size(48, 48),
+    );
     expectNoFlutterOverflow(tester);
     await expectLater(
       find.byKey(_goldenRootKey),
@@ -83,14 +93,20 @@ void main() {
   }
 }
 
+Future<void> pumpDay118Home(WidgetTester tester, Size viewport) =>
+    _pumpHome(tester, viewport);
+
+Future<void> pumpDay118Profile(WidgetTester tester, Size viewport) =>
+    _pumpProfile(tester, viewport);
+
 Future<void> _pumpHome(WidgetTester tester, Size viewport) async {
   await setTestViewport(tester, size: viewport);
-  final pets = _pets();
+  final pets = _pets(secondId: 'bap', secondName: 'Bắp');
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         authSessionSnapshotProvider.overrideWithValue(
-          const AsyncValue<AuthSession?>.data(_session),
+          const AsyncValue<AuthSession?>.data(_homeSession),
         ),
         petBackendListProvider.overrideWithValue(
           AsyncValue<List<PetProfile>>.data(pets),
@@ -98,6 +114,7 @@ Future<void> _pumpHome(WidgetTester tester, Size viewport) async {
         upcomingRemindersProvider.overrideWithValue(
           AsyncValue<List<Reminder>>.data([_reminder]),
         ),
+        selectedPetIdProvider.overrideWith(_GoldenSelectedPetIdNotifier.new),
       ],
       child: RepaintBoundary(
         key: _goldenRootKey,
@@ -114,7 +131,7 @@ Future<void> _pumpHome(WidgetTester tester, Size viewport) async {
 
 Future<void> _pumpProfile(WidgetTester tester, Size viewport) async {
   await setTestViewport(tester, size: viewport);
-  final pets = _pets();
+  final pets = _profilePets();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -130,7 +147,9 @@ Future<void> _pumpProfile(WidgetTester tester, Size viewport) async {
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
-          home: const ProfileScreen(),
+          home: const ProfileScreen(
+            avatarAsset: 'assets/images/profile/p1_16_owner.png',
+          ),
         ),
       ),
     ),
@@ -144,6 +163,9 @@ Future<void> _precacheAssets(WidgetTester tester) async {
   for (final asset in const [
     'assets/images/pets/p1_05_mochi.png',
     'assets/images/pets/p1_05_kem.png',
+    'assets/images/profile/p1_16_owner.png',
+    'assets/images/profile/p1_16_mochi.png',
+    'assets/images/profile/p1_16_kem.png',
     'assets/images/pets/home_adoption_golden.png',
   ]) {
     await tester.runAsync(() => precacheImage(AssetImage(asset), context));
@@ -151,7 +173,35 @@ Future<void> _precacheAssets(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-List<PetProfile> _pets() => [
+List<PetProfile> _pets({String secondId = 'kem', String secondName = 'Kem'}) =>
+    [
+      PetProfile(
+        id: 'mochi',
+        name: 'Mochi',
+        species: 'dog',
+        breed: 'Golden Retriever',
+        gender: 'male',
+        dateOfBirth: DateTime(2022, 4, 12),
+        weightKg: 12.4,
+        healthStatus: 'healthy',
+        avatarPath: 'assets/images/pets/p1_05_mochi.png',
+        color: 'Vàng kem',
+      ),
+      PetProfile(
+        id: secondId,
+        name: secondName,
+        species: 'cat',
+        breed: 'Mèo Ba Tư',
+        gender: 'female',
+        dateOfBirth: DateTime(2023, 2, 8),
+        weightKg: 4.1,
+        healthStatus: 'needs_vaccine',
+        avatarPath: 'assets/images/pets/p1_05_kem.png',
+        color: 'Trắng kem',
+      ),
+    ];
+
+List<PetProfile> _profilePets() => [
   PetProfile(
     id: 'mochi',
     name: 'Mochi',
@@ -161,7 +211,7 @@ List<PetProfile> _pets() => [
     dateOfBirth: DateTime(2022, 4, 12),
     weightKg: 12.4,
     healthStatus: 'healthy',
-    avatarPath: 'assets/images/pets/p1_05_mochi.png',
+    avatarPath: 'assets/images/profile/p1_16_mochi.png',
     color: 'Vàng kem',
   ),
   PetProfile(
@@ -172,8 +222,8 @@ List<PetProfile> _pets() => [
     gender: 'female',
     dateOfBirth: DateTime(2023, 2, 8),
     weightKg: 4.1,
-    healthStatus: 'needs_vaccine',
-    avatarPath: 'assets/images/pets/p1_05_kem.png',
+    healthStatus: 'healthy',
+    avatarPath: 'assets/images/profile/p1_16_kem.png',
     color: 'Trắng kem',
   ),
 ];
@@ -192,10 +242,24 @@ const _session = AuthSession(
   refreshTokenExpiresAt: '2099-06-14T10:00:00.000Z',
 );
 
+const _homeSession = AuthSession(
+  user: AuthUser(
+    id: 'owner-1',
+    email: 'duong.ngo@example.com',
+    authProvider: 'email',
+    emailVerified: true,
+    displayName: 'Nguyễn Văn Nam',
+  ),
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+  accessTokenExpiresAt: '2099-05-14T10:00:00.000Z',
+  refreshTokenExpiresAt: '2099-06-14T10:00:00.000Z',
+);
+
 final _reminder = Reminder(
   id: 'reminder-1',
-  petId: 'mochi',
-  title: 'Tiêm ngừa cho Mochi',
+  petId: 'bap',
+  title: 'Tiêm ngừa cho Bắp',
   reminderAt: DateTime(2026, 7, 17, 9, 30),
   repeatRule: ReminderRepeatRule.none,
   timezone: 'Asia/Bangkok',
@@ -204,3 +268,8 @@ final _reminder = Reminder(
   updatedAt: '2026-07-16T00:00:00.000Z',
   note: 'PetCare Elite',
 );
+
+class _GoldenSelectedPetIdNotifier extends SelectedPetIdNotifier {
+  @override
+  String? build() => 'bap';
+}

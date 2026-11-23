@@ -112,6 +112,8 @@ void main() {
         await tester.tap(find.text('Quay lại danh sách'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
+        expect(find.byType(PetListScreen), findsOneWidget);
+
         final profileDestination = find.bySemanticsLabel('Profile');
         expect(profileDestination, findsOneWidget);
         await tester.tap(profileDestination);

@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/app/theme/app_tokens.dart';
 import 'package:pawmate_mobile/features/auth/application/auth_session_coordinator.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
 import 'package:pawmate_mobile/features/pets/application/pet_list_provider.dart';
@@ -119,6 +120,112 @@ void main() {
     expectNoFlutterOverflow(tester);
   });
 
+  testWidgets(
+    'Pet home adoption teaser keeps all visible labels readable at text scale 2.0',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      final router = _petRouter(
+        initialLocation: '/pets',
+        includeCreateScreen: false,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            petBackendListProvider.overrideWith(
+              (ref) async => [
+                _samplePet(id: 'mochi', name: 'Mochi'),
+                _samplePet(id: 'kem', name: 'Kem'),
+              ],
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final card = find.byKey(const Key('home-adoption-card'));
+      await tester.scrollUntilVisible(
+        card,
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      for (final key in const [
+        Key('home-adoption-title'),
+        Key('home-adoption-meta'),
+        Key('home-adoption-cta'),
+        Key('home-adoption-view-more'),
+      ]) {
+        final text = find.byKey(key);
+        expect(text, findsOneWidget);
+        expect(
+          tester.renderObject<RenderParagraph>(text).didExceedMaxLines,
+          isFalse,
+          reason: '$key must not ellipsize visible adoption copy',
+        );
+      }
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
+  testWidgets('Pet home visible card copy stays readable at text scale 2.0', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(320, 568));
+    final router = _petRouter(
+      initialLocation: '/pets',
+      includeCreateScreen: false,
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          petBackendListProvider.overrideWith(
+            (ref) async => [_samplePet(id: 'mochi', name: 'Mochi')],
+          ),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    for (final label in const [
+      'PawMate',
+      'LỊCH NHẮC SỨC KHỎE',
+      'Chưa có lịch nhắc cho Mochi',
+      'Tạo lịch tiêm phòng, tẩy giun hoặc tái khám.',
+      'Mất Poodle trắng tại phường Tân Quý',
+      'PHÒNG KHÁM GẦN BẠN',
+      'PetHome Q7',
+      'Google',
+      '★ 4.8',
+    ]) {
+      await tester.scrollUntilVisible(
+        find.text(label),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final text = find.text(label);
+      expect(text, findsOneWidget);
+      expect(
+        tester.renderObject<RenderParagraph>(text).didExceedMaxLines,
+        isFalse,
+        reason: 'Visible Home copy must not ellipsize: $label',
+      );
+    }
+    expectNoFlutterOverflow(tester);
+  });
+
   for (final viewport in _homeResponsiveViewports) {
     testWidgets('Pet home keeps Golden adoption content and 48px actions at '
         '${viewport.width.toInt()}px', (tester) async {
@@ -179,6 +286,16 @@ void main() {
             actionSize.width,
             lessThanOrEqualTo(viewport.width * 0.6),
             reason: '$key must remain a compact CTA at $viewport',
+          );
+          final visual = find.descendant(
+            of: find.byKey(key),
+            matching: find.byType(AnimatedContainer),
+          );
+          expect(visual, findsOneWidget);
+          expect(
+            tester.getSize(visual).height,
+            AppControlSize.compactButtonVisualHeight,
+            reason: '$key must use the approved compact visual at $viewport',
           );
         }
       }
@@ -655,7 +772,7 @@ void main() {
         ],
         child: MaterialApp.router(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           routerConfig: router,
         ),
       ),
@@ -793,17 +910,76 @@ void main() {
       ProviderScope(
         child: MaterialApp.router(
           theme: AppTheme.light(),
-          builder: testTextScaleBuilder(1.3),
+          builder: testTextScaleBuilder(2),
           routerConfig: router,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Hồ sơ thú cưng'), findsOneWidget);
+    expect(find.bySemanticsLabel('Hồ sơ thú cưng'), findsOneWidget);
+    final header = find.text('Hồ sơ');
+    expect(header, findsOneWidget);
+    expect(
+      tester.renderObject<RenderParagraph>(header).didExceedMaxLines,
+      isFalse,
+      reason: 'The Create Pet heading must remain readable at text scale 2.0.',
+    );
+    final microchipLabel = find.text('Số Microchip (nếu có)');
+    expect(microchipLabel, findsOneWidget);
+    expect(
+      tester.renderObject<RenderParagraph>(microchipLabel).didExceedMaxLines,
+      isFalse,
+      reason: 'Field labels must not ellipsize at text scale 2.0.',
+    );
     expect(find.byKey(const Key('pet-form-save-button')), findsOneWidget);
     expectNoFlutterOverflow(tester);
   });
+
+  testWidgets(
+    'Pet form keeps the final field above its fixed CTA with large text and keyboard',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      final router = _petRouter(
+        initialLocation: '/pets/create',
+        includeCreateScreen: true,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final microchipField = find.descendant(
+        of: find.byKey(const Key('pet-form-microchip-field')),
+        matching: find.byType(TextFormField),
+      );
+      final formScroll = find.byType(CustomScrollView);
+      await tester.drag(formScroll, const Offset(0, -1500));
+      await tester.pumpAndSettle();
+      expect(tester.getRect(microchipField).bottom, lessThanOrEqualTo(568));
+      await tester.tap(microchipField);
+      await tester.enterText(microchipField, 'MC-8293-128');
+      await setKeyboardInset(tester, bottom: 300);
+
+      await tester.drag(formScroll, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      final saveAction = find.text('L\u01B0u h\u1ED3 s\u01A1');
+      expect(
+        tester.getRect(microchipField).bottom,
+        lessThanOrEqualTo(tester.getRect(saveAction).top),
+      );
+      expect(tester.getRect(saveAction).bottom, lessThanOrEqualTo(268));
+      expectNoFlutterOverflow(tester);
+    },
+  );
 }
 
 Future<void> _pumpReminderHome(

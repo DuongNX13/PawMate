@@ -164,7 +164,7 @@ void main() {
   testWidgets(
     'Day25 keeps permission and map-unavailable fallbacks recoverable',
     (tester) async {
-      await setTestViewport(tester, size: const Size(390, 844));
+      await setTestViewport(tester, size: const Size(320, 568));
       final fakeApi = _FakeVetApi();
       await tester.pumpWidget(
         ProviderScope(
@@ -186,14 +186,27 @@ void main() {
           ],
           child: MaterialApp(
             theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
             home: const VetMapScreen(),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
+      await tester.scrollUntilVisible(
+        find.text('Chưa có quyền vị trí'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byKey(const Key('vet-map-accessible-flow')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       expect(find.text('Chưa có quyền vị trí'), findsOneWidget);
       expect(find.text('Xem dạng danh sách'), findsOneWidget);
+      await tester.ensureVisible(find.text('Xem dạng danh sách'));
+      expectNoFlutterOverflow(tester);
     },
   );
 }

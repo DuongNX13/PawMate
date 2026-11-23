@@ -10,6 +10,8 @@ import 'package:pawmate_mobile/features/auth/application/auth_session_coordinato
 import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_session_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../test_support/day115_capture.dart';
+import '../../test_support/ui_test_helpers.dart';
 
 void main() {
   testWidgets('stale active flag without secure session opens login', (
@@ -158,13 +160,20 @@ void main() {
       '/health',
       '/health/events/new',
       '/health/reminders',
+      '/health/knowledge',
       '/notifications',
       '/community',
       '/adoption',
+      '/adoption/requests',
+      '/adoption/11111111-1111-4111-8111-111111111111',
+      '/adoption/11111111-1111-4111-8111-111111111111/request',
+      '/adoption/chat/33333333-3333-4333-8333-333333333333',
       '/profile/controls',
       '/profile/privacy',
+      '/profile/notifications',
       '/profile',
       '/rescue',
+      '/rescue/map',
       '/rescue/create',
       '/rescue/create/details',
       '/rescue/case-1',
@@ -180,6 +189,16 @@ void main() {
         harness.router.routeInformationProvider.value.uri.path,
         '/auth/login',
         reason: '$location must require a valid secure session.',
+      );
+      expect(
+        harness
+            .router
+            .routeInformationProvider
+            .value
+            .uri
+            .queryParameters['returnTo'],
+        location,
+        reason: '$location must survive the Login redirect unchanged.',
       );
     }
     harness.dispose();
@@ -256,6 +275,7 @@ void main() {
   testWidgets('guest redirect preserves protected path and query as returnTo', (
     tester,
   ) async {
+    await setTestViewport(tester, size: const Size(390, 844));
     SharedPreferences.setMockInitialValues({
       'hasSeenOnboarding': true,
       'hasActiveSession': false,
@@ -268,8 +288,32 @@ void main() {
     final uri = harness.router.routeInformationProvider.value.uri;
     expect(uri.path, '/auth/login');
     expect(uri.queryParameters['returnTo'], '/vets/list?availability=24h');
+    await captureDay115(tester, 'UX-26');
     harness.dispose();
   });
+
+  testWidgets(
+    'guest redirect preserves canonical adoption profile as returnTo',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'hasSeenOnboarding': true,
+        'hasActiveSession': false,
+      });
+      final harness = await _pumpProductionRouter(tester, session: null);
+      const listingId = '11111111-1111-4111-8111-111111111111';
+
+      harness.router.go('/adoption/$listingId?source=home');
+      await tester.pumpAndSettle();
+
+      final uri = harness.router.routeInformationProvider.value.uri;
+      expect(uri.path, '/auth/login');
+      expect(
+        uri.queryParameters['returnTo'],
+        '/adoption/$listingId?source=home',
+      );
+      harness.dispose();
+    },
+  );
 
   testWidgets('expired access token is refreshed before protected restore', (
     tester,
@@ -383,6 +427,10 @@ void main() {
     const locations = <String>[
       '/pets/list',
       '/adoption',
+      '/adoption/requests',
+      '/adoption/11111111-1111-4111-8111-111111111111',
+      '/adoption/11111111-1111-4111-8111-111111111111/request',
+      '/adoption/chat/33333333-3333-4333-8333-333333333333',
       '/vets/map',
       '/vets/list',
       '/health',

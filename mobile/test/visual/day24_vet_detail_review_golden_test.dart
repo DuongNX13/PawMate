@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/app/theme/app_tokens.dart';
 import 'package:pawmate_mobile/features/vets/data/vet_api.dart';
 import 'package:pawmate_mobile/features/vets/domain/vet_models.dart';
 import 'package:pawmate_mobile/features/vets/presentation/vet_detail_screen.dart';
@@ -20,24 +21,24 @@ const _detailExtraViewports = <Size>[
 const _reviewExtraViewports = <Size>[Size(360, 844), Size(430, 932)];
 
 const _detail = VetDetail(
-  id: 'pawmate-q1',
-  name: 'Phòng khám Thú y PawMate Quận 1',
+  id: 'pethome-q7',
+  name: 'PetHome Q7',
   city: 'TP Hồ Chí Minh',
-  district: 'Quận 1',
-  address: '120 Nguyễn Huệ',
+  district: 'Phú Mỹ, Quận 7',
+  address: '120 Nguyễn Lương Bằng',
   phone: '0903 111 222',
   summary: 'Cấp cứu 24/7 và chăm sóc định kỳ cho thú cưng.',
-  services: ['Khám tổng quát', 'Tiêm phòng', 'Cấp cứu 24/7'],
+  services: ['Tiêm phòng', 'Cấp cứu 24/7', 'Khám tổng quát'],
   seedRank: 1,
   averageRating: 4.8,
   reviewCount: 120,
-  is24h: true,
+  is24h: false,
   isOpen: true,
   readyForMap: true,
   latitude: 10.778,
   longitude: 106.701,
   website: 'https://pawmate.test/vets/pawmate-q1',
-  openHours: ['Mở cửa 24/7'],
+  openHours: ['08:00 - 21:00'],
   photoUrls: [],
   source: VetSource(
     url: 'https://pawmate.test',
@@ -47,6 +48,31 @@ const _detail = VetDetail(
     selectionReason: 'golden-fixture',
   ),
 );
+
+Future<void> pumpDay120VetSheet(
+  WidgetTester tester,
+  Size size, {
+  required bool list,
+}) async {
+  await _pumpDetail(tester, viewport: size);
+  final button = find.byKey(
+    Key(list ? 'review-list-open-button' : 'vet-detail-write-review-button'),
+  );
+  await tester.scrollUntilVisible(
+    button,
+    250,
+    maxScrolls: 40,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.ensureVisible(button);
+  await tester.pumpAndSettle();
+  if (tester.getRect(button).bottom > size.height - 124) {
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -300));
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -67,6 +93,38 @@ void main() {
       tester.getSize(find.bySemanticsLabel('Chỉ đường')).height,
       greaterThanOrEqualTo(48),
     );
+    expect(
+      tester.getSize(find.byKey(const Key('vet-detail-header-shell'))).height,
+      64,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('vet-detail-hero'))).height,
+      240,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('vet-detail-quick-facts'))).height,
+      118,
+    );
+    expect(
+      tester.getSize(find.byKey(const Key('vet-detail-address-card'))).height,
+      greaterThanOrEqualTo(104),
+    );
+    for (final label in ['Chỉ đường', 'Gọi ngay']) {
+      final action = find.bySemanticsLabel(label);
+      expect(
+        tester
+            .getSize(
+              find.descendant(
+                of: action,
+                matching: find.byType(AnimatedContainer),
+              ),
+            )
+            .height,
+        AppControlSize.compactButtonVisualHeight,
+      );
+      expect(tester.getRect(action).top, greaterThanOrEqualTo(0));
+      expect(tester.getRect(action).bottom, lessThanOrEqualTo(844));
+    }
     expectNoFlutterOverflow(tester);
     await expectLater(
       find.byKey(_goldenKey),
@@ -134,7 +192,24 @@ Future<void> _pumpReviewSheet(WidgetTester tester, Size viewport) async {
   expect(tester.getRect(reviewButton).bottom, lessThanOrEqualTo(safeTapBottom));
   await tester.tap(reviewButton);
   await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('write-review-star-5')));
+  await tester.enterText(
+    find.byKey(const Key('write-review-body-field')),
+    'Dịch vụ',
+  );
+  await tester.tap(find.byKey(const Key('write-review-submit')));
+  await tester.pumpAndSettle();
+  expect(find.text('Vui lòng nhập tối thiểu 10 ký tự.'), findsOneWidget);
+  final reviewScroll = find.descendant(
+    of: find.byType(SingleChildScrollView),
+    matching: find.byType(Scrollable),
+  );
+  tester.state<ScrollableState>(reviewScroll.first).position.jumpTo(0);
+  await tester.pump();
 }
+
+Future<void> pumpDay118VetDetail(WidgetTester tester, Size viewport) =>
+    _pumpDetail(tester, viewport: viewport);
 
 Future<void> _pumpDetail(
   WidgetTester tester, {
@@ -149,7 +224,7 @@ Future<void> _pumpDetail(
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
-          home: const VetDetailScreen(vetId: 'pawmate-q1'),
+          home: const VetDetailScreen(vetId: 'pethome-q7'),
         ),
       ),
     ),

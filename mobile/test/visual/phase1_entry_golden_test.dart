@@ -23,6 +23,22 @@ const _tierAExtraViewports = <Size>[
 ];
 const _goldenRootKey = Key('day13-phase1-entry-golden-root');
 
+Future<void> pumpDay120Entry(
+  WidgetTester tester,
+  Size size, {
+  required bool login,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  final router = login ? _buildLoginRouter() : _buildOnboardingRouter();
+  addTearDown(router.dispose);
+  await _pumpGolden(
+    tester,
+    router: router,
+    api: _GoldenAuthApi(),
+    viewport: size,
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -46,6 +62,24 @@ void main() {
     );
   });
 
+  testWidgets('P1-01 onboarding approved responsive golden at 360x800', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await _pumpGolden(
+      tester,
+      router: _buildOnboardingRouter(),
+      api: _GoldenAuthApi(),
+      viewport: const Size(360, 800),
+    );
+
+    expectNoFlutterOverflow(tester);
+    await expectLater(
+      find.byKey(_goldenRootKey),
+      matchesGoldenFile('goldens/day13/p1-01-onboarding-360x800.png'),
+    );
+  });
+
   testWidgets('P1-02 login error golden at 390x844', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await _pumpGolden(
@@ -55,13 +89,20 @@ void main() {
         loginError: 'Email hoặc mật khẩu không đúng. Vui lòng kiểm tra lại.',
       ),
     );
-    await tester.enterText(find.byType(TextFormField).at(0), 'nam@example.com');
-    await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'example@gmail.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'secret12');
     await tester.tap(find.byKey(const Key('login-submit-button')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
     expectNoFlutterOverflow(tester);
+    expect(
+      tester.getBottomRight(find.byKey(const Key('login-register-cta'))).dy,
+      lessThanOrEqualTo(_viewport.height),
+    );
     await expectLater(
       find.byKey(_goldenRootKey),
       matchesGoldenFile('goldens/day13/p1-02-login-error-390x844.png'),
@@ -99,10 +140,15 @@ void main() {
       );
       await tester.enterText(
         find.byType(TextFormField).at(0),
-        'nam@example.com',
+        'example@gmail.com',
       );
-      await tester.enterText(find.byType(TextFormField).at(1), 'secret123');
-      await tester.tap(find.byKey(const Key('login-submit-button')));
+      await tester.enterText(find.byType(TextFormField).at(1), 'secret12');
+      final submit = find.byKey(const Key('login-submit-button'));
+      if (viewport.height <= 568) {
+        await tester.ensureVisible(submit);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(submit);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 

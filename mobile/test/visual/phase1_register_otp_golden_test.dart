@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
+import 'package:pawmate_mobile/app/theme/app_tokens.dart';
 import 'package:pawmate_mobile/features/auth/data/auth_api.dart';
 import 'package:pawmate_mobile/features/auth/presentation/otp_screen.dart';
 import 'package:pawmate_mobile/features/auth/presentation/register_screen.dart';
@@ -20,6 +21,27 @@ const _registerExtraViewports = <Size>[
 const _otpExtraViewports = <Size>[Size(360, 844), Size(430, 932)];
 const _goldenRootKey = Key('day14-register-otp-golden-root');
 
+Future<void> pumpDay120Auth(
+  WidgetTester tester,
+  Size size, {
+  required bool otp,
+}) async {
+  final now = DateTime(2026, 7, 14, 18);
+  await _pumpGolden(
+    tester,
+    otp
+        ? OtpScreen(
+            email: 'nam@example.com',
+            registrationId: 'user-1',
+            verificationExpiresAt: now.add(const Duration(minutes: 5)),
+            resendAvailableAt: now.add(const Duration(seconds: 57)),
+            now: () => now,
+          )
+        : const RegisterScreen(),
+    viewport: size,
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -32,6 +54,15 @@ void main() {
     await _pumpGolden(tester, const RegisterScreen());
 
     expectNoFlutterOverflow(tester);
+    expect(find.text('0/254'), findsNothing);
+    expect(find.text('0/11'), findsNothing);
+    expect(find.text('0/64'), findsNothing);
+    expect(
+      tester
+          .getBottomRight(find.byKey(const ValueKey('register-login-cta')))
+          .dy,
+      lessThanOrEqualTo(_viewport.height),
+    );
     await expectLater(
       find.byKey(_goldenRootKey),
       matchesGoldenFile('goldens/day14/p1-03-register-390x844.png'),
@@ -51,9 +82,34 @@ void main() {
         now: () => now,
       ),
     );
+    await _enterRejectedOtp(tester);
 
     expectNoFlutterOverflow(tester);
     expect(find.text('Gửi lại mã (57s)'), findsOneWidget);
+    final otpIllustrationSize = tester.getSize(
+      find.descendant(
+        of: find.byKey(const ValueKey('otp-illustration')),
+        matching: find.byType(Image),
+      ),
+    );
+    expect(otpIllustrationSize.width, inInclusiveRange(160, 168));
+    expect(otpIllustrationSize.height, otpIllustrationSize.width);
+    expect(
+      tester
+          .getSize(
+            find.descendant(
+              of: find.byKey(const ValueKey('otp-confirm-button')),
+              matching: find.byType(AnimatedContainer),
+            ),
+          )
+          .height,
+      AppControlSize.compactButtonVisualHeight,
+    );
+    expect(
+      find.text('Mã OTP không chính xác. Vui lòng thử lại.'),
+      findsOneWidget,
+    );
+    _expectOtpFieldsInsideViewport(tester);
     await expectLater(
       find.byKey(_goldenRootKey),
       matchesGoldenFile('goldens/day14/p1-04-otp-390x844.png'),
@@ -111,9 +167,11 @@ void main() {
         ),
         viewport: viewport,
       );
+      await _enterRejectedOtp(tester);
 
       expectNoFlutterOverflow(tester);
       expect(find.text('Gửi lại mã (57s)'), findsOneWidget);
+      _expectOtpFieldsInsideViewport(tester);
       await expectLater(
         find.byKey(_goldenRootKey),
         matchesGoldenFile('goldens/day14/p1-04-otp-$tag.png'),
@@ -160,6 +218,54 @@ Future<void> _disposeGolden(WidgetTester tester) async {
   await tester.pump();
 }
 
+Future<void> _enterRejectedOtp(WidgetTester tester) async {
+  final input = find.descendant(
+    of: find.byKey(const ValueKey('otp-code-field')),
+    matching: find.byType(EditableText),
+  );
+  await tester.enterText(input, '123456');
+  await tester.pump();
+  await tester.tap(find.byKey(const ValueKey('otp-confirm-button')));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 600));
+  final scrollable = find.descendant(
+    of: find.byType(SingleChildScrollView),
+    matching: find.byType(Scrollable),
+  );
+  tester.state<ScrollableState>(scrollable.first).position.jumpTo(0);
+  await tester.pump();
+}
+
+void _expectOtpFieldsInsideViewport(WidgetTester tester) {
+  final fields = find.descendant(
+    of: find.byKey(const ValueKey('otp-code-field')),
+    matching: find.byType(AnimatedContainer),
+  );
+  expect(fields, findsNWidgets(6));
+  final viewportWidth =
+      tester.view.physicalSize.width / tester.view.devicePixelRatio;
+  for (final element in fields.evaluate()) {
+    final rect = tester.getRect(
+      find.byElementPredicate((candidate) {
+        return identical(candidate, element);
+      }),
+    );
+    expect(rect.left, greaterThanOrEqualTo(0));
+    expect(rect.right, lessThanOrEqualTo(viewportWidth));
+  }
+}
+
 class _GoldenAuthApi extends AuthApi {
   _GoldenAuthApi() : super(Dio());
+
+  @override
+  Future<VerifyEmailResponse> verifyEmail({
+    required String email,
+    required String token,
+  }) async {
+    throw const AuthApiException(
+      'Mã OTP không chính xác. Vui lòng thử lại.',
+      code: 'AUTH_016',
+    );
+  }
 }

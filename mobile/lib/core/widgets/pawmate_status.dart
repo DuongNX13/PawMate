@@ -26,6 +26,9 @@ class PawMateStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final allowWrap =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     final presentation = _StatusPresentation.resolve(
       value,
       colors: PawMateStatusColors.of(context),
@@ -50,13 +53,18 @@ class PawMateStatus extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(presentation.icon, size: 16, color: presentation.foreground),
+              Icon(
+                presentation.icon,
+                size: AppControlSize.iconSmall,
+                color: presentation.foreground,
+              ),
               const SizedBox(width: AppSpacing.s4),
               Flexible(
                 child: Text(
                   presentation.text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  maxLines: allowWrap ? null : 1,
+                  overflow: allowWrap ? null : TextOverflow.ellipsis,
+                  softWrap: allowWrap,
                   style: AppTextStyles.captionStrong(
                     color: presentation.foreground,
                   ),

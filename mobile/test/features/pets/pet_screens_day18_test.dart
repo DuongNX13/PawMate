@@ -3,11 +3,13 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
 import 'package:pawmate_mobile/core/widgets/pawmate_bottom_nav.dart';
+import 'package:pawmate_mobile/core/widgets/pawmate_button.dart';
 import 'package:pawmate_mobile/features/pets/application/pet_form_draft_provider.dart';
 import 'package:pawmate_mobile/features/pets/application/pet_list_provider.dart';
 import 'package:pawmate_mobile/features/pets/data/pet_api.dart';
@@ -78,6 +80,50 @@ void main() {
   });
 
   testWidgets(
+    'P1-05 loading, retry and empty surfaces remain reachable at 320dp/text scale 2',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+
+      Future<void> pumpState(AsyncValue<List<PetProfile>> state) async {
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [petBackendListProvider.overrideWithValue(state)],
+            child: MaterialApp(
+              theme: AppTheme.light(),
+              builder: testTextScaleBuilder(2),
+              home: const PetListScreen(),
+            ),
+          ),
+        );
+        await tester.pump();
+      }
+
+      await pumpState(const AsyncValue<List<PetProfile>>.loading());
+      expect(find.byKey(const Key('pet-list-loading-state')), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+
+      await pumpState(
+        AsyncValue<List<PetProfile>>.error(
+          const PetApiException('offline'),
+          StackTrace.empty,
+        ),
+      );
+      expect(find.byKey(const Key('pet-list-error-state')), findsOneWidget);
+      expect(find.text('Thử lại'), findsOneWidget);
+      expectNoFlutterOverflow(tester);
+
+      await pumpState(const AsyncValue<List<PetProfile>>.data([]));
+      final create = find.byKey(const Key('pet-list-empty-create-button'));
+      expect(create, findsOneWidget);
+      await tester.ensureVisible(create);
+      final createRect = tester.getRect(create);
+      expect(createRect.top, greaterThanOrEqualTo(0));
+      expect(createRect.bottom, lessThanOrEqualTo(568));
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
+  testWidgets(
     'pet detail exposes loading, offline, and avatar fallback states',
     (tester) async {
       await setTestViewport(tester, size: const Size(390, 844));
@@ -140,6 +186,135 @@ void main() {
         ),
         findsOneWidget,
       );
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
+  testWidgets(
+    'pet detail keeps long visible profile copy readable at text scale 2.0',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      final pet = PetProfile(
+        id: 'long-copy',
+        name: 'Bông Tuyết Golden Retriever Siêu Dễ Thương 2026',
+        species: 'dog',
+        breed: 'Golden Retriever lai lông dài màu kem đậm',
+        gender: 'unknown',
+        dateOfBirth: DateTime(2022, 4, 12),
+        weightKg: 12.4,
+        healthStatus: 'healthy',
+        color: 'Vàng kem chuyển nâu nhạt với mảng lông trắng ở ngực',
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            petBackendListProvider.overrideWithValue(
+              AsyncValue<List<PetProfile>>.data([pet]),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const PetDetailScreen(petId: 'long-copy'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      void expectVisibleTextIsReadable(Finder text, String label) {
+        expect(text, findsOneWidget);
+        expect(
+          tester.renderObject<RenderParagraph>(text).didExceedMaxLines,
+          isFalse,
+          reason: 'Visible pet-detail copy must not ellipsize: $label',
+        );
+      }
+
+      expect(
+        find.bySemanticsLabel('Hồ sơ thú cưng của ${pet.name}'),
+        findsOneWidget,
+      );
+      expectVisibleTextIsReadable(find.text(pet.name), pet.name);
+      final detailScroll = find.byType(Scrollable).first;
+      final breed = find.textContaining('Golden Retriever lai lông dài');
+      await tester.scrollUntilVisible(breed, 220, scrollable: detailScroll);
+      expectVisibleTextIsReadable(breed, 'Chó • ${pet.breed}');
+      await tester.scrollUntilVisible(
+        find.text(pet.color!),
+        260,
+        scrollable: detailScroll,
+      );
+      expectVisibleTextIsReadable(find.text(pet.color!), pet.color!);
+      expectNoFlutterOverflow(tester);
+    },
+  );
+
+  testWidgets(
+    'pet detail CTA always reaches P1-05 even when detail was pushed from Home',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(390, 844));
+      final router = GoRouter(
+        initialLocation: '/pets',
+        routes: [
+          GoRoute(
+            path: '/pets',
+            builder: (context, state) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  key: const Key('open-pet-detail-from-home'),
+                  onPressed: () => context.push('/pets/mochi'),
+                  child: const Text('Mở Mochi'),
+                ),
+              ),
+            ),
+          ),
+          GoRoute(
+            path: '/pets/list',
+            builder: (context, state) =>
+                const Scaffold(body: Center(child: Text('P1-05 Pet List'))),
+          ),
+          GoRoute(
+            path: '/pets/:id',
+            builder: (context, state) =>
+                PetDetailScreen(petId: state.pathParameters['id']!),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            petBackendListProvider.overrideWithValue(
+              AsyncValue<List<PetProfile>>.data([
+                _samplePet(id: 'mochi', name: 'Mochi'),
+              ]),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.light(),
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('open-pet-detail-from-home')));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Quay lại danh sách'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final backToList = find.text('Quay lại danh sách');
+      await tester.ensureVisible(backToList);
+      await tester.pump();
+      await tester.tap(backToList);
+      await tester.pumpAndSettle();
+
+      expect(router.routeInformationProvider.value.uri.path, '/pets/list');
+      expect(find.text('P1-05 Pet List'), findsOneWidget);
       expectNoFlutterOverflow(tester);
     },
   );
@@ -331,6 +506,47 @@ void main() {
     expect(container.read(petListProvider).single.id, 'pet-created');
     expectNoFlutterOverflow(tester);
   });
+
+  testWidgets(
+    'P1-06 keeps its actual save target above the keyboard at text scale 2.0',
+    (tester) async {
+      await setTestViewport(tester, size: const Size(320, 568));
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            theme: AppTheme.light(),
+            builder: testTextScaleBuilder(2),
+            home: const CreatePetScreen(returnTo: '/pets/list'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final colorField = _textField('pet-form-color-field');
+      await tester.scrollUntilVisible(
+        colorField,
+        160,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(colorField);
+      await tester.pumpAndSettle();
+      await tester.tap(colorField);
+      await setKeyboardInset(tester, bottom: 300);
+      await tester.enterText(colorField, 'Vàng kem');
+
+      final saveTarget = find.descendant(
+        of: find.byKey(const Key('pet-form-save-button')),
+        matching: find.byType(PawMateButton),
+      );
+      expect(saveTarget, findsOneWidget);
+      final keyboardTop = 568 - 300.0;
+      final saveRect = tester.getRect(saveTarget);
+      expect(saveRect.top, greaterThanOrEqualTo(0));
+      expect(saveRect.bottom, lessThanOrEqualTo(keyboardTop));
+      expect(tester.getSize(saveTarget).height, greaterThanOrEqualTo(48));
+      expectNoFlutterOverflow(tester);
+    },
+  );
 
   for (final viewport in _viewports) {
     final label = '${viewport.width.toInt()}x${viewport.height.toInt()}';

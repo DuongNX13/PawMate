@@ -8,6 +8,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_auth_layout.dart';
 import '../../../core/widgets/pawmate_adaptive.dart';
 import '../../../core/widgets/pawmate_button.dart';
 import '../application/auth_session_coordinator.dart';
@@ -292,6 +293,17 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
   }
 
   Widget _buildOtpForm(BuildContext context) {
+    final illustrationSize = PawMateAuthLayout.illustrationSize(context);
+    final contentGap = PawMateAuthLayout.sectionGap(
+      context,
+      regular: 24,
+      compact: 16,
+    );
+    final codeGap = PawMateAuthLayout.sectionGap(
+      context,
+      regular: 40,
+      compact: 20,
+    );
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -306,11 +318,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _OtpHeader(onBack: _openRegister),
-                    const SizedBox(height: 24),
-                    const _OtpIllustration(
+                    SizedBox(height: contentGap),
+                    _OtpIllustration(
+                      key: ValueKey('otp-illustration'),
                       assetPath: 'assets/images/auth/otp_verification_dog.png',
+                      size: illustrationSize,
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: contentGap),
                     Text(
                       'Xác minh mã OTP',
                       textAlign: TextAlign.center,
@@ -320,9 +334,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                     Text(
                       'Mã xác thực đã được gửi đến email ${_maskedDestination(_email)}. Vui lòng kiểm tra hộp thư của bạn.',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.body(color: AppColors.textSecondary),
+                      style: AppTextStyles.bodyCompact(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: codeGap),
                     Semantics(
                       label: 'Nhập mã OTP gồm 6 chữ số',
                       textField: true,
@@ -350,15 +366,22 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                           borderRadius: BorderRadius.circular(AppRadius.sm),
                           fieldHeight: 48,
                           fieldWidth: 44,
-                          activeColor: AppColors.primary500,
-                          selectedColor: AppColors.primary700,
-                          inactiveColor: AppColors.borderStrong,
+                          activeColor: _errorText == null
+                              ? AppColors.primary500
+                              : AppColors.error,
+                          selectedColor: _errorText == null
+                              ? AppColors.primary700
+                              : AppColors.error,
+                          inactiveColor: _errorText == null
+                              ? AppColors.borderStrong
+                              : AppColors.error,
                           errorBorderColor: AppColors.error,
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8),
                     _OtpErrorArea(errorText: _errorText),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 28),
                     _ResendOtpRow(
                       secondsLeft: _resendSecondsLeft,
                       isResending: _isResending,
@@ -366,7 +389,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                           ? _resendOtp
                           : null,
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: codeGap),
                     const _SystemReadyNote(),
                   ],
                 ),
@@ -379,6 +402,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen>
                 label: 'Xác minh',
                 isLoading: _isSubmitting,
                 trailingIcon: Icons.chevron_right_rounded,
+                compact: true,
                 onPressed: _canSubmit ? _submitOtp : null,
               ),
             ),
@@ -558,6 +582,9 @@ class _OtpHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return SizedBox(
       height: AppControlSize.minTouchTarget,
       child: Row(
@@ -565,12 +592,25 @@ class _OtpHeader extends StatelessWidget {
           PawMateAdaptiveBackButton(onPressed: onBack),
           const SizedBox(width: 2),
           Expanded(
-            child: Text(
-              'Xác minh tài khoản',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.h3(),
-            ),
+            child: usesExpandedTextLayout
+                ? Semantics(
+                    header: true,
+                    label: 'Xác minh tài khoản',
+                    child: ExcludeSemantics(
+                      child: Text(
+                        'Xác minh',
+                        maxLines: null,
+                        overflow: TextOverflow.visible,
+                        style: AppTextStyles.h3(),
+                      ),
+                    ),
+                  )
+                : Text(
+                    'Xác minh tài khoản',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.h3(),
+                  ),
           ),
         ],
       ),
@@ -580,6 +620,7 @@ class _OtpHeader extends StatelessWidget {
 
 class _OtpIllustration extends StatelessWidget {
   const _OtpIllustration({
+    super.key,
     required this.assetPath,
     this.size = 132,
     this.circular = true,
@@ -719,12 +760,16 @@ class _SystemReadyNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const label = 'HỆ THỐNG ĐANG SẴN SÀNG';
+    final usesExpandedTextLayout =
+        MediaQuery.textScalerOf(context).scale(1) >
+        AppControlSize.compactButtonMaxTextScale;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.surfaceVariant),
+        border: Border.all(color: AppColors.mint),
       ),
       child: Row(
         children: [
@@ -738,12 +783,28 @@ class _SystemReadyNote extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              'HỆ THỐNG ĐANG SẴN SÀNG',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.overline(color: AppColors.textSecondary),
-            ),
+            child: usesExpandedTextLayout
+                ? Semantics(
+                    label: label,
+                    child: ExcludeSemantics(
+                      child: Text(
+                        'SẴN SÀNG',
+                        maxLines: null,
+                        overflow: TextOverflow.visible,
+                        style: AppTextStyles.overline(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  )
+                : Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.overline(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
           ),
         ],
       ),
