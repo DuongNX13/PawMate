@@ -75,6 +75,16 @@ void main() {
           native.viewPadding.bottom / dpr,
         );
         final name = 'D123-$device-${family.toLowerCase()}';
+        // Run 45149905441 captured the "Test starting/finished" placeholder
+        // on ~1/3 of screens: fake-time pumps do not wait for the simulator
+        // to present a frame, so give it real time before capturing.
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 800)),
+        );
+        await t.pump();
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 400)),
+        );
         await binding.takeScreenshot('$name-top');
         final guidelines = await _guidelines(t);
         rows.add({
