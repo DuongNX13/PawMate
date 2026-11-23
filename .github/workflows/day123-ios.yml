@@ -79,16 +79,24 @@ jobs:
             logpid=$!
             code=0
             for probe in render interaction; do
-              # Run 1 hung for ~1h after "Xcode build done"; cap each drive.
-              D123_CAPTURE_DIR="$OUT/$name-$probe" perl -e 'alarm shift; exec @ARGV' 900 \
-                flutter drive --verbose \
-                --driver test_driver/day123_driver.dart \
-                --target "integration_test/day123_ios_${probe}_test.dart" \
-                --dart-define=D123_DEVICE="$name" \
-                -d "$udid" > "$OUT/drive-$name-$probe.log" 2>&1
-              rc=$?
-              echo "$name $probe exit=$rc" | tee -a "$OUT/summary.txt"
-              tail -40 "$OUT/drive-$name-$probe.log"
+              # flutter drive intermittently hangs at "Waiting for VM Service
+              # port" (runs 1 and 4); cap each attempt and retry once on hang.
+              for attempt in 1 2; do
+                cap="$OUT/$name-$probe"; [ "$attempt" -eq 1 ] || cap="$cap-retry"
+                set +e
+                D123_CAPTURE_DIR="$cap" perl -e 'alarm shift; exec @ARGV' 600 \
+                  flutter drive --verbose \
+                  --driver test_driver/day123_driver.dart \
+                  --target "integration_test/day123_ios_${probe}_test.dart" \
+                  --dart-define=D123_DEVICE="$name" \
+                  -d "$udid" > "$OUT/drive-$name-$probe-a$attempt.log" 2>&1
+                rc=$?
+                set -e
+                echo "$name $probe attempt=$attempt exit=$rc" | tee -a "$OUT/summary.txt"
+                [ "$rc" -eq 142 ] || break
+                xcrun simctl terminate "$udid" com.pawmate.pawmateMobile || true
+              done
+              tail -40 "$OUT/drive-$name-$probe-a$attempt.log"
               [ "$rc" -eq 0 ] || code=$rc
             done
             kill "$logpid" 2>/dev/null || true
