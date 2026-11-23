@@ -1,0 +1,92 @@
+name: day123-ios
+
+# Day 123 hosted iOS TEST: compile, render and semantics on iOS Simulator.
+# Runs only on baseline branches; no secrets, no signing, no production calls.
+on:
+  push:
+    branches: ['baseline/**']
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 75
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      OUT: ${{ github.workspace }}/day123-evidence
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.6
+          channel: stable
+
+      - name: Toolchain manifest
+        run: |
+          mkdir -p "$OUT"
+          {
+            echo "commit=$GITHUB_SHA"
+            echo "mobile_tree=$(git rev-parse HEAD:mobile)"
+            sw_vers
+            xcodebuild -version
+            flutter --version
+            pod --version
+          } | tee "$OUT/toolchain.txt"
+
+      - name: Pub get
+        run: flutter pub get 2>&1 | tee "$OUT/pub-get.log"
+
+      - name: Build iOS simulator (no codesign)
+        run: |
+          set -o pipefail
+          flutter build ios --simulator --no-codesign 2>&1 | tee "$OUT/build-ios.log"
+
+      - name: Pick simulators
+        id: sims
+        run: |
+          xcrun simctl list devices available -j > "$OUT/simulators.json"
+          python3 - "$OUT/simulators.json" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          data = json.load(open(sys.argv[1]))["devices"]
+          ios = [(rt, d) for rt, ds in data.items() if "iOS" in rt for d in ds]
+          def pick(word):
+              hits = [d for rt, d in sorted(ios, key=lambda x: x[0]) if word in d["name"]]
+              return hits[-1]["udid"] if hits else ""
+          print("small=" + pick("iPhone SE"))
+          print("large=" + pick("Pro Max"))
+          PY
+
+      - name: Render probe on small and large iPhone
+        run: |
+          status=0
+          for pair in "se:${{ steps.sims.outputs.small }}" "promax:${{ steps.sims.outputs.large }}"; do
+            name="${pair%%:*}"; udid="${pair#*:}"
+            if [ -z "$udid" ]; then echo "$name: no simulator" | tee -a "$OUT/summary.txt"; status=1; continue; fi
+            xcrun simctl boot "$udid" || true
+            xcrun simctl bootstatus "$udid" -b
+            xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+            D123_CAPTURE_DIR="$OUT/$name" flutter drive \
+              --driver test_driver/day123_driver.dart \
+              --target integration_test/day123_ios_render_test.dart \
+              --dart-define=D123_DEVICE="$name" \
+              -d "$udid" 2>&1 | tee "$OUT/drive-$name.log"
+            code=${PIPESTATUS[0]}
+            echo "$name: udid=$udid exit=$code" | tee -a "$OUT/summary.txt"
+            xcrun simctl io "$udid" screenshot "$OUT/$name-final.png" || true
+            xcrun simctl shutdown "$udid" || true
+            [ "$code" -eq 0 ] || status=1
+          done
+          exit $status
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day123-ios-evidence
+          path: day123-evidence
+          retention-days: 30
