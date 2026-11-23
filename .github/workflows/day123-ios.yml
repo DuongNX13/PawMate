@@ -67,6 +67,8 @@ jobs:
           for pair in "se:${{ steps.sims.outputs.small }}" "promax:${{ steps.sims.outputs.large }}"; do
             name="${pair%%:*}"; udid="${pair#*:}"
             if [ -z "$udid" ]; then echo "$name: no simulator" | tee -a "$OUT/summary.txt"; status=1; continue; fi
+            # A connected hardware keyboard hides the software keyboard probe.
+            defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
             xcrun simctl boot "$udid" || true
             xcrun simctl bootstatus "$udid" -b
             xcrun simctl status_bar "$udid" override --time 9:41 --batteryState charged --batteryLevel 100 || true
@@ -75,16 +77,21 @@ jobs:
             xcrun simctl spawn "$udid" log stream --level debug \
               --predicate 'process == "Runner"' > "$OUT/simlog-$name.txt" 2>&1 &
             logpid=$!
-            # Run 1 hung for ~1h after "Xcode build done"; cap each device.
-            D123_CAPTURE_DIR="$OUT/$name" perl -e 'alarm shift; exec @ARGV' 900 \
-              flutter drive --verbose \
-              --driver test_driver/day123_driver.dart \
-              --target integration_test/day123_ios_render_test.dart \
-              --dart-define=D123_DEVICE="$name" \
-              -d "$udid" > "$OUT/drive-$name.log" 2>&1
-            code=$?
+            code=0
+            for probe in render interaction; do
+              # Run 1 hung for ~1h after "Xcode build done"; cap each drive.
+              D123_CAPTURE_DIR="$OUT/$name-$probe" perl -e 'alarm shift; exec @ARGV' 900 \
+                flutter drive --verbose \
+                --driver test_driver/day123_driver.dart \
+                --target "integration_test/day123_ios_${probe}_test.dart" \
+                --dart-define=D123_DEVICE="$name" \
+                -d "$udid" > "$OUT/drive-$name-$probe.log" 2>&1
+              rc=$?
+              echo "$name $probe exit=$rc" | tee -a "$OUT/summary.txt"
+              tail -40 "$OUT/drive-$name-$probe.log"
+              [ "$rc" -eq 0 ] || code=$rc
+            done
             kill "$logpid" 2>/dev/null || true
-            tail -60 "$OUT/drive-$name.log"
             echo "$name: udid=$udid exit=$code" | tee -a "$OUT/summary.txt"
             xcrun simctl io "$udid" screenshot "$OUT/$name-final.png" || true
             xcrun simctl shutdown "$udid" || true
