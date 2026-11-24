@@ -52,7 +52,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.getBottomRight(logout).dy,
-        lessThan(tester.getTopLeft(find.text('Profile')).dy),
+        lessThan(tester.getTopLeft(find.byTooltip('Profile')).dy),
       );
       final logoutHandler = tester
           .widget<InkWell>(
@@ -130,11 +130,18 @@ void main() {
       reason:
           'The approved Profile anchor uses a compact horizontal identity card.',
     );
+    // Figma v0.34 P1-16 cards are taller; the last row may need a scroll at
+    // 390x844 but must never sit under the fixed bottom navigation.
+    await tester.scrollUntilVisible(
+      find.text('Đăng xuất tài khoản'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(
       tester.getBottomRight(find.text('Đăng xuất tài khoản')).dy,
-      lessThan(tester.getTopLeft(find.text('Profile')).dy),
-      reason:
-          'All five settings rows must remain above the fixed bottom navigation.',
+      lessThan(tester.getTopLeft(find.byTooltip('Profile')).dy),
+      reason: 'Settings rows must remain reachable above the bottom navigation.',
     );
 
     await tester.scrollUntilVisible(
@@ -157,7 +164,7 @@ void main() {
     expect(find.text('Thông báo'), findsOneWidget);
     expect(find.text('Quyền riêng tư & Bảo mật'), findsOneWidget);
     expect(find.text('Lịch nhắc'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.byTooltip('Profile'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('Đăng xuất tài khoản'),
@@ -242,7 +249,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('CÀI ĐẶT HỆ THỐNG'), findsOneWidget);
-      expect(find.text('Profile'), findsOneWidget);
+      expect(find.byTooltip('Profile'), findsOneWidget);
       expectNoFlutterOverflow(tester);
 
       await tester.drag(find.byType(ListView), const Offset(0, -420));

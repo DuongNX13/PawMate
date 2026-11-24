@@ -231,14 +231,13 @@ void _expectNav(WidgetTester tester, Size size) {
     reason: 'Nav must own the bottom safe-area once',
   );
   for (final destination in PawMateBottomNav.destinations) {
-    final text = find.descendant(
+    // Day 124: icon-only nav; the named target must clear the home indicator.
+    final target = find.descendant(
       of: nav,
-      matching: find.text(destination.label),
+      matching: find.byTooltip(destination.label),
     );
-    expect(text, findsOneWidget);
-    final paragraph = tester.renderObject<RenderParagraph>(text);
-    expect(paragraph.didExceedMaxLines, isFalse, reason: destination.label);
-    expect(tester.getRect(text).bottom, lessThanOrEqualTo(size.height - 34));
+    expect(target, findsOneWidget);
+    expect(tester.getRect(target).bottom, lessThanOrEqualTo(size.height - 34));
   }
 }
 

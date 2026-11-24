@@ -36,13 +36,8 @@ void main() {
             await t.tap(find.bySemanticsLabel(d.label));
             await t.pumpAndSettle();
             expect(route, d.route);
-            final caption = find.byKey(
-              const Key('navigation-selected-caption'),
-            );
-            expect(t.widget<Text>(caption).data, d.label);
-            final p = t.renderObject<RenderParagraph>(caption);
-            expect(p.didExceedMaxLines, false);
-            expect(p.textScaler.scale(13), 26);
+            // Day 124 removed the visible caption (Figma icon-only nav);
+            // selection is announced through semantics only.
             expect(
               t
                   .getSemantics(find.bySemanticsLabel(d.label))
@@ -123,12 +118,6 @@ void main() {
           PawMateBottomNav.destinations.map((d) => d.route).toList(),
         );
         expect(find.byType(FittedBox), findsNothing);
-        if (scale == 2) {
-          expect(
-            find.byKey(const Key('navigation-selected-caption')),
-            findsOneWidget,
-          );
-        }
         expectNoFlutterOverflow(t);
       } finally {
         semantics.dispose();

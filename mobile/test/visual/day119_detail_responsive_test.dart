@@ -3,7 +3,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pawmate_mobile/core/widgets/pawmate_button.dart';
 import 'package:pawmate_mobile/features/pets/presentation/create_pet_screen.dart';
 import 'package:pawmate_mobile/core/widgets/pawmate_bottom_nav.dart';
 import 'package:pawmate_mobile/features/rescue/application/rescue_home_provider.dart';
@@ -60,12 +59,13 @@ void main() {
       expect(avatar.width, closeTo(avatar.height, .01));
       _notTruncated(tester, day119LongPetName);
       await _end(tester);
-      final cta = find.text('Quay lại danh sách');
+      // D124 DT-01: Figma v0.34 makes the return action a text link.
+      final cta = find.text('Quay lại danh sách thú cưng');
       expect(cta.hitTestable(), findsOneWidget);
       expect(
         tester
             .getRect(
-              find.ancestor(of: cta, matching: find.byType(PawMateButton)),
+              find.ancestor(of: cta, matching: find.byType(TextButton)),
             )
             .bottom,
         lessThanOrEqualTo(size.height - 34),
@@ -280,10 +280,10 @@ void _nav(WidgetTester tester, Size size) {
   expect(nav, findsOneWidget);
   expect(tester.getRect(nav).bottom, size.height);
   for (final d in PawMateBottomNav.destinations) {
-    final t = find.descendant(of: nav, matching: find.text(d.label));
+    // Day 124: icon-only nav; the named target must clear the home indicator.
+    final t = find.descendant(of: nav, matching: find.byTooltip(d.label));
     expect(t, findsOneWidget);
     expect(tester.getRect(t).bottom, lessThanOrEqualTo(size.height - 34));
-    expect(tester.renderObject<RenderParagraph>(t).didExceedMaxLines, isFalse);
   }
 }
 

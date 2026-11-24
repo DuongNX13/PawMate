@@ -303,11 +303,11 @@ void main() {
       await tester.tap(find.byKey(const Key('open-pet-detail-from-home')));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.text('Quay lại danh sách'),
+        find.text('Quay lại danh sách thú cưng'),
         300,
         scrollable: find.byType(Scrollable).first,
       );
-      final backToList = find.text('Quay lại danh sách');
+      final backToList = find.text('Quay lại danh sách thú cưng');
       await tester.ensureVisible(backToList);
       await tester.pump();
       await tester.tap(backToList);

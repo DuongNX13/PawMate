@@ -579,7 +579,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tiêm phòng dại'), findsOneWidget);
-    expect(find.text('Health'), findsOneWidget);
+    expect(find.byTooltip('Health'), findsOneWidget);
     expectNoFlutterOverflow(tester);
   });
 

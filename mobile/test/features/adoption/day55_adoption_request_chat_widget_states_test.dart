@@ -67,6 +67,48 @@ void main() {
     },
   );
 
+  // D122-TB-P2-002: at 2x text the just-sent bubble must scroll above the
+  // composer instead of staying hidden under it.
+  testWidgets('D124 sent message scrolls above composer at 2x text', (
+    tester,
+  ) async {
+    await tester.runAsync(loadPawMateTestFonts);
+    final source = _WidgetSource(
+      chatPage: _chatPage(
+        messages: [
+          for (var i = 0; i < 12; i++)
+            _chatMessage('m$i', sender: i.isEven ? 'shelter-1' : 'adopter-1'),
+        ],
+      ),
+    );
+    await _pump(
+      tester,
+      const ShelterChatScreen(threadId: 'thread-1'),
+      source: source,
+      store: _WidgetStore(),
+      size: const Size(360, 800),
+      textScale: 2,
+    );
+    const body = 'Tin D124';
+    await tester.enterText(
+      find.byKey(const Key('adoption-chat-composer')),
+      body,
+    );
+    await _pumpFrames(tester);
+    await tester.tap(find.byKey(const Key('adoption-chat-send')));
+    await _pumpFrames(tester);
+    await tester.pump(const Duration(milliseconds: 600));
+    final bubble = find.descendant(
+      of: find.byKey(const Key('adoption-chat-message-list')),
+      matching: find.text(body),
+    );
+    expect(bubble, findsOneWidget);
+    final composerTop = tester
+        .getRect(find.byKey(const Key('adoption-chat-composer')))
+        .top;
+    expect(tester.getRect(bubble).bottom, lessThanOrEqualTo(composerTop));
+  });
+
   testWidgets('D115 ST-21 failed chat retains message and retries same key', (
     tester,
   ) async {

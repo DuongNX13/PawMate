@@ -125,16 +125,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sức khỏe'), findsWidgets);
-    expect(find.text('Thêm sự kiện'), findsWidgets);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Vet'), findsOneWidget);
+    expect(find.byTooltip('Thêm sự kiện'), findsWidgets);
+    expect(find.byTooltip('Home'), findsOneWidget);
+    expect(find.byTooltip('Vet'), findsOneWidget);
     expect(find.text('Sức khỏe'), findsWidgets);
-    expect(find.text('Health'), findsOneWidget);
-    expect(find.text('Rescue'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.byTooltip('Health'), findsOneWidget);
+    expect(find.byTooltip('Rescue'), findsOneWidget);
+    expect(find.byTooltip('Profile'), findsOneWidget);
     expect(find.text('Tiêm nhắc lại 5 bệnh'), findsOneWidget);
 
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.byTooltip('Profile'));
     await tester.pumpAndSettle();
 
     expect(find.text('Profile target'), findsOneWidget);
@@ -200,7 +200,7 @@ void main() {
       expect(find.text('Vaccine'), findsOneWidget);
       expect(find.text('Cân nặng'), findsOneWidget);
       expect(find.text('Tiêm phòng dại'), findsOneWidget);
-      expect(find.text('Health'), findsOneWidget);
+      expect(find.byTooltip('Health'), findsOneWidget);
       expect(
         tester
             .getSize(find.byKey(const ValueKey('health-filter-Tất cả')))

@@ -30,7 +30,7 @@ void main() {
 
       expect(find.text('Chi tiết tin báo'), findsOneWidget);
       expect(find.text('LuLu'), findsOneWidget);
-      expect(find.text('Đặc điểm nhận dạng'), findsOneWidget);
+      expect(find.text('ĐẶC ĐIỂM NHẬN DẠNG'), findsOneWidget);
       expect(
         find.byKey(const Key('rescue-detail-comment-bar')),
         findsOneWidget,
@@ -71,7 +71,7 @@ void main() {
 
     expect(find.byKey(const Key('rescue-detail-comment-bar')), findsNothing);
     expect(find.byKey(const Key('rescue-detail-owner-actions')), findsNothing);
-    expect(find.text('Tính cách và lưu ý'), findsNothing);
+    expect(find.text('TÍNH CÁCH VÀ LƯU Ý'), findsNothing);
     await tester.scrollUntilVisible(
       find.byKey(const Key('rescue-detail-report')),
       260,

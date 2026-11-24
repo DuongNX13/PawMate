@@ -53,27 +53,27 @@ void main() {
     await tester.pumpAndSettle();
 
     for (final label in ['Home', 'Vet', 'Health', 'Rescue', 'Profile']) {
-      expect(find.text(label), findsOneWidget);
+      expect(find.byTooltip(label), findsOneWidget);
     }
     expect(find.text('Home target'), findsOneWidget);
 
-    await tester.tap(find.text('Vet'));
+    await tester.tap(find.byTooltip('Vet'));
     await tester.pumpAndSettle();
     expect(find.text('Vet target'), findsOneWidget);
 
-    await tester.tap(find.text('Health'));
+    await tester.tap(find.byTooltip('Health'));
     await tester.pumpAndSettle();
     expect(find.text('Health target'), findsOneWidget);
 
-    await tester.tap(find.text('Rescue'));
+    await tester.tap(find.byTooltip('Rescue'));
     await tester.pumpAndSettle();
     expect(find.text('Rescue target'), findsOneWidget);
 
-    await tester.tap(find.text('Profile'));
+    await tester.tap(find.byTooltip('Profile'));
     await tester.pumpAndSettle();
     expect(find.text('Profile target'), findsOneWidget);
 
-    await tester.tap(find.text('Home'));
+    await tester.tap(find.byTooltip('Home'));
     await tester.pumpAndSettle();
     expect(find.text('Home target'), findsOneWidget);
     expectNoFlutterOverflow(tester);
@@ -107,13 +107,8 @@ void main() {
       _imageIconFor(tester, 'assets/icons/navigation/rescue.png').color,
       AppColors.navInactiveIcon,
     );
-    expect(tester.widget<Text>(find.text('Home')).style?.color, Colors.white);
-    expect(
-      tester.widget<Text>(find.text('Rescue')).style?.color,
-      AppColors.navInactiveLabel,
-    );
 
-    await tester.tap(find.text('Rescue'));
+    await tester.tap(find.byTooltip('Rescue'));
     await tester.pumpAndSettle();
 
     expect(
@@ -124,7 +119,6 @@ void main() {
       _imageIconFor(tester, 'assets/icons/navigation/rescue.png').color,
       Colors.white,
     );
-    expect(tester.widget<Text>(find.text('Rescue')).style?.color, Colors.white);
     expectNoFlutterOverflow(tester);
   });
 
@@ -167,7 +161,8 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('bottom nav grows at 2.0 text scale without shrinking labels', (
+  // Day 124: icon-only per Figma v0.34, so text scale must not grow the bar.
+  testWidgets('bottom nav keeps fixed height and named targets at 2.0 text', (
     tester,
   ) async {
     await setTestViewport(tester, size: const Size(320, 568));
@@ -191,9 +186,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final semantics = tester.ensureSemantics();
     expect(
       tester.getSize(find.byType(PawMateBottomNav)).height,
-      greaterThan(AppControlSize.bottomNavHeight),
+      AppControlSize.bottomNavHeight,
     );
     expect(find.byType(FittedBox), findsNothing);
     for (final label in ['Home', 'Vet', 'Health', 'Rescue', 'Profile']) {
@@ -207,12 +203,14 @@ void main() {
       );
     }
     expect(
-      tester
-          .widget<Text>(find.byKey(const Key('navigation-selected-caption')))
-          .maxLines,
-      1,
+      find.descendant(
+        of: find.byType(PawMateBottomNav),
+        matching: find.byType(Text),
+      ),
+      findsNothing,
     );
     expectNoFlutterOverflow(tester);
+    semantics.dispose();
   });
 }
 

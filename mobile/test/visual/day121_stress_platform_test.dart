@@ -198,6 +198,9 @@ void main() {
               final h = await pumpDay119(t, 'DT-04', size, longContent: true);
               if (family == 'RescueExpanded') {
                 final toggle = find.byKey(const Key('rescue-load-more'));
+                // D124: the Figma full-bleed map pushes the toggle past the
+                // list cache at text 2, so scroll it into the built range.
+                await _scrollToBuilt121(t, toggle);
                 await visible121(t, toggle, size);
                 await t.tap(toggle);
                 await t.pumpAndSettle();
@@ -218,6 +221,7 @@ void main() {
                 final marker = find.byKey(
                   ValueKey('rescue-marker-$day119FirstCaseId'),
                 );
+                await _scrollToBuilt121(t, marker);
                 await visible121(t, marker, size);
                 await t.tap(marker);
                 await t.pumpAndSettle();
@@ -344,6 +348,15 @@ Future<void> _app(
     ),
   );
   await readyDay119(t);
+}
+
+Future<void> _scrollToBuilt121(WidgetTester t, Finder target) async {
+  if (target.evaluate().isNotEmpty) return;
+  await t.scrollUntilVisible(
+    target,
+    120,
+    scrollable: find.byType(Scrollable).first,
+  );
 }
 
 Future<void> visible121(

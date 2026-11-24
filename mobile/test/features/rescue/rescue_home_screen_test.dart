@@ -37,11 +37,11 @@ void main() {
     expect(find.text('Bảo mật Bắp trong 2 phút'), findsNothing);
     expect(find.text('Mochi đi lạc'), findsNothing);
     expect(find.text('Đăng tin'), findsNothing);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Vet'), findsOneWidget);
-    expect(find.text('Health'), findsOneWidget);
-    expect(find.text('Rescue'), findsOneWidget);
-    expect(find.text('Profile'), findsOneWidget);
+    expect(find.byTooltip('Home'), findsOneWidget);
+    expect(find.byTooltip('Vet'), findsOneWidget);
+    expect(find.byTooltip('Health'), findsOneWidget);
+    expect(find.byTooltip('Rescue'), findsOneWidget);
+    expect(find.byTooltip('Profile'), findsOneWidget);
     expect(
       tester.getSize(find.byKey(const ValueKey('rescue-notifications-button'))),
       const Size(48, 48),
@@ -80,7 +80,7 @@ void main() {
 
     expect(find.text('Cứu hộ thú cưng'), findsOneWidget);
     expect(find.text('Rescue chưa mở dữ liệu thật'), findsOneWidget);
-    expect(find.text('Rescue'), findsOneWidget);
+    expect(find.byTooltip('Rescue'), findsOneWidget);
     expectNoFlutterOverflow(tester);
   });
 

@@ -53,7 +53,8 @@ void main() {
 
     expect(
       tester.getSize(find.byKey(const Key('profile-pet-mochi'))),
-      const Size(120, 128),
+      // Figma v0.34 P1-16: two half-width pet cards (D123-IOS-UI-007).
+      const Size(167, 184),
     );
     expect(
       tester.getSize(find.byKey(const Key('profile-edit-action'))),

@@ -41,6 +41,84 @@ void main() {
     expect(find.text('Chưa có quyền vị trí'), findsOneWidget);
   });
 
+  // D122-TB-P2-004/007: on a 360x800 phone at 2x text the banner covered the
+  // first card and the denied panel clipped "Xem dạng danh sách".
+  testWidgets('D124 denied map at 360x800 text 2 uses the scroll flow', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(360, 800));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith((ref) => _FakeVetApi()),
+          vetLocationServiceProvider.overrideWith(
+            (ref) => _FakeLocationService.permissionDenied(),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          home: const VetMapScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('vet-map-accessible-flow')), findsOneWidget);
+    final listAction = find.text('Xem dạng danh sách').first;
+    await tester.ensureVisible(listAction);
+    await tester.pumpAndSettle();
+    expect(listAction.hitTestable(), findsOneWidget);
+    expectNoFlutterOverflow(tester);
+  });
+
+  // D122-VIS-003: the map-unavailable title was squeezed to ~9px in the 160pt
+  // map strip on a 360x800 phone at 2x text.
+  testWidgets('D124 unavailable map strip stays decorative at text 2', (
+    tester,
+  ) async {
+    await setTestViewport(tester, size: const Size(360, 800));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          vetApiProvider.overrideWith(
+            (ref) => _FakeVetApi(nearbyItems: const []),
+          ),
+          vetLocationServiceProvider.overrideWith(
+            (ref) => _FakeLocationService.success(),
+          ),
+          vetMapCanvasBuilderProvider.overrideWith(
+            (ref) =>
+                (
+                  VetMapLocation center,
+                  List<VetSummary> vets,
+                  VetMapStyle mapStyle,
+                  ValueChanged<String> onMarkerTap,
+                  ValueChanged<Object> onMapUnavailable,
+                ) => const ColoredBox(color: Color(0xFFEDE6DA)),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: testTextScaleBuilder(2),
+          home: const VetMapScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(VetMapScreen)),
+    ).read(vetMapProvider.notifier).markMapUnavailable();
+    await tester.pumpAndSettle();
+
+    final titles = find.text('Bản đồ đang tạm gián đoạn', skipOffstage: false);
+    for (final element in titles.evaluate()) {
+      final box = element.renderObject! as RenderBox;
+      expect(box.size.height, greaterThan(20));
+    }
+    expectNoFlutterOverflow(tester);
+  });
+
   testWidgets('shows location disabled state on map screen', (tester) async {
     await setTestViewport(tester, size: const Size(390, 844));
 
@@ -571,7 +649,7 @@ void main() {
         reason: '$label must remain fully legible on the compact map sheet',
       );
     }
-    expect(find.text('Vet'), findsOneWidget);
+    expect(find.byTooltip('Vet'), findsOneWidget);
     expectNoFlutterOverflow(tester);
   });
 

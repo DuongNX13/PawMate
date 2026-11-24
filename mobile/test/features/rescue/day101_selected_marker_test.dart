@@ -91,11 +91,17 @@ void main() {
     );
     expect(source.detailCaseIds, isEmpty);
     expect(source.callCount, 1);
+    // Figma v0.34 DT-05: the card floats over the lower edge of the map but
+    // never covers the selected marker (D123-IOS-UI-003).
     expect(
       tester.getRect(_card).top,
-      greaterThanOrEqualTo(
+      lessThan(
         tester.getRect(find.byKey(const Key('rescue-map-preview'))).bottom,
       ),
+    );
+    expect(
+      tester.getRect(_card).top,
+      greaterThan(tester.getRect(_marker).bottom),
     );
     await tester.tap(find.byKey(const Key('rescue-selected-close')));
     await tester.pumpAndSettle();

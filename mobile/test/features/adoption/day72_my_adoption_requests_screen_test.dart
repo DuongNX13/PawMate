@@ -29,8 +29,9 @@ void main() {
     );
     addTearDown(harness.dispose);
 
-    expect(find.bySemanticsLabel('Đơn nhận nuôi của tôi'), findsOneWidget);
-    final title = find.text('Đơn của tôi');
+    // D123-IOS-UI-011: Figma DT-03 title is "Lịch sử nhận nuôi".
+    expect(find.bySemanticsLabel('Lịch sử nhận nuôi'), findsOneWidget);
+    final title = find.text('Lịch sử nhận nuôi');
     expect(title, findsOneWidget);
     expect(
       tester.renderObject<RenderParagraph>(title).didExceedMaxLines,

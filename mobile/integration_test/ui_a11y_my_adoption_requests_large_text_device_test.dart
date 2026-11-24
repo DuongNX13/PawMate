@@ -39,7 +39,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.bySemanticsLabel('Đơn nhận nuôi của tôi'), findsOneWidget);
+      expect(find.bySemanticsLabel('Lịch sử nhận nuôi'), findsOneWidget);
       final title = find.text('Đơn của tôi');
       expect(title, findsOneWidget);
       expect(
