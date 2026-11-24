@@ -133,7 +133,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 12),
             Text(
               'CÀI ĐẶT HỆ THỐNG',
-              style: AppTextStyles.label(color: AppColors.textMuted),
+              // Figma brown label; also fixes low contrast (D123-IOS-A11Y-001).
+              style: AppTextStyles.label(color: AppColors.brown),
             ),
             const SizedBox(height: 8),
             _SettingsGroup(
@@ -547,7 +548,7 @@ class _PetPreviewGrid extends StatelessWidget {
     final visiblePets = pets.take(2).toList();
     return LayoutBuilder(
       builder: (context, constraints) {
-        const cardWidth = 120.0;
+        final cardWidth = (constraints.maxWidth - AppSpacing.s16) / 2;
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -593,8 +594,8 @@ class _PetPreviewCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          height: usesExpandedTextLayout ? null : 128,
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+          height: usesExpandedTextLayout ? null : 184,
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
@@ -608,11 +609,11 @@ class _PetPreviewCard extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Container(
-                    width: 56,
-                    height: 56,
-                    decoration: const BoxDecoration(
+                    width: 82,
+                    height: 82,
+                    decoration: BoxDecoration(
                       color: AppColors.careGreenSoft,
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: PetAvatarMedia(
@@ -639,17 +640,20 @@ class _PetPreviewCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
                 pet.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.label(color: AppColors.textPrimary),
+                style: AppTextStyles.bodyStrong(color: AppColors.deepTeal),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.careGreenSoft,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -676,27 +680,20 @@ class _SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.45)),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Column(
-        children: [
-          for (var index = 0; index < children.length; index++) ...[
-            children[index],
-            if (index != children.length - 1)
-              Divider(
-                height: 1,
-                indent: 18,
-                endIndent: 18,
-                color: AppColors.border.withValues(alpha: 0.4),
-              ),
-          ],
+    // Figma v0.34 P1-16: every setting is its own white card, 2pt apart.
+    return Column(
+      children: [
+        for (var index = 0; index < children.length; index++) ...[
+          Material(
+            key: Key('profile-settings-card-$index'),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            clipBehavior: Clip.antiAlias,
+            child: children[index],
+          ),
+          if (index != children.length - 1) const SizedBox(height: 2),
         ],
-      ),
+      ],
     );
   }
 }
@@ -756,7 +753,7 @@ class _ProfileActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = danger ? AppColors.error : AppColors.primary700;
-    final background = danger ? AppColors.errorSoft : AppColors.primarySoft;
+    final background = danger ? AppColors.errorSoft : AppColors.healthHeroSoft;
     final usesExpandedTextLayout =
         MediaQuery.textScalerOf(context).scale(1) >
         AppControlSize.compactButtonMaxTextScale;
@@ -766,19 +763,20 @@ class _ProfileActionTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 10, 8),
+          padding: const EdgeInsets.fromLTRB(13, 10, 13, 10),
           child: Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                key: const Key('profile-settings-icon'),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: background,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(icon, color: accent, size: 20),
+                child: Icon(icon, color: accent, size: 22),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

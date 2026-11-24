@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_text_styles.dart';
 import '../../app/theme/app_tokens.dart';
 import 'pawmate_adaptive.dart';
+import 'pawmate_fit_title.dart';
 
 class PawMateTopBar extends StatelessWidget implements PreferredSizeWidget {
   const PawMateTopBar({
@@ -55,10 +56,8 @@ class PawMateTopBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     const foreground = AppColors.textPrimary;
     final titleWidget = eyebrow == null && subtitle == null
-        ? Text(
+        ? PawMateFitTitle(
             title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style:
                 titleStyle ??
                 (brandTitle

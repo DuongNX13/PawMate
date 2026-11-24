@@ -14,6 +14,8 @@ class RescueMapPreview extends StatelessWidget {
     this.backgroundAsset,
     this.selectedCaseId,
     this.onSelectCase,
+    this.extraHeight = 0,
+    this.fullBleed = false,
   });
 
   final List<RescueCaseSummary> items;
@@ -22,16 +24,24 @@ class RescueMapPreview extends StatelessWidget {
   final String? selectedCaseId;
   final ValueChanged<RescueCaseSummary>? onSelectCase;
 
+  /// Extra map height hidden under sheets that float over its lower edge.
+  final double extraHeight;
+
+  /// Edge-to-edge map (Figma v0.34 DT-04/DT-05) with square corners.
+  final bool fullBleed;
+
+  static double baseHeight(double viewportWidth) => viewportWidth <= 360
+      ? 208.0
+      : viewportWidth >= 430
+      ? 252.0
+      : 240.0;
+
   @override
   Widget build(BuildContext context) {
     final area = _commonArea(items);
     final viewportWidth = MediaQuery.sizeOf(context).width;
-    final mapHeight = viewportWidth <= 360
-        ? 208.0
-        : viewportWidth >= 430
-        ? 252.0
-        : 240.0;
-    final borderRadius = backgroundAsset == null
+    final mapHeight = baseHeight(viewportWidth) + extraHeight;
+    final borderRadius = backgroundAsset == null && !fullBleed
         ? BorderRadius.circular(AppRadius.mapPreview)
         : BorderRadius.zero;
     return Semantics(
@@ -40,12 +50,15 @@ class RescueMapPreview extends StatelessWidget {
       button: true,
       label:
           'Bản đồ khu vực ước tính gần ${area.isEmpty ? 'khu vực của bạn' : area}, ${items.length} ca cứu hộ. Nhấn để mở bản đồ.',
+      onTap: onOpenMap,
       child: Material(
         color: Colors.transparent,
         borderRadius: borderRadius,
         child: InkWell(
           key: const Key('rescue-map-preview'),
           onTap: onOpenMap,
+          // The labeled Semantics above owns the tap action (A11Y-003).
+          excludeFromSemantics: true,
           borderRadius: borderRadius,
           child: ClipRRect(
             borderRadius: borderRadius,
@@ -62,13 +75,13 @@ class RescueMapPreview extends StatelessWidget {
                       ),
                     ),
                     Positioned(
-                      left: AppSpacing.s16,
+                      left: AppSpacing.s16 + (fullBleed ? AppSpacing.s16 : 0),
                       top: AppSpacing.s12,
                       child: _MapPill(label: 'Khu vực ước tính • công khai'),
                     ),
                     Positioned(
-                      right: AppSpacing.s12,
-                      bottom: AppSpacing.s12,
+                      right: AppSpacing.s12 + (fullBleed ? AppSpacing.s16 : 0),
+                      bottom: AppSpacing.s12 + extraHeight,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: AppColors.surface.withValues(alpha: 0.92),
@@ -93,6 +106,8 @@ class RescueMapPreview extends StatelessWidget {
                     Image.asset(
                       backgroundAsset!,
                       fit: BoxFit.cover,
+                      // The baked "nearby" pill sits at the image's top-left.
+                      alignment: Alignment.topLeft,
                       semanticLabel:
                           'Bản đồ khu vực ước tính, ${items.length} ca cứu hộ',
                       errorBuilder: (context, error, stackTrace) => CustomPaint(
@@ -105,8 +120,12 @@ class RescueMapPreview extends StatelessWidget {
                   if (onSelectCase != null)
                     LayoutBuilder(
                       builder: (context, constraints) {
+                        // Keep tappable markers out of the sheet overlap.
                         final points = _markerPoints(
-                          constraints.biggest,
+                          Size(
+                            constraints.maxWidth,
+                            constraints.maxHeight - extraHeight,
+                          ),
                           items.length,
                           area.hashCode,
                         );

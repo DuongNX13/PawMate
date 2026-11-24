@@ -43,6 +43,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_syncScrolled);
     unawaited(_restoreDraft());
   }
 
@@ -177,8 +178,21 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  // ANDROID-STRESS-Onboarding: the hero sits under a transparent status bar,
+  // so once the form scrolls a scrim keeps text out of that band.
+  final _scrollController = ScrollController();
+  final _scrolled = ValueNotifier<bool>(false);
+
+  void _syncScrolled() {
+    _scrolled.value = _scrollController.offset > 0;
+  }
+
   @override
   void dispose() {
+    _scrollController
+      ..removeListener(_syncScrolled)
+      ..dispose();
+    _scrolled.dispose();
     _petNameController.dispose();
     _breedController.dispose();
     _ageController.dispose();
@@ -244,190 +258,223 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          child: Column(
-            children: [
-              AnimatedContainer(
-                key: const ValueKey('onboarding-responsive-hero'),
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                height: heroHeight,
-                child: Stack(
-                  children: [
-                    Positioned.fill(child: _buildHeroImage(selectedPhoto)),
-                    Positioned(
-                      right: 16,
-                      bottom: 26,
-                      child: SizedBox.square(
-                        dimension: 56,
-                        child: Material(
-                          color: AppColors.surface,
-                          shape: const CircleBorder(),
-                          elevation: AppElevation.none,
-                          child: IconButton(
-                            key: const Key('onboarding-photo-picker'),
-                            tooltip: 'Thêm ảnh thú cưng',
-                            padding: EdgeInsets.zero,
-                            onPressed: _isSubmitting || _isRestoringDraft
-                                ? null
-                                : () => unawaited(_pickPhoto()),
-                            icon: const Icon(
-                              Icons.add_a_photo_outlined,
-                              size: 18,
-                              color: AppColors.primary500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Transform.translate(
-                offset: const Offset(0, -12),
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(20, 34, 0, 28),
-                  child: Form(
-                    key: _formKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Stack(
+        children: [
+          SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    key: const ValueKey('onboarding-responsive-hero'),
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    height: heroHeight,
+                    child: Stack(
                       children: [
-                        Text(
-                          'Hãy cùng làm quen với bạn thân của bạn',
-                          style: AppTextStyles.h1(color: AppColors.primary500),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Hãy chia sẻ một chút về bé để chúng tôi có thể chăm sóc bé tốt nhất.',
-                          style: AppTextStyles.body(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: sectionGap),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              PawMateTextField(
-                                key: const Key('onboarding-pet-name-field'),
-                                controller: _petNameController,
-                                label: 'TÊN THÚ CƯNG',
-                                hintText: 'vd: LuLu',
-                                isRequired: true,
-                                showRequiredIndicator: false,
-                                enabled: !_isSubmitting && !_isRestoringDraft,
-                                labelStyle: AppTextStyles.captionStrong(),
-                                labelSpacing: AppSpacing.s4,
-                                fillColor: AppColors.surface,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 18,
-                                ),
-                                textInputAction: TextInputAction.next,
-                                validator: _validatePetName,
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(50),
-                                ],
-                              ),
-                              SizedBox(height: fieldGap),
-                              PawMateTextField(
-                                key: const Key('onboarding-breed-field'),
-                                controller: _breedController,
-                                label: 'GIỐNG',
-                                hintText: 'vd: Golden',
-                                enabled: !_isSubmitting && !_isRestoringDraft,
-                                labelStyle: AppTextStyles.captionStrong(),
-                                labelSpacing: AppSpacing.s4,
-                                fillColor: AppColors.surface,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 18,
-                                ),
-                                textInputAction: TextInputAction.next,
-                                validator: _validateBreed,
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(80),
-                                ],
-                              ),
-                              SizedBox(height: fieldGap),
-                              PawMateTextField(
-                                key: const Key('onboarding-age-field'),
-                                controller: _ageController,
-                                label: 'TUỔI (NĂM)',
-                                hintText: 'vd: 2',
-                                enabled: !_isSubmitting && !_isRestoringDraft,
-                                labelStyle: AppTextStyles.captionStrong(),
-                                labelSpacing: AppSpacing.s4,
-                                fillColor: AppColors.surface,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 18,
-                                ),
-                                keyboardType: TextInputType.number,
-                                textInputAction: TextInputAction.done,
-                                validator: _validateAge,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(2),
-                                ],
-                              ),
-                              if (_draftError != null) ...[
-                                const SizedBox(height: 18),
-                                _OnboardingErrorBanner(message: _draftError!),
-                              ],
-                              SizedBox(height: fieldGap),
-                              PawMateButton(
-                                key: const ValueKey(
-                                  'onboarding-continue-button',
-                                ),
-                                label: 'Tiếp tục',
-                                isLoading: _isSubmitting,
+                        Positioned.fill(child: _buildHeroImage(selectedPhoto)),
+                        Positioned(
+                          right: 16,
+                          bottom: 26,
+                          child: SizedBox.square(
+                            dimension: 56,
+                            child: Material(
+                              color: AppColors.surface,
+                              shape: const CircleBorder(),
+                              elevation: AppElevation.none,
+                              child: IconButton(
+                                key: const Key('onboarding-photo-picker'),
+                                tooltip: 'Thêm ảnh thú cưng',
+                                padding: EdgeInsets.zero,
                                 onPressed: _isSubmitting || _isRestoringDraft
                                     ? null
-                                    : () => unawaited(
-                                        _finishOnboarding(
-                                          nextRoute: '/auth/register',
-                                          validate: true,
-                                        ),
-                                      ),
+                                    : () => unawaited(_pickPhoto()),
+                                icon: const Icon(
+                                  Icons.add_a_photo_outlined,
+                                  size: 18,
+                                  color: AppColors.primary500,
+                                ),
                               ),
-                              const SizedBox(height: 10),
-                              PawMateButton(
-                                key: const ValueKey('onboarding-login-button'),
-                                label: 'Bỏ qua và đăng nhập',
-                                variant: PawMateButtonVariant.ghost,
-                                onPressed: _isSubmitting || _isRestoringDraft
-                                    ? null
-                                    : () => unawaited(
-                                        _finishOnboarding(
-                                          nextRoute: '/auth/login',
-                                          validate: false,
-                                        ),
-                                      ),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  Transform.translate(
+                    offset: const Offset(0, -12),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(28),
+                        ),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 34, 0, 28),
+                      child: Form(
+                        key: _formKey,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Hãy cùng làm quen với bạn thân của bạn',
+                              style: AppTextStyles.h1(
+                                color: AppColors.primary500,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Hãy chia sẻ một chút về bé để chúng tôi có thể chăm sóc bé tốt nhất.',
+                              style: AppTextStyles.body(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            SizedBox(height: sectionGap),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  PawMateTextField(
+                                    key: const Key('onboarding-pet-name-field'),
+                                    controller: _petNameController,
+                                    label: 'TÊN THÚ CƯNG',
+                                    hintText: 'vd: LuLu',
+                                    isRequired: true,
+                                    showRequiredIndicator: false,
+                                    enabled:
+                                        !_isSubmitting && !_isRestoringDraft,
+                                    labelStyle: AppTextStyles.captionStrong(),
+                                    labelSpacing: AppSpacing.s4,
+                                    fillColor: AppColors.surface,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 18,
+                                    ),
+                                    textInputAction: TextInputAction.next,
+                                    validator: _validatePetName,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(50),
+                                    ],
+                                  ),
+                                  SizedBox(height: fieldGap),
+                                  PawMateTextField(
+                                    key: const Key('onboarding-breed-field'),
+                                    controller: _breedController,
+                                    label: 'GIỐNG',
+                                    hintText: 'vd: Golden',
+                                    enabled:
+                                        !_isSubmitting && !_isRestoringDraft,
+                                    labelStyle: AppTextStyles.captionStrong(),
+                                    labelSpacing: AppSpacing.s4,
+                                    fillColor: AppColors.surface,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 18,
+                                    ),
+                                    textInputAction: TextInputAction.next,
+                                    validator: _validateBreed,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(80),
+                                    ],
+                                  ),
+                                  SizedBox(height: fieldGap),
+                                  PawMateTextField(
+                                    key: const Key('onboarding-age-field'),
+                                    controller: _ageController,
+                                    label: 'TUỔI (NĂM)',
+                                    hintText: 'vd: 2',
+                                    enabled:
+                                        !_isSubmitting && !_isRestoringDraft,
+                                    labelStyle: AppTextStyles.captionStrong(),
+                                    labelSpacing: AppSpacing.s4,
+                                    fillColor: AppColors.surface,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 18,
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.done,
+                                    validator: _validateAge,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                      LengthLimitingTextInputFormatter(2),
+                                    ],
+                                  ),
+                                  if (_draftError != null) ...[
+                                    const SizedBox(height: 18),
+                                    _OnboardingErrorBanner(
+                                      message: _draftError!,
+                                    ),
+                                  ],
+                                  SizedBox(height: fieldGap),
+                                  PawMateButton(
+                                    key: const ValueKey(
+                                      'onboarding-continue-button',
+                                    ),
+                                    label: 'Tiếp tục',
+                                    isLoading: _isSubmitting,
+                                    onPressed:
+                                        _isSubmitting || _isRestoringDraft
+                                        ? null
+                                        : () => unawaited(
+                                            _finishOnboarding(
+                                              nextRoute: '/auth/register',
+                                              validate: true,
+                                            ),
+                                          ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  PawMateButton(
+                                    key: const ValueKey(
+                                      'onboarding-login-button',
+                                    ),
+                                    label: 'Bỏ qua và đăng nhập',
+                                    variant: PawMateButtonVariant.ghost,
+                                    onPressed:
+                                        _isSubmitting || _isRestoringDraft
+                                        ? null
+                                        : () => unawaited(
+                                            _finishOnboarding(
+                                              nextRoute: '/auth/login',
+                                              validate: false,
+                                            ),
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.paddingOf(context).top,
+            child: IgnorePointer(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _scrolled,
+                builder: (context, scrolled, _) => AnimatedOpacity(
+                  key: const Key('onboarding-status-bar-scrim'),
+                  opacity: scrolled ? 1 : 0,
+                  duration: AppMotion.fast,
+                  child: const ColoredBox(color: AppColors.background),
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

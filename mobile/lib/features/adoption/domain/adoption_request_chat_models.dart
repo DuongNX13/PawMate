@@ -285,7 +285,9 @@ class AdoptionChatMedia {
           segments[2].isEmpty ||
           segments[3] != 'media' ||
           segments[4] != mediaId) {
-        throw const FormatException('Invalid private Adoption chat media path.');
+        throw const FormatException(
+          'Invalid private Adoption chat media path.',
+        );
       }
     }
     final rawUrl = _optionalString(json['publicUrl']);
@@ -319,6 +321,7 @@ class AdoptionChatMedia {
   final String sha256;
   final String status;
   final DateTime createdAt;
+
   /// Relative API path only. The client builds its own authenticated request.
   final String? downloadPath;
   final Uri? publicUrl;
@@ -350,8 +353,7 @@ class AdoptionChatMessage {
     );
     for (final attachment in media) {
       final path = attachment.downloadPath;
-      if (path != null &&
-          Uri.parse(path).pathSegments[2] != threadId) {
+      if (path != null && Uri.parse(path).pathSegments[2] != threadId) {
         throw const FormatException('Invalid Adoption chat media thread.');
       }
     }

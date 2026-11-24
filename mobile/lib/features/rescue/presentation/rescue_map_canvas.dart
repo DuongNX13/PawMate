@@ -161,8 +161,8 @@ class _RescueRasterMapCanvasState extends State<RescueRasterMapCanvas> {
         )
         .toList(growable: false);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.xl),
+    // Figma v0.34 P2-05: the map fills the screen edge to edge.
+    return ClipRect(
       child: FlutterMap(
         mapController: _controller,
         options: MapOptions(
@@ -189,7 +189,7 @@ class _RescueRasterMapCanvasState extends State<RescueRasterMapCanvas> {
               padding: const EdgeInsets.all(AppSpacing.s8),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: AppColors.surface.withValues(alpha: 0.92),
+                  color: AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                   border: Border.all(color: AppColors.border),
                 ),
@@ -203,7 +203,7 @@ class _RescueRasterMapCanvasState extends State<RescueRasterMapCanvas> {
                         ? '(c) TomTom'
                         : '(c) OpenStreetMap contributors',
                     style: const TextStyle(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textPrimary,
                       fontSize: 10,
                     ),
                   ),

@@ -38,8 +38,9 @@ class _VetMapScreenState extends ConsumerState<VetMapScreen> {
     final finder = ref.watch(vetFinderSessionProvider);
     final builder = ref.watch(vetMapCanvasBuilderProvider);
     final notifier = ref.read(vetMapProvider.notifier);
+    // D122-TB-P2-004/007: at 2x text even an 800pt-tall phone cannot fit the
+    // overlay layout, so any expanded text scale uses the scroll flow.
     final compactAccessibility =
-        MediaQuery.sizeOf(context).height < 700 &&
         MediaQuery.textScalerOf(context).scale(1) > 1.3;
 
     return Scaffold(
@@ -440,12 +441,12 @@ class _LocationPermissionStrip extends StatelessWidget {
       'Bật định vị để tìm phòng khám gần nhất',
       maxLines: usesExpandedTextLayout ? null : 2,
       overflow: usesExpandedTextLayout ? null : TextOverflow.ellipsis,
-      style: AppTextStyles.captionStrong(color: AppColors.deepGreen),
+      style: AppTextStyles.captionStrong(color: AppColors.textPrimary),
     );
     final enableButton = TextButton(
       onPressed: onEnableTap,
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.deepGreen,
+        foregroundColor: AppColors.textPrimary,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
         minimumSize: const Size(72, AppControlSize.minTouchTarget),
         textStyle: AppTextStyles.captionStrong(),
@@ -462,7 +463,8 @@ class _LocationPermissionStrip extends StatelessWidget {
           ? const EdgeInsets.fromLTRB(12, 8, 4, 4)
           : const EdgeInsets.only(left: 12, right: 4),
       decoration: BoxDecoration(
-        color: AppColors.careGreenSoft.withValues(alpha: 0.82),
+        // Opaque so the map behind cannot drop text contrast (A11Y-001).
+        color: AppColors.careGreenSoft,
         borderRadius: BorderRadius.circular(AppRadius.md),
         boxShadow: const [
           BoxShadow(
@@ -577,8 +579,9 @@ class _MapUnavailableSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final compactAccessibilitySurface =
-        MediaQuery.sizeOf(context).height < 700 && textScale > 1.3;
+    // Must match the screen's scroll-flow switch, which puts this surface in
+    // a 160pt strip at any expanded text scale (D122-VIS-003).
+    final compactAccessibilitySurface = textScale > 1.3;
 
     return ColoredBox(
       color: AppColors.lightBeige,

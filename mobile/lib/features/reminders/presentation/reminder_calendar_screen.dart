@@ -6,8 +6,10 @@ import '../../../app/router/app_navigation.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/pawmate_adaptive.dart';
+import '../../../core/widgets/pawmate_add_fab.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
 import '../../../core/widgets/pawmate_button.dart';
+import '../../../core/widgets/pawmate_fit_title.dart';
 import '../../notifications/application/notification_providers.dart';
 import '../../pets/application/pet_list_provider.dart';
 import '../../pets/domain/pet_profile.dart';
@@ -104,31 +106,14 @@ class _ReminderCalendarScreenState
     final remindersState = query == null
         ? null
         : ref.watch(reminderListProvider(query));
-    final useCompactFab =
-        MediaQuery.sizeOf(context).width < 430 ||
-        MediaQuery.textScalerOf(context).scale(1) > 1.15;
     return Scaffold(
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/health'),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: useCompactFab
-          ? FloatingActionButton(
-              heroTag: 'reminder-create-fab',
-              tooltip: 'Thêm lịch',
-              backgroundColor: AppColors.primary500,
-              foregroundColor: AppColors.white,
-              onPressed: selectedPet == null
-                  ? null
-                  : () => _openReminderSheet(query),
-              child: const Icon(Icons.add_rounded),
-            )
-          : FloatingActionButton.extended(
-              heroTag: 'reminder-create-fab',
-              onPressed: selectedPet == null
-                  ? null
-                  : () => _openReminderSheet(query),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Thêm lịch'),
-            ),
+      floatingActionButton: PawMateAddFab(
+        heroTag: 'reminder-create-fab',
+        tooltip: 'Thêm lịch',
+        onPressed: selectedPet == null ? null : () => _openReminderSheet(query),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 190),
@@ -814,10 +799,8 @@ class _ReminderHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    PawMateFitTitle(
                       'Lịch nhắc nhở',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.appBarTitle(
                         color: AppColors.primary700,
                       ),
@@ -957,13 +940,12 @@ class _WeekStrip extends StatelessWidget {
       (index) => DateTime(start.year, start.month, start.day + index),
     );
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      clipBehavior: Clip.none,
-      child: Row(
-        children: [
-          for (var index = 0; index < days.length; index++) ...[
-            _WeekDayPill(
+    // D122-TB-P2-006: share the width so all seven days stay visible.
+    return Row(
+      children: [
+        for (var index = 0; index < days.length; index++) ...[
+          Expanded(
+            child: _WeekDayPill(
               date: days[index],
               selected: _isSameCalendarDay(days[index], today),
               count: reminders
@@ -973,10 +955,10 @@ class _WeekStrip extends StatelessWidget {
                   )
                   .length,
             ),
-            if (index != days.length - 1) const SizedBox(width: 8),
-          ],
+          ),
+          if (index != days.length - 1) const SizedBox(width: 4),
         ],
-      ),
+      ],
     );
   }
 }
@@ -1008,50 +990,55 @@ class _WeekDayPill extends StatelessWidget {
       key: ValueKey(
         'reminder-day-${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
       ),
-      width: 44,
-      constraints: const BoxConstraints(minHeight: 72),
+      constraints: const BoxConstraints(minHeight: 72, maxWidth: 44),
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
         color: selected ? AppColors.mint : Colors.transparent,
         border: selected ? null : Border.all(color: Colors.transparent),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: AppTextStyles.meta(
-              color: selected ? AppColors.deepGreen : AppColors.label,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Text(
-                '${date.day}',
-                style: AppTextStyles.cardTitle(
-                  color: selected ? AppColors.deepGreen : AppColors.textPrimary,
-                ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          children: [
+            Text(
+              label,
+              // D123-IOS-A11Y-001: weekday labels use full-contrast text.
+              style: AppTextStyles.meta(
+                color: selected ? AppColors.deepGreen : AppColors.textPrimary,
               ),
-              if (count > 0)
-                Positioned(
-                  bottom: -10,
-                  child: Container(
-                    width: count > 1 ? 16 : 8,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.deepGreen
-                          : AppColors.primary500,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
+            ),
+            const SizedBox(height: 4),
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Text(
+                  '${date.day}',
+                  style: AppTextStyles.cardTitle(
+                    color: selected
+                        ? AppColors.deepGreen
+                        : AppColors.textPrimary,
                   ),
                 ),
-            ],
-          ),
-        ],
+                if (count > 0)
+                  Positioned(
+                    bottom: -10,
+                    child: Container(
+                      width: count > 1 ? 16 : 8,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? AppColors.deepGreen
+                            : AppColors.primary500,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -233,6 +233,7 @@ class _VetListScreenState extends ConsumerState<VetListScreen> {
         ),
         child: FloatingActionButton(
           heroTag: 'vet-list-map-fab',
+          tooltip: 'Mở bản đồ phòng khám',
           backgroundColor: AppColors.primary500,
           foregroundColor: Colors.white,
           elevation: 0,

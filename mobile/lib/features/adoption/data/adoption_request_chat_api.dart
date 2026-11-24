@@ -21,7 +21,9 @@ final adoptionRequestListSourceProvider = Provider<AdoptionRequestListSource>((
   return AdoptionRequestChatApi(ref.watch(authenticatedDioProvider));
 });
 
-final adoptionChatMediaSourceProvider = Provider<AdoptionChatMediaSource>((ref) {
+final adoptionChatMediaSourceProvider = Provider<AdoptionChatMediaSource>((
+  ref,
+) {
   return AdoptionRequestChatApi(ref.watch(authenticatedDioProvider));
 });
 
@@ -92,7 +94,8 @@ class AdoptionRequestChatApi
     required AdoptionChatMedia media,
   }) async {
     final path = media.downloadPath;
-    final expectedPath = '/adoption/chat/${Uri.encodeComponent(threadId)}/media/'
+    final expectedPath =
+        '/adoption/chat/${Uri.encodeComponent(threadId)}/media/'
         '${Uri.encodeComponent(media.mediaId)}';
     if (path != expectedPath) {
       throw const AdoptionApiException(
@@ -110,10 +113,13 @@ class AdoptionRequestChatApi
     try {
       final response = await _dio.get<List<int>>(
         expectedPath,
-        options: _options(accessToken).copyWith(responseType: ResponseType.bytes),
+        options: _options(
+          accessToken,
+        ).copyWith(responseType: ResponseType.bytes),
       );
       final bytes = response.data;
-      final contentType = response.headers.value(Headers.contentTypeHeader)
+      final contentType = response.headers
+          .value(Headers.contentTypeHeader)
           ?.split(';')
           .first
           .trim()

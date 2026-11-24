@@ -9,6 +9,8 @@ import '../../../core/widgets/pawmate_ui.dart';
 import '../../pets/application/pet_list_provider.dart';
 import '../../pets/data/pet_api.dart';
 import '../../pets/domain/pet_profile.dart';
+import '../../reminders/application/reminder_providers.dart';
+import '../../reminders/domain/reminder.dart';
 import '../../vets/application/vet_finder_session_provider.dart';
 import '../application/health_knowledge_provider.dart';
 import '../domain/health_knowledge.dart';
@@ -188,145 +190,146 @@ class _PetHealthSummary extends StatelessWidget {
         ),
       );
     }
-    final name = pet?.name ?? 'Sổ sức khỏe';
-    final breed = pet?.breed.trim();
-    final description = pet == null
-        ? 'Thêm thú cưng để cá nhân hóa lịch chăm sóc.'
-        : '${breed?.isNotEmpty == true ? breed : 'Thú cưng'}'
-              '${pet?.weightKg == null ? '' : ' • ${pet!.weightKg!.toStringAsFixed(1)} kg'}';
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 202),
-      child: PawMateCard(
-        variant: PawMateCardVariant.raised,
-        padding: const EdgeInsets.fromLTRB(
-          20,
-          AppSpacing.s16,
-          20,
-          AppSpacing.s16,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final stacked =
-                              constraints.maxWidth < 220 ||
-                              MediaQuery.textScalerOf(context).scale(1) > 1.3;
-                          final title = Text(
-                            name,
-                            maxLines: stacked ? 2 : 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.h3(),
-                          );
-                          const status = PawMateStatus(
-                            label: 'Tình trạng sức khỏe',
-                            value: PawMateStatusValue.success,
-                            text: 'Khỏe mạnh',
-                          );
-                          if (stacked) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                title,
-                                const SizedBox(height: AppSpacing.s8),
-                                status,
-                              ],
-                            );
-                          }
-                          return Row(
-                            children: [
-                              Flexible(fit: FlexFit.loose, child: title),
-                              const SizedBox(width: AppSpacing.s8),
-                              status,
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.s4),
-                      Text(description, style: AppTextStyles.caption()),
-                    ],
+    final name = pet!.name;
+    final breed = pet!.breed.trim();
+    return Container(
+      key: const Key('health-hub-hero'),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.healthHeroSoft,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ClipRRect(
+                key: const Key('health-hub-pet-avatar'),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: const Image(
+                  image: AssetImage(
+                    'assets/images/pets/home_adoption_golden.png',
                   ),
+                  width: 72,
+                  height: 72,
+                  fit: BoxFit.cover,
                 ),
-                const SizedBox(width: AppSpacing.s12),
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(
-                    Icons.favorite_rounded,
-                    color: AppColors.primary500,
-                    size: 28,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s16),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final weight = _Metric(
-                  icon: Icons.monitor_weight_outlined,
-                  label: 'Cân nặng',
-                  value: pet?.weightKg == null
-                      ? 'Chưa có'
-                      : '${pet!.weightKg!.toStringAsFixed(1)} kg',
-                );
-                const latest = _Metric(
-                  icon: Icons.event_available_outlined,
-                  label: 'Khám gần nhất',
-                  value: 'Xem timeline',
-                );
-                if (MediaQuery.textScalerOf(context).scale(1) > 1.3 ||
-                    constraints.maxWidth < 280) {
-                  return Column(
-                    children: [
-                      weight,
-                      const SizedBox(height: AppSpacing.s12),
-                      latest,
-                    ],
-                  );
-                }
-                return Row(
+              ),
+              const SizedBox(width: AppSpacing.s16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: weight),
-                    const SizedBox(width: AppSpacing.s12),
-                    const Expanded(child: latest),
+                    Wrap(
+                      spacing: AppSpacing.s8,
+                      runSpacing: AppSpacing.s4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.h2(),
+                        ),
+                        const _StatusChip(label: 'KHỎE MẠNH'),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    Text(
+                      breed.isEmpty ? 'Thú cưng' : breed,
+                      style: AppTextStyles.bodyCompact(),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final weight = _Metric(
+                icon: Icons.monitor_weight_outlined,
+                label: 'Cân nặng',
+                value: pet!.weightKg == null
+                    ? 'Chưa có'
+                    : pet!.weightKg!.toStringAsFixed(1),
+                unit: pet!.weightKg == null ? null : 'kg',
+              );
+              const latest = _Metric(
+                icon: Icons.event_available_outlined,
+                label: 'Khám gần nhất',
+                value: 'Xem timeline',
+              );
+              if (MediaQuery.textScalerOf(context).scale(1) > 1.3 ||
+                  constraints.maxWidth < 280) {
+                return Column(
+                  children: [
+                    weight,
+                    const SizedBox(height: AppSpacing.s12),
+                    latest,
                   ],
                 );
-              },
-            ),
-          ],
-        ),
+              }
+              return Row(
+                children: [
+                  Expanded(child: weight),
+                  const SizedBox(width: AppSpacing.s12),
+                  const Expanded(child: latest),
+                ],
+              );
+            },
+          ),
+        ],
       ),
     );
   }
 }
 
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Tình trạng sức khỏe: Khỏe mạnh',
+    excludeSemantics: true,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.mint,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.overline(color: AppColors.deepTeal),
+      ),
+    ),
+  );
+}
+
 class _Metric extends StatelessWidget {
-  const _Metric({required this.icon, required this.label, required this.value});
+  const _Metric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.unit,
+  });
 
   final IconData icon;
   final String label;
   final String value;
+  final String? unit;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 76),
+      constraints: const BoxConstraints(minHeight: 90),
       padding: const EdgeInsets.all(AppSpacing.s12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: AppColors.creamTile,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -346,7 +349,16 @@ class _Metric extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s4),
-          Text(value, style: AppTextStyles.captionStrong()),
+          Text.rich(
+            TextSpan(
+              text: value,
+              style: AppTextStyles.h4(),
+              children: [
+                if (unit != null)
+                  TextSpan(text: ' $unit', style: AppTextStyles.bodyCompact()),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -408,15 +420,17 @@ class _HealthToolGrid extends StatelessWidget {
         return Wrap(
           spacing: AppSpacing.s12,
           runSpacing: AppSpacing.s12,
-          children: tools
+          children: tools.indexed
               .map(
-                (tool) => SizedBox(
+                (entry) => SizedBox(
                   width: width,
                   child: _HealthToolCard(
-                    title: tool.$1,
-                    subtitle: tool.$2,
-                    icon: tool.$3,
-                    onTap: tool.$4,
+                    title: entry.$2.$1,
+                    subtitle: entry.$2.$2,
+                    icon: entry.$2.$3,
+                    onTap: entry.$2.$4,
+                    firstRow: entry.$1 < 2,
+                    warm: entry.$1 == 1 || entry.$1 == 2,
                   ),
                 ),
               )
@@ -433,31 +447,56 @@ class _HealthToolCard extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.onTap,
+    required this.firstRow,
+    required this.warm,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
+  final bool firstRow;
+  final bool warm;
 
   @override
   Widget build(BuildContext context) {
-    return PawMateCard(
-      onTap: onTap,
-      semanticLabel: '$title, $subtitle',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.centerLeft,
-            child: Icon(icon, color: AppColors.primary500, size: 24),
+    return Semantics(
+      button: true,
+      label: '$title, $subtitle',
+      excludeSemantics: true,
+      child: Material(
+        color: warm ? AppColors.peachSoft : AppColors.successSoft,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.s16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  key: const Key('health-hub-tool-icon'),
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: firstRow ? AppColors.deepTeal : AppColors.mint,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    icon,
+                    size: 24,
+                    color: firstRow ? AppColors.white : AppColors.deepTeal,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s12),
+                Text(title, style: AppTextStyles.bodyStrong()),
+                Text(subtitle, style: AppTextStyles.caption()),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.s8),
-          Text(title, style: AppTextStyles.label()),
-          Text(subtitle, style: AppTextStyles.caption()),
-        ],
+        ),
       ),
     );
   }
@@ -527,13 +566,20 @@ class _PetQuickAddAction extends StatelessWidget {
   );
 }
 
-class _ReminderPreview extends StatelessWidget {
+class _ReminderPreview extends ConsumerWidget {
   const _ReminderPreview({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final next = ref
+        .watch(upcomingRemindersProvider)
+        .maybeWhen(
+          data: (items) => items.isEmpty ? null : items.first,
+          orElse: () => null,
+        );
+    if (next != null) return _DatedReminderCard(reminder: next, onTap: onTap);
     return PawMateCard(
       onTap: onTap,
       semanticLabel: 'Mở lịch nhắc sức khỏe',
@@ -567,6 +613,84 @@ class _ReminderPreview extends StatelessWidget {
             ),
           ),
           const Icon(Icons.chevron_right_rounded),
+        ],
+      ),
+    );
+  }
+}
+
+class _DatedReminderCard extends StatelessWidget {
+  const _DatedReminderCard({required this.reminder, required this.onTap});
+
+  final Reminder reminder;
+  final VoidCallback onTap;
+
+  String _dayLabel(DateTime due) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = DateTime(due.year, due.month, due.day).difference(today);
+    if (diff.inDays == 0) return 'NAY';
+    if (diff.inDays == 1) return 'MAI';
+    return 'TH${due.month}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final due = reminder.dueAt.toLocal();
+    final time =
+        '${due.hour.toString().padLeft(2, '0')}:${due.minute.toString().padLeft(2, '0')}';
+    final note = reminder.note?.trim();
+    final meta = note == null || note.isEmpty ? time : '$time • $note';
+    return PawMateCard(
+      onTap: onTap,
+      semanticLabel: '${reminder.title}, ngày ${due.day}/${due.month}, $meta',
+      child: Row(
+        children: [
+          Container(
+            key: const Key('health-hub-reminder-date'),
+            width: 53,
+            height: 53,
+            decoration: BoxDecoration(
+              color: AppColors.mint,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _dayLabel(due),
+                  style: AppTextStyles.micro(color: AppColors.deepTeal),
+                ),
+                Text(
+                  '${due.day}',
+                  style: AppTextStyles.h4(color: AppColors.deepTeal),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(reminder.title, style: AppTextStyles.bodyStrong()),
+                const SizedBox(height: AppSpacing.s4),
+                Text(meta, style: AppTextStyles.caption()),
+              ],
+            ),
+          ),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppColors.deepTeal,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.white,
+            ),
+          ),
         ],
       ),
     );

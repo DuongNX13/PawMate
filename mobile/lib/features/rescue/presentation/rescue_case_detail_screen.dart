@@ -69,7 +69,7 @@ class _RescueCaseDetailScreenState
               key: const Key('rescue-detail-comment-bar'),
               primaryAction: PawMateAction(
                 label: 'Bình luận',
-                icon: Icons.chat_bubble_outline_rounded,
+                icon: Icons.chat_bubble_rounded,
                 semanticLabel: 'Bình luận về tin báo này',
                 onPressed: () =>
                     context.push('/rescue/${widget.caseId}/comment'),
@@ -387,7 +387,7 @@ class _InformationTile extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTextStyles.micro()),
+          Text(label.toUpperCase(), style: AppTextStyles.micro()),
           const SizedBox(height: AppSpacing.s4),
           Text(value, style: AppTextStyles.label()),
         ],

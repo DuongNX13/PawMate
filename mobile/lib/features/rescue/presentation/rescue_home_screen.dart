@@ -340,7 +340,8 @@ class _RescueCreateCard extends StatelessWidget {
                       enabled
                           ? 'Gửi thông tin tìm kiếm thú cưng ngay'
                           : 'Gửi thông tin tìm kiếm thú cưng',
-                      maxLines: 1,
+                      // D122-R61-COPY-01: wrap instead of clipping at 2x text.
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.caption(),
                     ),
@@ -377,27 +378,59 @@ class _RescueReadyContent extends StatelessWidget {
   final ValueChanged<RescueCaseSummary> onSelectCase;
   final Widget? selectedCard;
 
+  // Figma v0.34 DT-04/DT-05: the map runs edge to edge and the selected card
+  // plus the nearby sheet float over its lower part.
+  static const _sheetOverlap = 56.0;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RescueMapPreview(
-          items: state.items,
-          onOpenMap: onOpenMap,
-          backgroundAsset: mapPreviewAsset,
-          selectedCaseId: selectedCaseId,
-          onSelectCase: onSelectCase,
-        ),
-        const SizedBox(height: AppSpacing.s12),
-        if (selectedCard != null) ...[
-          selectedCard!,
-          const SizedBox(height: AppSpacing.s12),
-        ],
-        if (state.isStale && state.message != null)
-          _StaleBanner(message: state.message!),
-        _RescueListCard(state: state, now: now, onOpenCase: onOpenCase),
-      ],
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final mapHeight =
+        RescueMapPreview.baseHeight(viewportWidth) + _sheetOverlap;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bleedWidth = constraints.maxWidth + AppSpacing.s16 * 2;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: mapHeight,
+              child: OverflowBox(
+                minWidth: bleedWidth,
+                maxWidth: bleedWidth,
+                child: RescueMapPreview(
+                  items: state.items,
+                  onOpenMap: onOpenMap,
+                  backgroundAsset: mapPreviewAsset,
+                  selectedCaseId: selectedCaseId,
+                  onSelectCase: onSelectCase,
+                  extraHeight: _sheetOverlap,
+                  fullBleed: true,
+                ),
+              ),
+            ),
+            Transform.translate(
+              offset: const Offset(0, -_sheetOverlap),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (selectedCard != null) ...[
+                    selectedCard!,
+                    const SizedBox(height: AppSpacing.s12),
+                  ],
+                  if (state.isStale && state.message != null)
+                    _StaleBanner(message: state.message!),
+                  _RescueListCard(
+                    state: state,
+                    now: now,
+                    onOpenCase: onOpenCase,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -416,73 +449,90 @@ class _RescueSelectedCaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = item;
+    final close = IconButton(
+      key: const Key('rescue-selected-close'),
+      tooltip: 'Đóng thông tin ca đã chọn',
+      onPressed: onClose,
+      icon: const Icon(Icons.close_rounded),
+    );
+    // Figma v0.34 DT-05: floating card, photo left, CTA bottom right.
     return PawMateCard(
       key: Key(
         value == null
             ? 'rescue-selected-unavailable'
             : 'rescue-selected-case-card',
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  value?.petName ?? 'Ca đã chọn không còn trong danh sách',
-                  style: AppTextStyles.h3(),
-                ),
-              ),
-              IconButton(
-                key: const Key('rescue-selected-close'),
-                tooltip: 'Đóng thông tin ca đã chọn',
-                onPressed: onClose,
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
-          if (value == null)
-            Text(
-              'Tin báo có thể đã bị xóa hoặc không còn phù hợp bộ lọc. Hãy chọn một ca khác.',
-              style: AppTextStyles.body(),
-            )
-          else ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      variant: PawMateCardVariant.raised,
+      child: value == null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _RescueThumbnail(item: value, image: value.primaryImage),
-                const SizedBox(width: AppSpacing.s12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        [
-                          value.breedOrColor ?? value.species.label,
-                          if (value.ageLabel != null) value.ageLabel!,
-                        ].join(' · '),
-                        style: AppTextStyles.body(),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Ca đã chọn không còn trong danh sách',
+                        style: AppTextStyles.h3(),
                       ),
-                      Text(
-                        'Khu vực ước tính: ${value.publicLocation.areaLabel}',
-                        style: AppTextStyles.bodyCompact(),
+                    ),
+                    close,
+                  ],
+                ),
+                Text(
+                  'Tin báo có thể đã bị xóa hoặc không còn phù hợp bộ lọc. Hãy chọn một ca khác.',
+                  style: AppTextStyles.body(),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _RescueThumbnail(item: value, image: value.primaryImage),
+                    const SizedBox(width: AppSpacing.s12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(value.petName, style: AppTextStyles.h3()),
+                          Text(
+                            [
+                              value.breedOrColor ?? value.species.label,
+                              if (value.ageLabel != null) value.ageLabel!,
+                            ].join(' · '),
+                            style: AppTextStyles.bodyCompact(),
+                          ),
+                          Text(
+                            'Khu vực ước tính: ${value.publicLocation.areaLabel}',
+                            style: AppTextStyles.caption(),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AppSpacing.s8),
-                      _StatusChip(status: value.status),
-                    ],
-                  ),
+                    ),
+                    close,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s8),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: AppSpacing.s8,
+                  spacing: AppSpacing.s8,
+                  children: [
+                    _StatusChip(status: value.status),
+                    FilledButton.icon(
+                      key: const Key('rescue-selected-details'),
+                      onPressed: onOpenDetails,
+                      iconAlignment: IconAlignment.end,
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      label: const Text('Xem chi tiết'),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.s12),
-            FilledButton(
-              key: const Key('rescue-selected-details'),
-              onPressed: onOpenDetails,
-              child: const Text('Xem chi tiết'),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }
@@ -579,14 +629,27 @@ class _RescueListCardState extends State<_RescueListCard>
           );
     return PawMateCard(
       key: const Key('rescue-nearby-list'),
+      variant: PawMateCardVariant.raised,
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Center(
+            child: Container(
+              key: const Key('rescue-sheet-handle'),
+              margin: const EdgeInsets.only(top: AppSpacing.s8),
+              width: 48,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.mint,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.s16,
-              AppSpacing.s12,
+              AppSpacing.s8,
               AppSpacing.s16,
               AppSpacing.s8,
             ),
@@ -622,10 +685,17 @@ class _RescueListCardState extends State<_RescueListCard>
                     ? 'Thu gọn danh sách ca gần nhất'
                     : 'Mở rộng 5 ca gần nhất',
                 child: ExcludeSemantics(
-                  child: OutlinedButton(
+                  // D123-IOS-UI-006: Figma v0.34 uses a text row with arrow.
+                  child: TextButton.icon(
                     key: const Key('rescue-load-more'),
                     onPressed: _toggleExpanded,
-                    child: Text(_isExpanded.value ? 'Thu gọn' : 'Xem thêm'),
+                    iconAlignment: IconAlignment.end,
+                    icon: Icon(
+                      _isExpanded.value
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                    ),
+                    label: Text(_isExpanded.value ? 'Thu gọn' : 'Xem thêm'),
                   ),
                 ),
               ),

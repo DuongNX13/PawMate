@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -35,6 +36,7 @@ class ShelterChatScreen extends ConsumerStatefulWidget {
 class _ShelterChatScreenState extends ConsumerState<ShelterChatScreen> {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
+  final ScrollController _messageScroll = ScrollController();
 
   @override
   void initState() {
@@ -52,7 +54,20 @@ class _ShelterChatScreenState extends ConsumerState<ShelterChatScreen> {
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
+    _messageScroll.dispose();
     super.dispose();
+  }
+
+  // D122-TB-P2-002: bring the just-sent bubble above the composer.
+  void _scrollToLatest() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_messageScroll.hasClients) return;
+      _messageScroll.animateTo(
+        _messageScroll.position.maxScrollExtent,
+        duration: AppMotion.standard,
+        curve: AppMotion.standardCurve,
+      );
+    });
   }
 
   @override
@@ -135,6 +150,7 @@ class _ShelterChatScreenState extends ConsumerState<ShelterChatScreen> {
             key: const Key('adoption-chat-refresh'),
             onRefresh: () => notifier.load(refresh: true),
             child: _MessageList(
+              scrollController: _messageScroll,
               state: state,
               onLoadOlder: notifier.loadOlder,
               header: [
@@ -205,6 +221,7 @@ class _ShelterChatScreenState extends ConsumerState<ShelterChatScreen> {
                 mounted) {
               _controller.clear();
               _focusNode.requestFocus();
+              _scrollToLatest();
             }
           },
         ),
@@ -352,6 +369,7 @@ class _ContextCard extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(28, 44, 28, 0),
     child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Stack(
           clipBehavior: Clip.none,
@@ -407,13 +425,13 @@ class _ContextCard extends StatelessWidget {
         const SizedBox(height: 20),
         Text(
           '${contextData.petName} & PawMate',
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.start,
           style: AppTextStyles.h2(),
         ),
         const SizedBox(height: 2),
         Text(
           'Trung tâm cứu hộ',
-          textAlign: TextAlign.center,
+          textAlign: TextAlign.start,
           style: AppTextStyles.bodyStrong(),
         ),
         const SizedBox(height: AppSpacing.s24),
@@ -515,11 +533,13 @@ class _PrivacyNote extends StatelessWidget {
 
 class _MessageList extends StatelessWidget {
   const _MessageList({
+    required this.scrollController,
     required this.state,
     required this.onLoadOlder,
     required this.header,
   });
 
+  final ScrollController scrollController;
   final AdoptionChatState state;
   final Future<void> Function() onLoadOlder;
   final List<Widget> header;
@@ -527,6 +547,7 @@ class _MessageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     key: const Key('adoption-chat-message-list'),
+    controller: scrollController,
     physics: const AlwaysScrollableScrollPhysics(),
     keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
     padding: EdgeInsets.zero,
@@ -872,7 +893,7 @@ class _QuickReplies extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: 56,
+    height: math.max(56, MediaQuery.textScalerOf(context).scale(20) + 32),
     child: ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
       scrollDirection: Axis.horizontal,
@@ -895,9 +916,13 @@ class _QuickReplies extends StatelessWidget {
                     minHeight: AppControlSize.minTouchTarget,
                   ),
                   child: Center(
+                    // Grows with large text so diacritics are not clipped.
                     child: Container(
-                      height: 36,
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      constraints: const BoxConstraints(minHeight: 36),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -1022,9 +1047,14 @@ class _Composer extends StatelessWidget {
                   const SizedBox(width: AppSpacing.s4),
                   IconButton.filled(
                     key: const Key('adoption-chat-send'),
+                    // D123-IOS-UI-013: Figma keeps the button filled.
                     style: IconButton.styleFrom(
+                      backgroundColor: AppColors.deepTeal,
                       foregroundColor: AppColors.white,
-                      disabledForegroundColor: AppColors.textSecondary,
+                      disabledBackgroundColor: AppColors.deepTeal.withValues(
+                        alpha: 0.6,
+                      ),
+                      disabledForegroundColor: AppColors.white,
                     ),
                     tooltip: state.errorMessage != null && state.canSend
                         ? 'Gửi lại tin nhắn'

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
+import '../../../core/widgets/pawmate_add_fab.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
 import '../../../core/widgets/pawmate_chip.dart';
 import '../../../core/widgets/pawmate_button.dart';
@@ -63,32 +64,16 @@ class _HealthTimelineScreenState extends ConsumerState<HealthTimelineScreen> {
       error: (error, _) => _reminderErrorMessage(error),
       orElse: () => null,
     );
-    final useCompactFab =
-        MediaQuery.sizeOf(context).width < 430 ||
-        MediaQuery.textScalerOf(context).scale(1) > 1.15;
-
     return Scaffold(
       bottomNavigationBar: const PawMateBottomNav(currentRoute: '/health'),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: useCompactFab
-          ? FloatingActionButton(
-              heroTag: 'health-add-event-fab',
-              tooltip: 'Thêm sự kiện',
-              backgroundColor: AppColors.primary500,
-              foregroundColor: Colors.white,
-              onPressed: selectedPet == null
-                  ? null
-                  : () => _openAddEventScreen(selectedPet.id),
-              child: const Icon(Icons.add_rounded),
-            )
-          : FloatingActionButton.extended(
-              heroTag: 'health-add-event-fab',
-              onPressed: selectedPet == null
-                  ? null
-                  : () => _openAddEventScreen(selectedPet.id),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Thêm sự kiện'),
-            ),
+      floatingActionButton: PawMateAddFab(
+        heroTag: 'health-add-event-fab',
+        tooltip: 'Thêm sự kiện',
+        onPressed: selectedPet == null
+            ? null
+            : () => _openAddEventScreen(selectedPet.id),
+      ),
       body: SafeArea(
         child: ListView(
           key: const PageStorageKey('health-timeline-scroll'),

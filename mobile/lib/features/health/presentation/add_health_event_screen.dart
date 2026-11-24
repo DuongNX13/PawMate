@@ -67,12 +67,7 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
         child: Stack(
           children: [
             ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                keyboardOpen ? 24 : 100,
-              ),
+              padding: EdgeInsets.fromLTRB(16, 12, 16, keyboardOpen ? 24 : 100),
               children: [
                 _AddHealthHeader(
                   onBack: () => PawMateNavigation.backOrGo(context, '/health'),
@@ -341,9 +336,7 @@ class _AddHealthEventScreenState extends ConsumerState<AddHealthEventScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           behavior: SnackBarBehavior.fixed,
           content: Text('Đã lưu sự kiện sức khỏe.'),

@@ -6,6 +6,7 @@ import '../../../app/router/app_route_registry.dart';
 import '../../../app/theme/app_text_styles.dart';
 import '../../../app/theme/app_tokens.dart';
 import '../../../core/widgets/pawmate_bottom_nav.dart';
+import '../../../core/widgets/pawmate_fit_title.dart';
 import '../application/notification_providers.dart';
 import '../data/notification_api.dart';
 import '../domain/pawmate_notification.dart';
@@ -324,10 +325,8 @@ class _NotificationHeader extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           Expanded(
-            child: Text(
+            child: PawMateFitTitle(
               'Thông báo',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: AppTextStyles.appBarTitle(color: AppColors.primary700),
             ),
           ),
@@ -510,13 +509,13 @@ class _NotificationSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 28,
+      height: AppControlSize.minTouchTarget,
       child: Row(
         children: [
           Expanded(
             child: Text(
               title,
-              style: AppTextStyles.overline(color: AppColors.textMuted),
+              style: AppTextStyles.overline(color: AppColors.textSecondary),
             ),
           ),
           if (unreadCount > 0 && onMarkAllRead != null) ...[
@@ -530,10 +529,15 @@ class _NotificationSectionHeader extends StatelessWidget {
                   color: AppColors.primary500,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
-                alignment: Alignment.center,
-                child: Text(
-                  unreadCount > 99 ? '99+' : '$unreadCount',
-                  style: AppTextStyles.micro(color: AppColors.white),
+                // Size to content: an aligned Container would stretch to the
+                // 48pt header row height.
+                child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
+                  child: Text(
+                    unreadCount > 99 ? '99+' : '$unreadCount',
+                    style: AppTextStyles.micro(color: AppColors.white),
+                  ),
                 ),
               ),
             ),
@@ -674,7 +678,6 @@ class _NotificationCard extends StatelessWidget {
                               key: ValueKey(
                                 'notification-dismiss-${notification.id}',
                               ),
-                              visualDensity: VisualDensity.compact,
                               tooltip: 'Ẩn thông báo',
                               onPressed: isBusy ? null : onDismiss,
                               icon: isBusy

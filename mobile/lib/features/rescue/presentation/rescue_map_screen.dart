@@ -292,17 +292,31 @@ class _RescueFilterStrip extends StatelessWidget {
     return Semantics(
       container: true,
       label: 'Bộ lọc bản đồ: ${filters.semanticsLabel}',
-      child: SizedBox(
-        height: AppControlSize.minTouchTarget,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (var index = 0; index < chips.length; index++) ...[
-                if (index > 0) const SizedBox(width: AppSpacing.s8),
-                chips[index],
-              ],
-            ],
+      // Figma v0.34 P2-05: chips sit in a rounded translucent tray.
+      child: Container(
+        key: const Key('rescue-map-filter-tray'),
+        padding: const EdgeInsets.all(AppSpacing.s4),
+        decoration: BoxDecoration(
+          // Opaque so map tiles cannot drop chip text contrast (A11Y-001).
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          boxShadow: AppShadows.soft,
+        ),
+        child: SizedBox(
+          height: AppControlSize.minTouchTarget,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var index = 0; index < chips.length; index++) ...[
+                    if (index > 0) const SizedBox(width: AppSpacing.s8),
+                    chips[index],
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -528,133 +542,148 @@ class _RescueMapBottomSheet extends StatelessWidget {
             ...state.items.where((item) => item.caseId != selected.caseId),
           ];
 
-    return SizedBox(
-      height: sheetHeight,
-      child: Material(
-        color: AppColors.background,
-        elevation: AppElevation.none,
-        child: SingleChildScrollView(
-          key: const Key('rescue-map-sheet-scroll'),
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.s24,
-            AppSpacing.s8,
-            AppSpacing.s24,
-            AppSpacing.s16,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (state.mapUnavailable) ...[
-                _MapSheetState(
-                  key: const ValueKey('rescue-map-unavailable'),
-                  title: 'Bản đồ đang tạm gián đoạn',
-                  message:
-                      'Bạn vẫn có thể xem các ca cứu hộ ở dạng danh sách công khai.',
-                  actionLabel: 'Tải lại bản đồ',
-                  onAction: onRetryMap,
-                ),
-                const SizedBox(height: AppSpacing.s12),
-              ],
-              if (state.status == RescueMapLoadStatus.error &&
-                  state.items.isEmpty)
-                _MapSheetState(
-                  key: const ValueKey('rescue-map-error'),
-                  title: 'Chưa tải được ca cứu hộ',
-                  message: state.message ?? 'Vui lòng thử lại sau.',
-                  actionLabel: 'Thử lại',
-                  onAction: onRetry,
-                )
-              else if (state.status == RescueMapLoadStatus.empty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _MapSheetState(
-                      key: const ValueKey('rescue-map-empty'),
-                      title: 'Chưa có ca phù hợp',
-                      message:
-                          'Bạn có thể báo mất thú cưng để mọi người cùng tìm kiếm.',
-                      actionLabel: 'Báo mất',
-                      onAction: onReportLost,
-                    ),
-                    if (state.filters != const RescueMapFilters()) ...[
-                      const SizedBox(height: AppSpacing.s8),
-                      PawMateButton(
-                        label: 'Xóa bộ lọc',
-                        variant: PawMateButtonVariant.secondary,
-                        compact: true,
-                        onPressed: onClearFilters,
-                      ),
-                    ],
-                  ],
-                )
-              else ...[
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final stackAction =
-                        MediaQuery.textScalerOf(context).scale(1) > 1.3 ||
-                        constraints.maxWidth < 320;
-                    final title = Text(
-                      selected == null
-                          ? state.usesNearbyQuery
-                                ? 'Gần bạn nhất (${state.items.length})'
-                                : 'Mới cập nhật (${state.items.length})'
-                          : 'Đang chọn ${selected.petName}',
-                      style: AppTextStyles.h4(),
-                    );
-                    final action = TextButton(
-                      key: Key(
-                        selected == null
-                            ? 'rescue-map-view-all'
-                            : 'rescue-map-clear-selection',
-                      ),
-                      onPressed: selected == null
-                          ? onViewAll
-                          : onClearSelection,
-                      child: const Text('Xem tất cả'),
-                    );
-
-                    return stackAction
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              title,
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: action,
-                              ),
-                            ],
-                          )
-                        : Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(child: title),
-                              action,
-                            ],
-                          );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.s12),
-                if (state.isStale && state.message != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.s8),
-                    child: Text(
-                      'Đang hiển thị bản cập nhật trước: ${state.message}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption(color: AppColors.textMuted),
-                    ),
-                  ),
-                for (final item in displayItems.take(5)) ...[
-                  _RescueMarkerCard(
-                    key: ValueKey('rescue-marker-card-${item.caseId}'),
-                    item: item,
-                    selected: item.caseId == state.selectedCaseId,
-                    onOpen: () => onOpenCase(item),
+    // Figma v0.34 P2-05: inset white sheet with 24pt corners over the map.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.s12,
+        0,
+        AppSpacing.s12,
+        AppSpacing.s8,
+      ),
+      child: SizedBox(
+        height: sheetHeight,
+        child: Material(
+          key: const Key('rescue-map-sheet'),
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(24),
+          elevation: AppElevation.floating,
+          shadowColor: AppColors.deepTeal.withValues(alpha: 0.3),
+          clipBehavior: Clip.antiAlias,
+          child: SingleChildScrollView(
+            key: const Key('rescue-map-sheet-scroll'),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.s24,
+              AppSpacing.s8,
+              AppSpacing.s24,
+              AppSpacing.s16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (state.mapUnavailable) ...[
+                  _MapSheetState(
+                    key: const ValueKey('rescue-map-unavailable'),
+                    title: 'Bản đồ đang tạm gián đoạn',
+                    message:
+                        'Bạn vẫn có thể xem các ca cứu hộ ở dạng danh sách công khai.',
+                    actionLabel: 'Tải lại bản đồ',
+                    onAction: onRetryMap,
                   ),
                   const SizedBox(height: AppSpacing.s12),
                 ],
+                if (state.status == RescueMapLoadStatus.error &&
+                    state.items.isEmpty)
+                  _MapSheetState(
+                    key: const ValueKey('rescue-map-error'),
+                    title: 'Chưa tải được ca cứu hộ',
+                    message: state.message ?? 'Vui lòng thử lại sau.',
+                    actionLabel: 'Thử lại',
+                    onAction: onRetry,
+                  )
+                else if (state.status == RescueMapLoadStatus.empty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _MapSheetState(
+                        key: const ValueKey('rescue-map-empty'),
+                        title: 'Chưa có ca phù hợp',
+                        message:
+                            'Bạn có thể báo mất thú cưng để mọi người cùng tìm kiếm.',
+                        actionLabel: 'Báo mất',
+                        onAction: onReportLost,
+                      ),
+                      if (state.filters != const RescueMapFilters()) ...[
+                        const SizedBox(height: AppSpacing.s8),
+                        PawMateButton(
+                          label: 'Xóa bộ lọc',
+                          variant: PawMateButtonVariant.secondary,
+                          compact: true,
+                          onPressed: onClearFilters,
+                        ),
+                      ],
+                    ],
+                  )
+                else ...[
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final stackAction =
+                          MediaQuery.textScalerOf(context).scale(1) > 1.3 ||
+                          constraints.maxWidth < 320;
+                      final title = Text(
+                        selected == null
+                            ? state.usesNearbyQuery
+                                  ? 'Gần bạn nhất (${state.items.length})'
+                                  : 'Mới cập nhật (${state.items.length})'
+                            : 'Đang chọn ${selected.petName}',
+                        style: AppTextStyles.h4(),
+                      );
+                      final action = TextButton(
+                        key: Key(
+                          selected == null
+                              ? 'rescue-map-view-all'
+                              : 'rescue-map-clear-selection',
+                        ),
+                        onPressed: selected == null
+                            ? onViewAll
+                            : onClearSelection,
+                        child: const Text('Xem tất cả'),
+                      );
+
+                      return stackAction
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                title,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: action,
+                                ),
+                              ],
+                            )
+                          : Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(child: title),
+                                action,
+                              ],
+                            );
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.s12),
+                  if (state.isStale && state.message != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.s8),
+                      child: Text(
+                        'Đang hiển thị bản cập nhật trước: ${state.message}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  for (final item in displayItems.take(5)) ...[
+                    _RescueMarkerCard(
+                      key: ValueKey('rescue-marker-card-${item.caseId}'),
+                      item: item,
+                      selected: item.caseId == state.selectedCaseId,
+                      onOpen: () => onOpenCase(item),
+                    ),
+                    const SizedBox(height: AppSpacing.s12),
+                  ],
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -791,11 +820,18 @@ class _RescueMarkerCard extends StatelessWidget {
               '${item.petName}, ${item.species.label}, ${item.status.label}, ${item.publicLocation.areaLabel}, khu vực ước tính',
           child: Material(
             color: selected ? AppColors.surfaceContainer : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            // Figma v0.34 P2-05: outlined cards inside the white sheet.
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              side: const BorderSide(
+                color: AppColors.healthHeroSoft,
+                width: 1.5,
+              ),
+            ),
             child: InkWell(
               key: ValueKey('rescue-marker-select-${item.caseId}'),
               onTap: onOpen,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.s12,

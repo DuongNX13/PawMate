@@ -452,9 +452,9 @@ class _DiscussionCaseSummary extends StatelessWidget {
           vertical: AppSpacing.s16,
         ),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          // Figma v0.34 P2-08 case summary sits on the mint hero tint.
+          color: AppColors.healthHeroSoft,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1140,7 +1140,6 @@ class _DiscussionCommentCard extends StatelessWidget {
         comment.moderationState == RescueCommentModerationState.hidden;
     final hasMedia = !hidden && comment.media.isNotEmpty;
     final isReply = comment.replyToCommentId != null;
-    final framed = isReply || hasMedia;
     return Semantics(
       container: true,
       label: hidden
@@ -1159,18 +1158,23 @@ class _DiscussionCommentCard extends StatelessWidget {
                 children: [
                   Container(
                     key: ValueKey('rescue-comment-${comment.commentId}'),
-                    padding: framed
-                        ? const EdgeInsets.all(AppSpacing.s12)
-                        : EdgeInsets.zero,
-                    decoration: framed
-                        ? BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(
-                              isReply ? AppRadius.sm : AppRadius.md,
-                            ),
-                            border: Border.all(color: AppColors.border),
-                          )
-                        : null,
+                    // Figma v0.34 P2-08: every comment is a 12pt bubble;
+                    // replies use the mint tint (D123-IOS-UI-008).
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.s16,
+                      AppSpacing.s8,
+                      AppSpacing.s4,
+                      AppSpacing.s12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isReply
+                          ? AppColors.healthHeroSoft
+                          : AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: comment.isOptimistic
+                          ? Border.all(color: AppColors.mint)
+                          : null,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -1211,7 +1215,6 @@ class _DiscussionCommentCard extends StatelessWidget {
                               onPressed: onOptions,
                               icon: const Icon(Icons.more_vert_rounded),
                               color: AppColors.brown,
-                              visualDensity: VisualDensity.compact,
                             ),
                           ],
                         ),

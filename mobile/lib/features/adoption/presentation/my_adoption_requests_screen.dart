@@ -19,17 +19,14 @@ class MyAdoptionRequestsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final usesExpandedTextLayout =
-        MediaQuery.textScalerOf(context).scale(1) >
-        AppControlSize.compactButtonMaxTextScale;
     final requests = ref.watch(myAdoptionRequestsProvider);
     return PawMatePageScaffold(
       layoutMode: PawMatePageLayoutMode.fullResponsive,
       key: const Key('my-adoption-requests-screen'),
       backgroundColor: AppColors.background,
       topBar: PawMateTopBar(
-        title: usesExpandedTextLayout ? 'Đơn của tôi' : 'Đơn nhận nuôi của tôi',
-        semanticTitle: 'Đơn nhận nuôi của tôi',
+        title: 'Lịch sử nhận nuôi',
+        semanticTitle: 'Lịch sử nhận nuôi',
         showBackButton: true,
         centerTitle: true,
         onBack: () => _back(context),

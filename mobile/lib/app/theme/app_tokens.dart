@@ -63,6 +63,10 @@ class AppColors {
 
   static const success = Color(0xFF2D7A55);
   static const successSoft = Color(0xFFF0F8F3);
+  // Figma v0.34 P2-13 health hub hero, metric tile and warm tool tile fills.
+  static const healthHeroSoft = Color(0xFFE5F4EA);
+  static const creamTile = Color(0xFFFCF9F3);
+  static const peachSoft = Color(0xFFFFF7ED);
   // Dark semantic foregrounds are used on their pale containers; the brighter
   // anchor orange/red remain available for non-text accents only.
   static const warning = Color(0xFF8A5A16);
