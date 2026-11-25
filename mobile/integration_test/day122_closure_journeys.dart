@@ -486,7 +486,21 @@ Future<void> rehearseClosureVetJourney(
   expect(find.byType(VetDetailScreen), findsOneWidget);
   expect(h.source.details, ['qa-clinic']);
   await capture('vet-detail');
-  await tap(find.byKey(const Key('review-list-open-button')));
+  // D124 TB-003: detail sections are separate list items now, so the review
+  // section is built lazily. Scroll it in like a user would.
+  final reviewOpen = find.byKey(const Key('review-list-open-button'));
+  await tester.scrollUntilVisible(
+    reviewOpen,
+    220,
+    scrollable: find
+        .descendant(
+          of: find.byType(VetDetailScreen),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  await tester.pumpAndSettle();
+  await tap(reviewOpen);
   expect(find.byKey(const Key('review-list-scroll')), findsOneWidget);
   expect(find.byKey(const Key('review-list-empty')), findsOneWidget);
   expect(h.source.reviews, isNotEmpty);
