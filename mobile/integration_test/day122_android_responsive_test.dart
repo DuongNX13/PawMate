@@ -152,7 +152,7 @@ void main() {
         expect(t.view.viewPadding.bottom, native.viewPadding.bottom);
         expect(t.takeException(), isNull);
         _nav(t, size, native.viewPadding.bottom / native.devicePixelRatio);
-        await binding.takeScreenshot('D122-${id.toLowerCase()}-top');
+        await _shot122(t, binding, 'D122-${id.toLowerCase()}-top');
 
         final vertical = find.byWidgetPredicate(
           (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
@@ -167,7 +167,7 @@ void main() {
         }
         expect(t.takeException(), isNull);
         _nav(t, size, native.viewPadding.bottom / native.devicePixelRatio);
-        await binding.takeScreenshot('D122-${id.toLowerCase()}-end');
+        await _shot122(t, binding, 'D122-${id.toLowerCase()}-end');
         (binding.reportData!['rows'] as List<Map<String, dynamic>>).add({
           'id': id,
           'family': family,
@@ -186,6 +186,19 @@ void main() {
       timeout: const Timeout(Duration(minutes: 2)),
     );
   }
+}
+
+// D124: on Android, takeScreenshot waits for a rasterized frame after the
+// surface conversion. A settled screen schedules none, so the capture could
+// wait until the 2-minute timeout. Force one frame first.
+Future<void> _shot122(
+  WidgetTester t,
+  IntegrationTestWidgetsFlutterBinding binding,
+  String name,
+) async {
+  t.binding.scheduleFrame();
+  await t.pump();
+  await binding.takeScreenshot(name);
 }
 
 void restoreNativeMetrics122(WidgetTester t) {
