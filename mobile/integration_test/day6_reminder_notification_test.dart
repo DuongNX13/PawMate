@@ -78,18 +78,21 @@ void main() {
       // The QA account can contain pets from earlier runs. Select the pet
       // created by this journey before creating the reminder so the UI and
       // the API read-back use the same shared selected-pet state.
-      final petDropdown = find.byType(DropdownButton<String>);
-      expect(petDropdown, findsOneWidget);
-      await tester.tap(petDropdown);
+      // D125: v034 swapped the pet dropdown for a PopupMenuButton.
+      final petSelector = find.byKey(const ValueKey('reminder-pet-selector'));
+      expect(petSelector, findsOneWidget);
+      await tester.tap(petSelector);
       await tester.pumpAndSettle();
       final createdPetOption = find.byWidgetPredicate(
-        (widget) =>
-            widget is DropdownMenuItem<String> && widget.value == pet.id,
+        (widget) => widget is PopupMenuItem<String> && widget.value == pet.id,
       );
       expect(createdPetOption, findsOneWidget);
       await tester.tap(createdPetOption);
       await tester.pumpAndSettle();
-      expect(tester.widget<DropdownButton<String>>(petDropdown).value, pet.id);
+      expect(
+        tester.widget<PopupMenuButton<String>>(petSelector).initialValue,
+        pet.id,
+      );
 
       await tester.tap(find.byTooltip('Thêm lịch'));
       await tester.pumpAndSettle();
@@ -155,14 +158,17 @@ void main() {
         accessToken: session.accessToken,
       );
       expect(find.text(dueTitle), findsOneWidget);
-      expect(find.textContaining('thông báo chưa đọc'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey('notification-unread-count')),
+        findsWidgets,
+      );
 
       await tester.tap(
         find.byKey(const ValueKey('notification-mark-all-read-button')),
       );
       await tester.pumpAndSettle(const Duration(seconds: 5));
       expect(
-        find.byKey(const ValueKey('notification-unread-banner')),
+        find.byKey(const ValueKey('notification-unread-count')),
         findsNothing,
       );
 
@@ -173,7 +179,7 @@ void main() {
       );
       expect(find.text(dueTitle), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('notification-unread-banner')),
+        find.byKey(const ValueKey('notification-unread-count')),
         findsNothing,
       );
     },
