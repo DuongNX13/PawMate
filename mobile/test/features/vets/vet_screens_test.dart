@@ -600,6 +600,12 @@ void main() {
       expect(find.text('PawMate'), findsOneWidget);
       expect(find.text('PetHome Q7'), findsOneWidget);
       expect(find.textContaining('4.8 (120+)'), findsOneWidget);
+      // D124 TB-003: each detail section is a lazily built list item.
+      await tester.scrollUntilVisible(
+        find.text('Dịch vụ cung cấp'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Dịch vụ cung cấp'), findsOneWidget);
       expect(find.text('Tiêm phòng'), findsWidgets);
       expect(find.text('Chỉ đường'), findsOneWidget);
@@ -671,6 +677,12 @@ void main() {
     );
     final address = find.text(
       '83 Nghi Tam, Tay Ho, Ha Noi, second floor reception\nHải Châu, Đà Nẵng',
+    );
+    // D124 TB-003: the address card is its own lazily built list item.
+    await tester.scrollUntilVisible(
+      address,
+      200,
+      scrollable: find.byType(Scrollable).first,
     );
     expect(address, findsOneWidget);
     expect(
@@ -1336,8 +1348,17 @@ void main() {
     await tester.pumpAndSettle();
     final open = find.byKey(const Key('review-list-open-button'));
     expect(find.byType(Scrollable), findsWidgets);
-    await tester.ensureVisible(
+    // D124 TB-003: detail sections are lazily built list items.
+    await tester.scrollUntilVisible(
       find.byKey(const Key('vet-detail-write-review-button')),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      open,
+      220,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
     expect(open, findsOneWidget);
