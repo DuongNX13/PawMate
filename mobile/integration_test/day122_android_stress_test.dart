@@ -37,9 +37,15 @@ void main() {
   const chatOnly = bool.fromEnvironment('D122_CHAT_ONLY');
   const petOnly = bool.fromEnvironment('D122_PET_ONLY');
   const runtimeOnly = bool.fromEnvironment('D122_RUNTIME_ONLY');
-  Future<void> capture(String name) async {
-    if (!runtimeOnly) await binding.takeScreenshot(name);
+  Future<void> capture(WidgetTester t, String name) async {
+    if (runtimeOnly) return;
+    // D124: a settled screen schedules no frame, and the Android capture
+    // waits for one; force a frame so it cannot hang until the timeout.
+    t.binding.scheduleFrame();
+    await t.pump();
+    await binding.takeScreenshot(name);
   }
+
   final families = chatOnly
       ? ['ShelterChat']
       : petOnly
@@ -58,7 +64,9 @@ void main() {
   binding.reportData = {
     'day': 122,
     'proof': 'ANDROID_NATIVE_STRESS_FIXTURE_DATA',
-    'captures': runtimeOnly ? 'NOT_RUN_CAPTURE_BRANCH_STOPPED' : 'REVIEW_REQUIRED',
+    'captures': runtimeOnly
+        ? 'NOT_RUN_CAPTURE_BRANCH_STOPPED'
+        : 'REVIEW_REQUIRED',
     'rows': <Map<String, dynamic>>[],
   };
   setUpAll(() async {
@@ -151,7 +159,7 @@ void main() {
           ).scale(16),
           greaterThan(16),
         );
-        await capture('D122-stress-${family.toLowerCase()}-top');
+        await capture(t, 'D122-stress-${family.toLowerCase()}-top');
         if (family == 'Onboarding' ||
             family == 'PetEdit' ||
             family == 'ShelterChat') {
@@ -186,7 +194,10 @@ void main() {
           expect(cta, findsOneWidget);
           await t.ensureVisible(cta);
           await t.pumpAndSettle();
-          await capture('D122-stress-${family.toLowerCase()}-ime-diagnostic');
+          await capture(
+            t,
+            'D122-stress-${family.toLowerCase()}-ime-diagnostic',
+          );
           expect(cta.hitTestable(), findsOneWidget);
           expect(
             t.getRect(cta).bottom,
@@ -194,9 +205,7 @@ void main() {
               size.height - n.viewInsets.bottom / n.devicePixelRatio + 1,
             ),
           );
-          await capture(
-            'D122-stress-${family.toLowerCase()}-ime',
-          );
+          await capture(t, 'D122-stress-${family.toLowerCase()}-ime');
         } else if (family == 'RescueExpanded' || family == 'RescueSelected') {
           final target = family == 'RescueExpanded'
               ? find.byKey(const Key('rescue-load-more'))
@@ -213,9 +222,7 @@ void main() {
                 : find.byKey(const Key('rescue-selected-case-card')),
             findsOneWidget,
           );
-          await capture(
-            'D122-stress-${family.toLowerCase()}-selected',
-          );
+          await capture(t, 'D122-stress-${family.toLowerCase()}-selected');
         } else {
           final scroll = find.byWidgetPredicate(
             (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
@@ -228,9 +235,7 @@ void main() {
             }
             expect(position.extentAfter, lessThanOrEqualTo(.5));
           }
-          await capture(
-            'D122-stress-${family.toLowerCase()}-end',
-          );
+          await capture(t, 'D122-stress-${family.toLowerCase()}-end');
         }
         expect(t.takeException(), isNull);
         (binding.reportData!['rows'] as List<Map<String, dynamic>>).add({
