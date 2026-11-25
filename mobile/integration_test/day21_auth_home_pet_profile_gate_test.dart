@@ -105,11 +105,11 @@ void main() {
         expect(find.byType(PetDetailScreen), findsOneWidget);
         expect(find.text(homePet.name), findsAtLeastNWidgets(1));
         await tester.scrollUntilVisible(
-          find.text('Quay lại danh sách'),
+          find.text('Quay lại danh sách thú cưng'),
           500,
           scrollable: find.byType(Scrollable).first,
         );
-        await tester.tap(find.text('Quay lại danh sách'));
+        await tester.tap(find.text('Quay lại danh sách thú cưng'));
         await tester.pumpAndSettle(const Duration(seconds: 5));
 
         expect(find.byType(PetListScreen), findsOneWidget);
