@@ -75,11 +75,13 @@ class _VetDetailScreenState extends ConsumerState<VetDetailScreen> {
                   ),
                 ),
                 _HeroCard(vet: vet),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                  child: Column(
+                // D124 TB-003: one list item per section. A single item several
+                // screens tall stops TalkBack's swipe from auto-scrolling on.
+                ...[
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 24),
                       Text(
                         vet.name,
                         maxLines: usesExpandedTextLayout ? null : 2,
@@ -91,10 +93,16 @@ class _VetDetailScreenState extends ConsumerState<VetDetailScreen> {
                       const SizedBox(height: 10),
                       _VetStatusLine(vet: vet),
                       const SizedBox(height: 24),
-                      _QuickFactsCard(vet: vet),
-                      const SizedBox(height: 20),
-                      _AddressCard(vet: vet),
-                      const SizedBox(height: 30),
+                    ],
+                  ),
+                  _QuickFactsCard(vet: vet),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, bottom: 30),
+                    child: _AddressCard(vet: vet),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text('Dịch vụ cung cấp', style: AppTextStyles.h3()),
                       const SizedBox(height: 14),
                       Wrap(
@@ -115,12 +123,22 @@ class _VetDetailScreenState extends ConsumerState<VetDetailScreen> {
                         leadingIcon: Icons.rate_review_outlined,
                       ),
                       const SizedBox(height: 34),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text('Đánh giá gần đây', style: AppTextStyles.h3()),
                       const SizedBox(height: 16),
                       _ReviewPreviewCard(vet: vet, reviewsAsync: reviewsAsync),
                       const SizedBox(height: 18),
-                      _SourceAttributionCard(vet: vet),
                     ],
+                  ),
+                  _SourceAttributionCard(vet: vet),
+                ].map(
+                  (section) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: section,
                   ),
                 ),
               ],
