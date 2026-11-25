@@ -124,14 +124,23 @@ void main() {
       await tester.pump();
       expect(find.text('Vui lòng mô tả môi trường sống.'), findsOneWidget);
 
-      await tester.enterText(
-        find.byKey(const Key('adoption-request-living-condition-field')),
-        'Căn hộ có lưới an toàn, dữ liệu synthetic.',
+      // D125: v034 replaced the free-text housing/experience fields with pickers.
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('adoption-request-living-condition-field')),
+          matching: find.byType(DropdownButton<String>),
+        ),
       );
-      await tester.enterText(
-        find.byKey(const Key('adoption-request-pet-experience-field')),
-        'Đã chăm sóc chó trưởng thành trong fixture kiểm thử.',
+      await _waitFor(tester, find.text('Căn hộ').last);
+      await tester.tap(find.text('Căn hộ').last);
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('adoption-request-pet-experience-field')),
+          matching: find.text('Đã có kinh nghiệm'),
+        ),
       );
+      await tester.pump();
       await tester.enterText(
         find.byKey(const Key('adoption-request-care-plan-field')),
         'Khám định kỳ và chăm sóc theo hướng dẫn bác sĩ thú y.',
