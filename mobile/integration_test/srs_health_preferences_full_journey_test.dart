@@ -158,6 +158,13 @@ void main() {
     await _waitFor(tester, find.byKey(const Key('privacy-defaults-scroll')));
     await tester.tap(find.byKey(const Key('privacy-hide-house-number')));
     await tester.pump();
+    // D125: the outgoing notification screen keeps its own save button until
+    // the route transition ends, so wait for a single match before tapping.
+    await _waitFor(
+      tester,
+      find.byKey(const Key('notification-preferences-scroll')),
+      absent: true,
+    );
     await tester.tap(find.text('Lưu thay đổi'));
     await _waitFor(tester, find.text('Đã lưu cài đặt quyền riêng tư.'));
     final updatedPrivacy = await preferenceApi.getPrivacyDefaults(
@@ -225,12 +232,13 @@ Future<void> _waitFor(
   WidgetTester tester,
   Finder finder, {
   Duration timeout = const Duration(seconds: 15),
+  bool absent = false,
 }) async {
   final deadline = DateTime.now().add(timeout);
   while (DateTime.now().isBefore(deadline)) {
     await tester.pump(const Duration(milliseconds: 100));
-    if (finder.evaluate().isNotEmpty) return;
+    if (finder.evaluate().isNotEmpty != absent) return;
     await Future<void>.delayed(const Duration(milliseconds: 100));
   }
-  expect(finder, findsAtLeastNWidgets(1));
+  expect(finder, absent ? findsNothing : findsAtLeastNWidgets(1));
 }
