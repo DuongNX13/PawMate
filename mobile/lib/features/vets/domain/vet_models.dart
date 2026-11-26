@@ -652,12 +652,10 @@ Map<String, dynamic> _readMap(dynamic value) {
   return <String, dynamic>{};
 }
 
+// pageInfo is the canonical envelope but omits total during the migration
+// window, so fields it lacks come from the legacy pagination envelope.
 Map<String, dynamic> _readPageInfo(Map<String, dynamic> json) {
-  final pageInfo = json['pageInfo'];
-  if (pageInfo is Map) {
-    return _readMap(pageInfo);
-  }
-  return _readMap(json['pagination']);
+  return {..._readMap(json['pagination']), ..._readMap(json['pageInfo'])};
 }
 
 List<String> _readStringList(dynamic value) {
