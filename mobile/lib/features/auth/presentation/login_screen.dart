@@ -214,13 +214,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              '${error.message} Hãy nhập mã OTP để xác minh tài khoản.',
+              '${error.message} Hãy bấm link xác minh trong email.',
             ),
           ),
         );
         context.go(
           Uri(
-            path: '/auth/otp',
+            path: '/auth/verify-email',
             queryParameters: authQueryParameters(
               values: {'email': email},
               returnTo: widget.returnTo,
