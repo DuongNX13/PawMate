@@ -46,4 +46,26 @@ void main() {
     expect(result.total, 0);
     expect(result.limit, 20);
   });
+
+  test('D125-P3-001 review total falls back to pagination when pageInfo lacks it', () {
+    final both = VetReviewResult.fromJson({
+      'data': const [],
+      'summary': const {'reviewCount': 7},
+      'pageInfo': {'nextCursor': null, 'hasMore': false, 'limit': 20},
+      'pagination': {'total': 7, 'limit': 20},
+    });
+    final pageInfoOnly = VetReviewResult.fromJson({
+      'data': const [],
+      'pageInfo': {'total': 3, 'limit': 10},
+    });
+    final paginationOnly = VetReviewResult.fromJson({
+      'data': const [],
+      'pagination': {'total': 5, 'limit': 20},
+    });
+
+    expect(both.total, 7);
+    expect(both.limit, 20);
+    expect(pageInfoOnly.total, 3);
+    expect(paginationOnly.total, 5);
+  });
 }
