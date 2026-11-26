@@ -587,7 +587,7 @@ GoRouter _loginRouter({String? returnTo}) {
             const Scaffold(body: Center(child: Text('Home target'))),
       ),
       GoRoute(
-        path: '/auth/otp',
+        path: '/auth/verify-email',
         builder: (context, state) => Scaffold(
           body: Center(
             child: Column(
