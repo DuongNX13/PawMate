@@ -29,6 +29,7 @@ void main() {
       'login': '/auth/login',
       'register': '/auth/register',
       'otp': '/auth/otp',
+      'verify-email': '/auth/verify-email',
       'pets-home': '/pets',
       'pets-list': 'list',
       'adoption': '/adoption',
