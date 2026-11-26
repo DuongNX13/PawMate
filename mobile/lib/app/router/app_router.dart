@@ -10,6 +10,7 @@ import '../../features/adoption/presentation/shelter_chat_screen.dart';
 import '../../features/auth/application/auth_session_coordinator.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/otp_screen.dart';
+import '../../features/auth/presentation/verify_email_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/health/presentation/add_health_event_screen.dart';
 import '../../features/health/presentation/health_timeline_screen.dart';
@@ -124,6 +125,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           verificationExpiresAt: _parseEpochMilliseconds(
             state.uri.queryParameters['expiresAt'],
           ),
+          resendAvailableAt: _parseEpochMilliseconds(
+            state.uri.queryParameters['resendAt'],
+          ),
+          returnTo: state.uri.queryParameters['returnTo'],
+        ),
+      ),
+      GoRoute(
+        path: '/auth/verify-email',
+        name: 'verify-email',
+        builder: (context, state) => VerifyEmailScreen(
+          email: state.uri.queryParameters['email'],
           resendAvailableAt: _parseEpochMilliseconds(
             state.uri.queryParameters['resendAt'],
           ),
@@ -500,6 +512,7 @@ const _publicRoutes = <String>{
   '/auth/login',
   '/auth/register',
   '/auth/otp',
+  '/auth/verify-email',
 };
 
 bool _isPublicRoute(String path) => _publicRoutes.contains(path);
