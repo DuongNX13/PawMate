@@ -135,9 +135,8 @@ void main() {
 
     final after = await VetApi(dio).listReviews(vetId);
     expect(after.items.any((r) => r.body == body), isTrue);
-    // D125-P3-001: VetReviewResult.total reads pageInfo (no total) before
-    // pagination, so it is always 0; the UI uses summary.reviewCount instead.
     expect(after.summary.reviewCount, before.summary.reviewCount + 1);
+    expect(after.total, before.total + 1);
 
     // Granted location branch: the map asks the real /vets/nearby.
     Navigator.of(
