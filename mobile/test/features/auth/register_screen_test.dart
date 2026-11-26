@@ -329,7 +329,7 @@ GoRouter _registerRouter({String? returnTo}) {
             const Scaffold(body: Center(child: Text('Login target'))),
       ),
       GoRoute(
-        path: '/auth/otp',
+        path: '/auth/verify-email',
         builder: (context, state) => Scaffold(
           body: SingleChildScrollView(
             child: Column(
