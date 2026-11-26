@@ -1,8 +1,8 @@
-// Day 125 journey 1: Register -> OTP -> authenticated landing, against the
-// local backend, which verifies email through the real Supabase Auth project.
-// The operator reads the code from the inbox and writes it into the app's
-// private files dir:
-//   adb shell run-as com.pawmate.pawmate_mobile sh -c 'echo 123456 > files/day125-otp.txt'
+// Day 125/126 journey 1: Register -> verification email link -> Login -> Home,
+// against the local backend, which verifies email through the real Supabase
+// Auth project. After clicking the link in the inbox, the operator signals the
+// test by writing a marker into the app's private files dir:
+//   adb shell run-as com.pawmate.pawmate_mobile sh -c 'touch files/day125-verified.txt'
 // Run with --dart-define=DAY125_EMAIL=<inbox the user approved>.
 import 'dart:io';
 
@@ -15,25 +15,27 @@ import 'package:integration_test/integration_test.dart';
 import 'package:pawmate_mobile/app/theme/app_theme.dart';
 import 'package:pawmate_mobile/core/network/app_dio.dart';
 import 'package:pawmate_mobile/features/auth/presentation/login_screen.dart';
-import 'package:pawmate_mobile/features/auth/presentation/otp_screen.dart';
 import 'package:pawmate_mobile/features/auth/presentation/register_screen.dart';
+import 'package:pawmate_mobile/features/auth/presentation/verify_email_screen.dart';
 
 const _apiBaseUrl = String.fromEnvironment(
   'PAWMATE_API_BASE_URL',
   defaultValue: 'http://10.0.2.2:3000',
 );
 const _email = String.fromEnvironment('DAY125_EMAIL');
-const _otpFile = '/data/user/0/com.pawmate.pawmate_mobile/files/day125-otp.txt';
+const _markerFile =
+    '/data/user/0/com.pawmate.pawmate_mobile/files/day125-verified.txt';
+const _password = 'Day125Otp!x';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Day125 journey 1 register, OTP and landing on local backend', (
+  testWidgets('Day125 journey 1 register, email link and login on local backend', (
     tester,
   ) async {
     expect(_email, isNotEmpty, reason: 'Pass --dart-define=DAY125_EMAIL');
-    final otp = File(_otpFile);
-    if (otp.existsSync()) otp.deleteSync();
+    final marker = File(_markerFile);
+    if (marker.existsSync()) marker.deleteSync();
     final dio = Dio(
       BaseOptions(
         baseUrl: _apiBaseUrl,
@@ -53,11 +55,9 @@ void main() {
           ),
         ),
         GoRoute(
-          path: '/auth/otp',
-          builder: (_, s) => OtpScreen(
+          path: '/auth/verify-email',
+          builder: (_, s) => VerifyEmailScreen(
             email: s.uri.queryParameters['email'],
-            registrationId: s.uri.queryParameters['registrationId'],
-            verificationExpiresAt: _epoch(s.uri.queryParameters['expiresAt']),
             resendAvailableAt: _epoch(s.uri.queryParameters['resendAt']),
             returnTo: s.uri.queryParameters['returnTo'],
           ),
@@ -102,11 +102,11 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const ValueKey('register-password-field')),
-      'Day125Otp!x',
+      _password,
     );
     await tester.enterText(
       find.byKey(const ValueKey('register-confirm-password-field')),
-      'Day125Otp!x',
+      _password,
     );
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
@@ -119,35 +119,44 @@ void main() {
     }
     await _waitFor(
       tester,
-      find.byKey(const ValueKey('otp-code-field')),
+      find.byKey(const ValueKey('verify-email-login-button')),
       orFail: find.byKey(const ValueKey('register-general-error')),
       timeout: const Duration(seconds: 40),
     );
     // ignore: avoid_print
-    print('DAY125 OTP-SCREEN READY');
+    print('DAY125 VERIFY-EMAIL-SCREEN READY');
 
     final deadline = DateTime.now().add(const Duration(minutes: 9));
-    while (!otp.existsSync() && DateTime.now().isBefore(deadline)) {
+    while (!marker.existsSync() && DateTime.now().isBefore(deadline)) {
       await tester.pump(const Duration(seconds: 1));
     }
-    expect(otp.existsSync(), isTrue, reason: 'OTP file not provided');
-    final code = otp.readAsStringSync().trim();
-    otp.deleteSync();
+    expect(marker.existsSync(), isTrue, reason: 'Verified marker not provided');
+    marker.deleteSync();
 
-    await tester.enterText(find.byKey(const ValueKey('otp-code-field')), code);
+    await tester.tap(find.byKey(const ValueKey('verify-email-login-button')));
+    await _waitFor(tester, find.byType(LoginScreen));
+    await tester.enterText(
+      find.byKey(const Key('login-password-field')),
+      _password,
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('otp-confirm-button')));
+    final loginSubmit = find.byKey(const Key('login-submit-button'));
     final home = find.text('DAY125-HOME');
-    final login = find.byType(LoginScreen);
+    if (home.evaluate().isEmpty && loginSubmit.evaluate().isNotEmpty) {
+      await tester.ensureVisible(loginSubmit);
+      await tester.pumpAndSettle();
+      await tester.tap(loginSubmit);
+    }
     await _waitFor(
       tester,
-      find.byWidgetPredicate((_) => home.evaluate().isNotEmpty || login.evaluate().isNotEmpty),
+      home,
+      orFail: find.byKey(const Key('login-error-banner')),
       timeout: const Duration(seconds: 40),
     );
     expect(tester.takeException(), isNull);
-    final landed = home.evaluate().isNotEmpty ? 'home' : 'login-verified';
     // ignore: avoid_print
-    print('DAY125 REGISTER-OTP PASS landed=$landed');
+    print('DAY125 REGISTER-LINK-LOGIN PASS');
   }, timeout: const Timeout(Duration(minutes: 12)));
 }
 
