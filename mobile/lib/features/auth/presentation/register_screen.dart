@@ -222,7 +222,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           response.resendAvailableAt ?? now.add(const Duration(seconds: 60));
       context.go(
         Uri(
-          path: '/auth/otp',
+          path: '/auth/verify-email',
           queryParameters: authQueryParameters(
             values: {
               'email': email,
