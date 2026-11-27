@@ -136,4 +136,34 @@ describe('Supabase email verification gateway', () => {
       field: 'email',
     });
   });
+
+  it('maps an expired Supabase OTP to the dedicated PawMate error code', async () => {
+    const verifyOtp = jest.fn().mockResolvedValue({
+      data: { user: null },
+      error: { message: 'Token has expired or is invalid' },
+    });
+    const gateway = createSupabaseEmailVerificationGateway(buildConfig(), {
+      authClient: {
+        signUp: jest.fn(),
+        verifyOtp,
+        resend: jest.fn(),
+      } as never,
+    });
+
+    await expect(
+      gateway?.verifyEmailToken({
+        email: 'expired@pawmate.vn',
+        token: '123456',
+      }),
+    ).rejects.toMatchObject({
+      code: AUTH_ERROR_CODES.expiredVerificationToken,
+      field: 'token',
+      statusCode: 400,
+    });
+    expect(verifyOtp).toHaveBeenCalledWith({
+      email: 'expired@pawmate.vn',
+      token: '123456',
+      type: 'signup',
+    });
+  });
 });
