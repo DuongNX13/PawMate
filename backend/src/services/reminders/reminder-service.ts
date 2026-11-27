@@ -71,7 +71,11 @@ export type ReminderStore = {
   ) => Promise<ReminderListResult>;
   findById: (reminderId: string) => Promise<ReminderRecord | undefined>;
   save: (reminder: ReminderRecord) => Promise<void>;
-  listDue: (now: string, limit: number) => Promise<ReminderRecord[]>;
+  listDue: (
+    now: string,
+    limit: number,
+    input?: { createdByUserId?: string },
+  ) => Promise<ReminderRecord[]>;
 };
 
 export type ReminderService = ReturnType<typeof createReminderService>;
@@ -99,7 +103,8 @@ class InMemoryReminderStore implements ReminderStore {
         return (
           reminder.petId === petId &&
           !reminder.deletedAt &&
-          (input.includeDone || !['done', 'cancelled'].includes(reminder.status)) &&
+          (input.includeDone ||
+            !['done', 'cancelled'].includes(reminder.status)) &&
           (!input.from || triggerAt >= input.from) &&
           (!input.to || triggerAt <= input.to)
         );
@@ -107,7 +112,10 @@ class InMemoryReminderStore implements ReminderStore {
       .sort((left, right) => {
         const leftTrigger = left.nextTriggerAt ?? left.reminderAt;
         const rightTrigger = right.nextTriggerAt ?? right.reminderAt;
-        return leftTrigger.localeCompare(rightTrigger) || left.createdAt.localeCompare(right.createdAt);
+        return (
+          leftTrigger.localeCompare(rightTrigger) ||
+          left.createdAt.localeCompare(right.createdAt)
+        );
       });
     const startIndex = input.cursor
       ? sorted.findIndex((reminder) => reminder.id === input.cursor) + 1
@@ -118,7 +126,9 @@ class InMemoryReminderStore implements ReminderStore {
     return {
       items: page,
       nextCursor:
-        safeStartIndex + input.limit < sorted.length ? page.at(-1)?.id : undefined,
+        safeStartIndex + input.limit < sorted.length
+          ? page.at(-1)?.id
+          : undefined,
       total: sorted.length,
       limit: input.limit,
     };
@@ -132,13 +142,19 @@ class InMemoryReminderStore implements ReminderStore {
     this.reminders.set(reminder.id, reminder);
   }
 
-  async listDue(now: string, limit: number) {
+  async listDue(
+    now: string,
+    limit: number,
+    input: { createdByUserId?: string } = {},
+  ) {
     return [...this.reminders.values()]
       .filter((reminder) => {
         const triggerAt = reminder.nextTriggerAt ?? reminder.reminderAt;
         return (
           reminder.status === 'scheduled' &&
           !reminder.deletedAt &&
+          (!input.createdByUserId ||
+            reminder.createdByUserId === input.createdByUserId) &&
           triggerAt <= now &&
           (!reminder.snoozedUntil || reminder.snoozedUntil <= now)
         );
@@ -293,10 +309,7 @@ const addRepeatInterval = (
 
 export const createReminderService = (dependencies: {
   petReader: PetReader;
-  notificationService: Pick<
-    NotificationService,
-    'createReminderNotification'
-  >;
+  notificationService: Pick<NotificationService, 'createReminderNotification'>;
   store?: ReminderStore;
 }) => {
   const store = dependencies.store ?? new InMemoryReminderStore();
@@ -322,12 +335,51 @@ export const createReminderService = (dependencies: {
     return reminder;
   };
 
+  const processDueRemindersInternal = async (
+    now: Date,
+    limit: number,
+    createdByUserId?: string,
+  ) => {
+    const dueReminders = await store.listDue(now.toISOString(), limit, {
+      createdByUserId,
+    });
+    const processed = await Promise.all(
+      dueReminders.map(async (reminder) => {
+        const triggeredAt = reminder.nextTriggerAt ?? reminder.reminderAt;
+        await dependencies.notificationService.createReminderNotification({
+          userId: reminder.createdByUserId,
+          petId: reminder.petId,
+          reminderId: reminder.id,
+          title: reminder.title,
+          body: reminder.note || `Reminder due at ${triggeredAt}.`,
+          now,
+        });
+        const nextTriggerAt = addRepeatInterval(
+          triggeredAt,
+          reminder.repeatRule,
+          now,
+        );
+        const nextReminder: ReminderRecord = {
+          ...reminder,
+          status: nextTriggerAt ? 'scheduled' : 'sent',
+          lastTriggeredAt: now.toISOString(),
+          nextTriggerAt,
+          snoozedUntil: undefined,
+          updatedAt: now.toISOString(),
+        };
+        await store.save(nextReminder);
+        return nextReminder;
+      }),
+    );
+
+    return {
+      processedCount: processed.length,
+      items: processed,
+    };
+  };
+
   return {
-    async list(
-      userId: string,
-      petId: string,
-      input: ReminderListInput = {},
-    ) {
+    async list(userId: string, petId: string, input: ReminderListInput = {}) {
       await requireOwnedPet(userId, petId);
       return store.listByPet(petId, {
         limit: validateLimit(input.limit),
@@ -377,7 +429,9 @@ export const createReminderService = (dependencies: {
       const reminderAt =
         input.reminderAt === undefined
           ? existingReminder.reminderAt
-          : validateIsoDate(input.reminderAt, 'reminderAt', { required: true })!;
+          : validateIsoDate(input.reminderAt, 'reminderAt', {
+              required: true,
+            })!;
       const nextReminder: ReminderRecord = {
         ...existingReminder,
         title:
@@ -435,11 +489,9 @@ export const createReminderService = (dependencies: {
         petId,
         reminderId,
       );
-      const snoozedUntil = validateIsoDate(
-        input.snoozedUntil,
-        'snoozedUntil',
-        { required: true },
-      )!;
+      const snoozedUntil = validateIsoDate(input.snoozedUntil, 'snoozedUntil', {
+        required: true,
+      })!;
       const nextReminder = {
         ...existingReminder,
         status: 'scheduled' as ReminderStatus,
@@ -470,40 +522,15 @@ export const createReminderService = (dependencies: {
     },
 
     async processDueReminders(now: Date = new Date(), limit = 100) {
-      const dueReminders = await store.listDue(now.toISOString(), limit);
-      const processed = await Promise.all(
-        dueReminders.map(async (reminder) => {
-        const triggeredAt = reminder.nextTriggerAt ?? reminder.reminderAt;
-        await dependencies.notificationService.createReminderNotification({
-          userId: reminder.createdByUserId,
-          petId: reminder.petId,
-          reminderId: reminder.id,
-          title: reminder.title,
-          body: reminder.note || `Reminder due at ${triggeredAt}.`,
-          now,
-        });
-        const nextTriggerAt = addRepeatInterval(
-          triggeredAt,
-          reminder.repeatRule,
-          now,
-        );
-        const nextReminder: ReminderRecord = {
-          ...reminder,
-          status: nextTriggerAt ? 'scheduled' : 'sent',
-          lastTriggeredAt: now.toISOString(),
-          nextTriggerAt,
-          snoozedUntil: undefined,
-          updatedAt: now.toISOString(),
-        };
-        await store.save(nextReminder);
-          return nextReminder;
-        }),
-      );
+      return processDueRemindersInternal(now, limit);
+    },
 
-      return {
-        processedCount: processed.length,
-        items: processed,
-      };
+    async processDueRemindersForUser(
+      userId: string,
+      now: Date = new Date(),
+      limit = 100,
+    ) {
+      return processDueRemindersInternal(now, limit, userId);
     },
   };
 };
