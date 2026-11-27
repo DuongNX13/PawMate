@@ -78,32 +78,136 @@ enum ReviewReportStatus {
   rejected
 }
 
+enum RescueCaseStatus {
+  missing
+  found
+}
+
+enum RescueContactPreference {
+  in_app
+  phone_with_consent
+}
+
+enum RescueCommentModerationState {
+  visible
+  pending
+  hidden
+}
+
+enum AdoptionListingStatus {
+  available
+  pending
+  adopted
+  closed
+}
+
+enum AdoptionDecision {
+  skip
+  like
+}
+
+enum AdoptionRequestStatus {
+  submitted
+  reviewing
+  approved
+  rejected
+  cancelled
+}
+
+enum AdoptionChatParticipantRole {
+  adopter
+  shelter
+}
+
+enum MediaPurpose {
+  pet_profile
+  rescue_case
+  rescue_comment
+  adoption_listing
+  adoption_chat
+}
+
+enum MediaLifecycleStatus {
+  requested
+  uploaded
+  verified
+  attached
+  rejected
+  deleted
+}
+
 model User {
-  id                  String              @id @default(uuid()) @db.Uuid
-  email               String              @unique
-  passwordHash        String?             @map("password_hash")
-  displayName         String?             @map("display_name")
+  id                  String                      @id @default(uuid()) @db.Uuid
+  email               String                      @unique
+  passwordHash        String?                     @map("password_hash")
+  displayName         String?                     @map("display_name")
   phone               String?
-  avatarUrl           String?             @map("avatar_url")
-  authProvider        AuthProvider        @default(email) @map("auth_provider")
-  googleSub           String?             @unique @map("google_sub")
-  appleSub            String?             @unique @map("apple_sub")
-  emailVerified       Boolean             @default(false) @map("email_verified")
-  failedLoginAttempts Int                 @default(0) @map("failed_login_attempts")
-  lockedUntil         DateTime?           @map("locked_until")
-  createdAt           DateTime            @default(now()) @map("created_at")
-  updatedAt           DateTime            @updatedAt @map("updated_at")
-  deletedAt           DateTime?           @map("deleted_at")
+  avatarUrl           String?                     @map("avatar_url")
+  authProvider        AuthProvider                @default(email) @map("auth_provider")
+  googleSub           String?                     @unique @map("google_sub")
+  appleSub            String?                     @unique @map("apple_sub")
+  emailVerified       Boolean                     @default(false) @map("email_verified")
+  failedLoginAttempts Int                         @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?                   @map("locked_until")
+  createdAt           DateTime                    @default(now()) @map("created_at")
+  updatedAt           DateTime                    @updatedAt @map("updated_at")
+  deletedAt           DateTime?                   @map("deleted_at")
   sessions            Session[]
   pets                Pet[]
   reviews             Review[]
   reviewHelpfulVotes  ReviewHelpfulVote[]
-  reviewReports       ReviewReport[]      @relation("ReviewReportReporter")
+  reviewReports       ReviewReport[]              @relation("ReviewReportReporter")
   notifications       Notification[]
-  healthRecords       HealthRecord[]      @relation("HealthRecordCreatedBy")
-  reminders           Reminder[]          @relation("ReminderCreatedBy")
+  healthRecords       HealthRecord[]              @relation("HealthRecordCreatedBy")
+  reminders           Reminder[]                  @relation("ReminderCreatedBy")
+  rescueCaseDrafts    RescueCaseDraft[]
+  rescueCases         RescueCase[]
+  rescuePrivatePlaces RescueCasePrivateLocation[]
+  rescueComments      RescueComment[]
+  rescueStatusEvents  RescueStatusEvent[]
+  mediaAssets         MediaAsset[]
+  idempotencyRecords  IdempotencyRecord[]
+  outboxEvents        OutboxEvent[]               @relation("OutboxEventActor")
+  adoptionListings    AdoptionListing[]           @relation("AdoptionListingShelter")
+  adoptionDecisions   AdoptionDecisionRecord[]    @relation("AdoptionDecisionAdopter")
+  adoptionRequests    AdoptionRequest[]           @relation("AdoptionRequestAdopter")
+  shelterRequests     AdoptionRequest[]           @relation("AdoptionRequestShelter")
+  adopterChatThreads  AdoptionChatThread[]        @relation("AdoptionChatThreadAdopter")
+  shelterChatThreads  AdoptionChatThread[]        @relation("AdoptionChatThreadShelter")
+  adoptionChatParticipants AdoptionChatParticipant[]
+  notificationPreferences NotificationPreference?
+  privacyDefaults         PrivacyDefault?
 
   @@map("users")
+}
+
+model NotificationPreference {
+  userId             String   @id @map("user_id") @db.Uuid
+  version            Int      @default(1)
+  nearbyLostCases    Boolean  @default(true) @map("nearby_lost_cases")
+  chatMessages       Boolean  @default(true) @map("chat_messages")
+  adoptionUpdates    Boolean  @default(true) @map("adoption_updates")
+  quietHoursEnabled  Boolean  @default(false) @map("quiet_hours_enabled")
+  quietHoursStart    String?  @map("quiet_hours_start") @db.VarChar(5)
+  quietHoursEnd      String?  @map("quiet_hours_end") @db.VarChar(5)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model PrivacyDefault {
+  userId                   String   @id @map("user_id") @db.Uuid
+  version                  Int      @default(1)
+  hideHouseNumber          Boolean  @default(true) @map("hide_house_number")
+  hidePhoneByDefault       Boolean  @default(true) @map("hide_phone_by_default")
+  reviewMediaBeforePublish Boolean  @default(true) @map("review_media_before_publish")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("privacy_defaults")
 }
 
 model Session {
@@ -256,6 +360,7 @@ model HealthRecord {
   createdByUserId String           @map("created_by_user_id") @db.Uuid
   recordType      HealthRecordType @map("record_type")
   recordDate      DateTime         @map("record_date") @db.Date
+  eventTime       String?          @map("event_time") @db.VarChar(5)
   title           String?
   notes           String?
   vetId           String?          @map("vet_id") @db.Uuid
@@ -317,4 +422,355 @@ model Notification {
 
   @@index([userId, dismissedAt, readAt, createdAt(sort: Desc)])
   @@map("notifications")
+}
+
+model RescueCaseDraft {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  ownerUserId         String                  @map("owner_user_id") @db.Uuid
+  source              String?                 @db.VarChar(32)
+  petName             String?                 @map("pet_name") @db.VarChar(50)
+  species             PetSpecies?
+  breedOrColor        String?                 @map("breed_or_color") @db.VarChar(100)
+  lostAt              DateTime?               @map("lost_at") @db.Timestamptz(3)
+  exactLatitude       Decimal?                @map("exact_latitude") @db.Decimal(9, 6)
+  exactLongitude      Decimal?                @map("exact_longitude") @db.Decimal(9, 6)
+  formattedAddress    String?                 @map("formatted_address")
+  areaLabel           String?                 @map("area_label") @db.VarChar(160)
+  privacyRadiusMeters Int                     @default(500) @map("privacy_radius_meters")
+  identifyingFeatures String?                 @map("identifying_features") @db.VarChar(500)
+  behaviorHint        String?                 @map("behavior_hint") @db.VarChar(500)
+  contactPreference   RescueContactPreference @default(in_app) @map("contact_preference")
+  version             Int                     @default(1)
+  publishedAt         DateTime?               @map("published_at")
+  discardedAt         DateTime?               @map("discarded_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  owner               User                    @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  publishedCase       RescueCase?             @relation("RescueCaseSourceDraft")
+  media               MediaAsset[]
+
+  @@unique([id, ownerUserId], map: "rescue_case_drafts_id_owner_key")
+  @@index([ownerUserId, publishedAt, discardedAt, updatedAt(sort: Desc)], map: "rescue_case_drafts_owner_state_updated_idx")
+  @@map("rescue_case_drafts")
+}
+
+model RescueCase {
+  id                   String                                @id @default(uuid()) @db.Uuid
+  sourceDraftId        String                                @unique(map: "rescue_cases_source_draft_key") @map("source_draft_id") @db.Uuid
+  ownerUserId          String                                @map("owner_user_id") @db.Uuid
+  petName              String                                @map("pet_name") @db.VarChar(50)
+  species              PetSpecies
+  breedOrColor         String                                @map("breed_or_color") @db.VarChar(100)
+  ageLabel             String?                               @map("age_label") @db.VarChar(80)
+  lostAt               DateTime                              @map("lost_at") @db.Timestamptz(3)
+  areaLabel            String                                @map("area_label") @db.VarChar(160)
+  approximateLatitude  Decimal                               @map("approximate_latitude") @db.Decimal(9, 6)
+  approximateLongitude Decimal                               @map("approximate_longitude") @db.Decimal(9, 6)
+  privacyRadiusMeters  Int                                   @default(500) @map("privacy_radius_meters")
+  publicLocation       Unsupported("geography(Point,4326)")? @map("public_location")
+  identifyingFeatures  String                                @map("identifying_features") @db.VarChar(500)
+  behaviorHint         String?                               @map("behavior_hint") @db.VarChar(500)
+  contactPreference    RescueContactPreference               @default(in_app) @map("contact_preference")
+  status               RescueCaseStatus                      @default(missing)
+  version              Int                                   @default(1)
+  commentCount         Int                                   @default(0) @map("comment_count")
+  foundAt              DateTime?                             @map("found_at")
+  createdAt            DateTime                              @default(now()) @map("created_at")
+  updatedAt            DateTime                              @updatedAt @map("updated_at")
+  deletedAt            DateTime?                             @map("deleted_at")
+  sourceDraft          RescueCaseDraft                       @relation("RescueCaseSourceDraft", fields: [sourceDraftId], references: [id], onDelete: Restrict)
+  owner                User                                  @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  privateLocation      RescueCasePrivateLocation?
+  media                MediaAsset[]
+  comments             RescueComment[]
+  statusEvents         RescueStatusEvent[]
+
+  @@unique([id, ownerUserId], map: "rescue_cases_id_owner_key")
+  @@index([status, lostAt(sort: Desc), id], map: "rescue_cases_status_lost_at_idx")
+  @@index([species, status, lostAt(sort: Desc)], map: "rescue_cases_species_status_lost_at_idx")
+  @@index([ownerUserId, createdAt(sort: Desc)], map: "rescue_cases_owner_created_idx")
+  @@map("rescue_cases")
+}
+
+model RescueCasePrivateLocation {
+  caseId           String     @id @map("case_id") @db.Uuid
+  ownerUserId      String     @map("owner_user_id") @db.Uuid
+  latitude         Decimal    @db.Decimal(9, 6)
+  longitude        Decimal    @db.Decimal(9, 6)
+  formattedAddress String?    @map("formatted_address")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  case             RescueCase @relation(fields: [caseId, ownerUserId], references: [id, ownerUserId], onDelete: Cascade)
+  owner            User       @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+
+  @@unique([caseId, ownerUserId], map: "rescue_case_private_locations_case_owner_key")
+  @@index([ownerUserId], map: "rescue_case_private_locations_owner_idx")
+  @@map("rescue_case_private_locations")
+}
+
+model MediaAsset {
+  id                  String               @id @default(uuid()) @db.Uuid
+  ownerUserId         String               @map("owner_user_id") @db.Uuid
+  purpose             MediaPurpose
+  mimeType            String               @map("mime_type") @db.VarChar(32)
+  sizeBytes           BigInt               @map("size_bytes")
+  sha256              String               @db.VarChar(64)
+  status              MediaLifecycleStatus @default(requested)
+  storageKey          String               @unique(map: "media_assets_storage_key_key") @map("storage_key")
+  publicUrl           String?              @map("public_url")
+  width               Int?
+  height              Int?
+  durationSeconds     Decimal?             @map("duration_seconds") @db.Decimal(10, 3)
+  draftId             String?              @map("draft_id") @db.Uuid
+  caseId              String?              @map("case_id") @db.Uuid
+  commentId           String?              @map("comment_id") @db.Uuid
+  position            Int?                 @db.SmallInt
+  verificationVersion Int                  @default(0) @map("verification_version")
+  verifiedAt          DateTime?            @map("verified_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  deletedAt           DateTime?            @map("deleted_at")
+  owner               User                 @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  draft               RescueCaseDraft?     @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  case                RescueCase?          @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  comment             RescueComment?       @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  uploadSession       MediaUploadSession?
+  adoptionHeroFor     AdoptionListing[]           @relation("AdoptionListingHeroMedia")
+  adoptionChatMessageId String?                    @map("adoption_chat_message_id") @db.Uuid
+  adoptionChatMessage   AdoptionChatMessage?       @relation(fields: [adoptionChatMessageId], references: [id], onDelete: Cascade)
+
+  @@index([ownerUserId, status, createdAt(sort: Desc)], map: "media_assets_owner_status_created_idx")
+  @@index([draftId, position], map: "media_assets_draft_position_idx")
+  @@index([caseId, position], map: "media_assets_case_position_idx")
+  @@index([commentId, position], map: "media_assets_comment_position_idx")
+  @@index([adoptionChatMessageId, position], map: "media_assets_adoption_chat_message_position_idx")
+  @@map("media_assets")
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  method         String   @db.VarChar(8)
+  normalizedPath String   @map("normalized_path") @db.VarChar(255)
+  keyHash        String   @map("key_hash") @db.Char(64)
+  requestHash    String   @map("request_hash") @db.Char(64)
+  responseStatus Int      @map("response_status") @db.SmallInt
+  responseBody   Json     @map("response_body") @db.JsonB
+  createdAt      DateTime @default(now()) @map("created_at")
+  expiresAt      DateTime @map("expires_at")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, method, normalizedPath, keyHash], map: "idempotency_records_scope_key")
+  @@index([expiresAt], map: "idempotency_records_expires_idx")
+  @@index([userId, createdAt(sort: Desc)], map: "idempotency_records_user_created_idx")
+  @@map("idempotency_records")
+}
+
+model OutboxEvent {
+  id            String    @id @default(uuid()) @db.Uuid
+  topic         String    @db.VarChar(100)
+  eventType     String    @map("event_type") @db.VarChar(120)
+  aggregateType String    @map("aggregate_type") @db.VarChar(100)
+  aggregateId   String    @map("aggregate_id") @db.Uuid
+  actorUserId   String?   @map("actor_user_id") @db.Uuid
+  payload       Json      @db.JsonB
+  schemaVersion Int       @default(1) @map("schema_version") @db.SmallInt
+  dedupeKey     String    @unique(map: "outbox_events_dedupe_key_key") @map("dedupe_key") @db.VarChar(255)
+  occurredAt    DateTime  @default(now()) @map("occurred_at")
+  availableAt   DateTime  @default(now()) @map("available_at")
+  lockedAt      DateTime? @map("locked_at")
+  lockExpiresAt DateTime? @map("lock_expires_at")
+  lockedBy      String?   @map("locked_by") @db.VarChar(128)
+  attempts      Int       @default(0)
+  processedAt   DateTime? @map("processed_at")
+  lastError     String?   @map("last_error")
+  actor         User?     @relation("OutboxEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([aggregateType, aggregateId, occurredAt], map: "outbox_events_aggregate_created_idx")
+  @@map("outbox_events")
+}
+
+model MediaUploadSession {
+  mediaId               String     @id @map("media_id") @db.Uuid
+  stagingStorageKey     String     @unique(map: "media_upload_sessions_staging_storage_key_key") @map("staging_storage_key")
+  uploadExpiresAt       DateTime   @map("upload_expires_at")
+  detectedMimeType      String?    @map("detected_mime_type") @db.VarChar(32)
+  detectedSizeBytes     BigInt?    @map("detected_size_bytes")
+  sanitizedStorageKey   String?    @unique(map: "media_upload_sessions_sanitized_storage_key_key") @map("sanitized_storage_key")
+  sanitizedSha256       String?    @map("sanitized_sha256") @db.Char(64)
+  storageEtag           String?    @map("storage_etag")
+  verificationStartedAt DateTime?  @map("verification_started_at")
+  leaseUntil            DateTime?  @map("lease_until")
+  completedAt           DateTime?  @map("completed_at")
+  rejectedAt            DateTime?  @map("rejected_at")
+  rejectionCode         String?    @map("rejection_code") @db.VarChar(32)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  media                 MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@index([uploadExpiresAt], map: "media_upload_sessions_expiry_idx")
+  @@map("media_upload_sessions")
+}
+
+model RescueComment {
+  id               String                       @id @default(uuid()) @db.Uuid
+  caseId           String                       @map("case_id") @db.Uuid
+  authorUserId     String                       @map("author_user_id") @db.Uuid
+  body             String                       @db.VarChar(500)
+  replyToCommentId String?                      @map("reply_to_comment_id") @db.Uuid
+  moderationState  RescueCommentModerationState @default(visible) @map("moderation_state")
+  createdAt        DateTime                     @default(now()) @map("created_at")
+  updatedAt        DateTime                     @updatedAt @map("updated_at")
+  deletedAt        DateTime?                    @map("deleted_at")
+  case             RescueCase                   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  author           User                         @relation(fields: [authorUserId], references: [id], onDelete: Restrict)
+  parent           RescueComment?               @relation("RescueCommentReplies", fields: [replyToCommentId, caseId], references: [id, caseId], onDelete: NoAction, onUpdate: NoAction)
+  replies          RescueComment[]              @relation("RescueCommentReplies")
+  media            MediaAsset[]
+
+  @@unique([id, caseId], map: "rescue_comments_id_case_key")
+  @@index([caseId, createdAt, id], map: "rescue_comments_case_created_idx")
+  @@index([authorUserId, createdAt(sort: Desc)], map: "rescue_comments_author_created_idx")
+  @@map("rescue_comments")
+}
+
+model RescueStatusEvent {
+  id              String            @id @default(uuid()) @db.Uuid
+  caseId          String            @map("case_id") @db.Uuid
+  changedByUserId String            @map("changed_by_user_id") @db.Uuid
+  fromStatus      RescueCaseStatus? @map("from_status")
+  toStatus        RescueCaseStatus  @map("to_status")
+  expectedVersion Int               @map("expected_version")
+  newVersion      Int               @map("new_version")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  case            RescueCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  changedBy       User              @relation(fields: [changedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([caseId, newVersion], map: "rescue_status_events_case_version_key")
+  @@index([caseId, createdAt], map: "rescue_status_events_case_created_idx")
+  @@index([changedByUserId, createdAt(sort: Desc)], map: "rescue_status_events_actor_created_idx")
+  @@map("rescue_status_events")
+}
+
+model AdoptionListing {
+  id                   String                @id @default(uuid()) @db.Uuid
+  shelterId            String                @map("shelter_id") @db.Uuid
+  heroMediaId          String                @map("hero_media_id") @db.Uuid
+  petName              String                @map("pet_name") @db.VarChar(50)
+  species              PetSpecies
+  breed                String?               @db.VarChar(100)
+  ageLabel             String                @map("age_label") @db.VarChar(80)
+  ageMonths            Int?                  @map("age_months") @db.SmallInt
+  description          String?               @db.VarChar(2000)
+  traits               String[]              @default([])
+  healthBadges         String[]              @default([]) @map("health_badges")
+  verificationBadges   String[]              @default([]) @map("verification_badges")
+  latitude             Decimal?              @db.Decimal(9, 6)
+  longitude            Decimal?              @db.Decimal(9, 6)
+  status               AdoptionListingStatus @default(available)
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  deletedAt            DateTime?             @map("deleted_at")
+  shelter              User                  @relation("AdoptionListingShelter", fields: [shelterId], references: [id], onDelete: Restrict)
+  heroMedia            MediaAsset            @relation("AdoptionListingHeroMedia", fields: [heroMediaId], references: [id], onDelete: Restrict)
+  decisions            AdoptionDecisionRecord[]
+  requests             AdoptionRequest[]
+
+  @@unique([id, shelterId], map: "adoption_listings_id_shelter_key")
+  @@index([status, createdAt(sort: Desc), id], map: "adoption_listings_status_created_idx")
+  @@index([species, status, createdAt(sort: Desc)], map: "adoption_listings_species_status_created_idx")
+  @@index([shelterId, status, createdAt(sort: Desc)], map: "adoption_listings_shelter_status_created_idx")
+  @@map("adoption_listings")
+}
+
+model AdoptionDecisionRecord {
+  id            String           @id @default(uuid()) @db.Uuid
+  listingId     String           @map("listing_id") @db.Uuid
+  adopterUserId String           @map("adopter_user_id") @db.Uuid
+  decision      AdoptionDecision
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  listing       AdoptionListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  adopter       User             @relation("AdoptionDecisionAdopter", fields: [adopterUserId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, adopterUserId], map: "adoption_decisions_listing_adopter_key")
+  @@index([adopterUserId, updatedAt(sort: Desc)], map: "adoption_decisions_adopter_updated_idx")
+  @@map("adoption_decisions")
+}
+
+model AdoptionRequest {
+  id                 String                @id @default(uuid()) @db.Uuid
+  listingId          String                @map("listing_id") @db.Uuid
+  adopterUserId      String                @map("adopter_user_id") @db.Uuid
+  shelterId          String                @map("shelter_id") @db.Uuid
+  livingCondition    String                @map("living_condition") @db.VarChar(500)
+  petExperience      String                @map("pet_experience") @db.VarChar(500)
+  carePlan           String                @map("care_plan") @db.VarChar(500)
+  commitmentAccepted Boolean               @map("commitment_accepted")
+  note               String?               @db.VarChar(1000)
+  status             AdoptionRequestStatus @default(submitted)
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+  listing            AdoptionListing       @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  adopter            User                  @relation("AdoptionRequestAdopter", fields: [adopterUserId], references: [id], onDelete: Restrict)
+  shelter            User                  @relation("AdoptionRequestShelter", fields: [shelterId], references: [id], onDelete: Restrict)
+  chatThread         AdoptionChatThread?
+
+  @@index([listingId, status, createdAt(sort: Desc)], map: "adoption_requests_listing_status_created_idx")
+  @@index([adopterUserId, status, createdAt(sort: Desc)], map: "adoption_requests_adopter_status_created_idx")
+  @@index([shelterId, status, createdAt(sort: Desc)], map: "adoption_requests_shelter_status_created_idx")
+  @@map("adoption_requests")
+}
+
+model AdoptionChatThread {
+  id            String                    @id @default(uuid()) @db.Uuid
+  requestId     String                    @unique(map: "adoption_chat_threads_request_key") @map("request_id") @db.Uuid
+  adopterUserId String                    @map("adopter_user_id") @db.Uuid
+  shelterId     String                    @map("shelter_id") @db.Uuid
+  createdAt     DateTime                  @default(now()) @map("created_at")
+  updatedAt     DateTime                  @updatedAt @map("updated_at")
+  closedAt      DateTime?                 @map("closed_at")
+  request       AdoptionRequest           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  adopter       User                      @relation("AdoptionChatThreadAdopter", fields: [adopterUserId], references: [id], onDelete: Restrict)
+  shelter       User                      @relation("AdoptionChatThreadShelter", fields: [shelterId], references: [id], onDelete: Restrict)
+  participants  AdoptionChatParticipant[]
+  messages      AdoptionChatMessage[]     @relation("AdoptionChatThreadMessages")
+
+  @@index([adopterUserId, updatedAt(sort: Desc)], map: "adoption_chat_threads_adopter_updated_idx")
+  @@index([shelterId, updatedAt(sort: Desc)], map: "adoption_chat_threads_shelter_updated_idx")
+  @@map("adoption_chat_threads")
+}
+
+model AdoptionChatParticipant {
+  threadId   String                      @map("thread_id") @db.Uuid
+  userId     String                      @map("user_id") @db.Uuid
+  role       AdoptionChatParticipantRole
+  lastReadAt DateTime                    @default(now()) @map("last_read_at")
+  lastReadSequence BigInt                @default(0) @map("last_read_sequence")
+  createdAt  DateTime                    @default(now()) @map("created_at")
+  updatedAt  DateTime                    @updatedAt @map("updated_at")
+  thread     AdoptionChatThread          @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user       User                        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  messages   AdoptionChatMessage[]       @relation("AdoptionChatParticipantMessages")
+
+  @@id([threadId, userId])
+  @@unique([threadId, role], map: "adoption_chat_participants_thread_role_key")
+  @@index([userId, updatedAt(sort: Desc)], map: "adoption_chat_participants_user_updated_idx")
+  @@map("adoption_chat_participants")
+}
+
+model AdoptionChatMessage {
+  id                String                  @id @default(uuid()) @db.Uuid
+  sequence          BigInt                  @unique(map: "adoption_chat_messages_sequence_key") @default(autoincrement()) @map("sequence_no")
+  threadId          String                  @map("thread_id") @db.Uuid
+  senderUserId      String                  @map("sender_user_id") @db.Uuid
+  body              String                  @db.VarChar(1000)
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  thread            AdoptionChatThread      @relation("AdoptionChatThreadMessages", fields: [threadId], references: [id], onDelete: Cascade)
+  senderParticipant AdoptionChatParticipant @relation("AdoptionChatParticipantMessages", fields: [threadId, senderUserId], references: [threadId, userId], onDelete: Cascade)
+  media             MediaAsset[]
+
+  @@index([threadId, sequence(sort: Desc)], map: "adoption_chat_messages_thread_sequence_idx")
+  @@map("adoption_chat_messages")
 }
