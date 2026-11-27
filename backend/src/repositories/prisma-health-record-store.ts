@@ -13,6 +13,7 @@ const mapHealthRecord = (record: {
   createdByUserId: string;
   recordType: $Enums.HealthRecordType;
   recordDate: Date;
+  eventTime: string | null;
   title: string | null;
   notes: string | null;
   vetId: string | null;
@@ -26,6 +27,7 @@ const mapHealthRecord = (record: {
   createdByUserId: record.createdByUserId,
   type: record.recordType as HealthRecordType,
   date: record.recordDate.toISOString().slice(0, 10),
+  time: record.eventTime ?? undefined,
   title: record.title ?? undefined,
   note: record.notes ?? undefined,
   vetId: record.vetId ?? undefined,
@@ -90,6 +92,7 @@ export class PrismaHealthRecordStore implements HealthRecordStore {
         createdByUserId: record.createdByUserId,
         recordType: record.type as $Enums.HealthRecordType,
         recordDate: new Date(record.date),
+        eventTime: record.time,
         title: record.title,
         notes: record.note,
         vetId: record.vetId,
@@ -103,6 +106,7 @@ export class PrismaHealthRecordStore implements HealthRecordStore {
         createdByUserId: record.createdByUserId,
         recordType: record.type as $Enums.HealthRecordType,
         recordDate: new Date(record.date),
+        eventTime: record.time,
         title: record.title,
         notes: record.note,
         vetId: record.vetId,
