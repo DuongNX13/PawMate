@@ -90,7 +90,9 @@ class InMemoryNotificationStore implements NotificationStore {
     return {
       items: page,
       nextCursor:
-        safeStartIndex + input.limit < sorted.length ? page.at(-1)?.id : undefined,
+        safeStartIndex + input.limit < sorted.length
+          ? page.at(-1)?.id
+          : undefined,
       total: sorted.length,
       unreadCount,
       limit: input.limit,
@@ -113,10 +115,10 @@ class InMemoryNotificationStore implements NotificationStore {
         !notification.readAt,
     );
     unreadNotifications.forEach((notification) => {
-        this.notifications.set(notification.id, {
-          ...notification,
-          readAt,
-        });
+      this.notifications.set(notification.id, {
+        ...notification,
+        readAt,
+      });
     });
 
     return unreadNotifications.length;
@@ -158,9 +160,11 @@ const requireOwnedNotification = async (
   return notification;
 };
 
-export const createNotificationService = (dependencies: {
-  store?: NotificationStore;
-} = {}) => {
+export const createNotificationService = (
+  dependencies: {
+    store?: NotificationStore;
+  } = {},
+) => {
   const store = dependencies.store ?? new InMemoryNotificationStore();
 
   return {
