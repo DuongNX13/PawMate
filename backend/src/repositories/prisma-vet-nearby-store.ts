@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 
 import {
   type VetClinic,
@@ -17,7 +17,7 @@ type VetDirectoryRow = {
   longitude: number;
   services: unknown;
   sourceRank: number | null;
-  averageRating: number | string | null;
+  averageRating: number | string | Prisma.Decimal | null;
   reviewCount: number | null;
   is24h: boolean | null;
   openHours: unknown;
@@ -37,9 +37,16 @@ const readStringList = (value: unknown) => {
   return [];
 };
 
-const readNumber = (value: number | string | null | undefined) => {
+const readNumber = (
+  value: number | string | Prisma.Decimal | null | undefined,
+) => {
   if (typeof value === 'number') {
     return value;
+  }
+
+  if (Prisma.Decimal.isDecimal(value)) {
+    const parsed = value.toNumber();
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 
   if (typeof value === 'string' && value.trim().length > 0) {
