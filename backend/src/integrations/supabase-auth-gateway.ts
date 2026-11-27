@@ -17,14 +17,13 @@ import {
   type OAuthVerifier,
 } from '../services/auth/auth-service';
 
-type SupabaseAuthClient = NonNullable<ReturnType<typeof createSupabaseAuthClient>>;
+type SupabaseAuthClient = NonNullable<
+  ReturnType<typeof createSupabaseAuthClient>
+>;
 type SupabaseAdminClient = {
   auth: {
     admin: {
-      listUsers: (params: {
-        page?: number;
-        perPage?: number;
-      }) => Promise<{
+      listUsers: (params: { page?: number; perPage?: number }) => Promise<{
         data: {
           users: Array<{
             id: string;
@@ -123,6 +122,16 @@ const readProviderUserId = (
   return identity?.id ?? identity?.identity_id ?? fallbackUserId;
 };
 
+type RepeatedSignupUser = {
+  identities?: unknown[] | null;
+  email_confirmed_at?: string | null;
+};
+
+const isRepeatedSignup = (
+  remoteUser: RepeatedSignupUser | null | undefined,
+): remoteUser is RepeatedSignupUser =>
+  Array.isArray(remoteUser?.identities) && remoteUser.identities.length === 0;
+
 const isEmailRateLimitError = (message?: string) =>
   /email rate limit exceeded/i.test(message ?? '');
 
@@ -130,7 +139,9 @@ const findUserByEmail = async (
   adminClient: SupabaseAdminClient,
   email: string,
 ) => {
-  const searchPage = async (page: number): Promise<{ id: string } | undefined> => {
+  const searchPage = async (
+    page: number,
+  ): Promise<{ id: string } | undefined> => {
     const response = await adminClient.auth.admin.listUsers({
       page,
       perPage: 200,
@@ -241,13 +252,54 @@ export const createSupabaseEmailVerificationGateway = (
   config: AppConfig,
   dependencies: GatewayDependencies = {},
 ): EmailVerificationGateway | undefined => {
-  const authClient = dependencies.authClient ?? createSupabaseAuthClient(config);
+  const authClient =
+    dependencies.authClient ?? createSupabaseAuthClient(config);
   const adminClient =
     dependencies.adminClient ?? createSupabaseAdminClient(config);
 
   if (!authClient) {
     return undefined;
   }
+
+  const signsInWithPassword = async (email: string, password: string) => {
+    const response = await authClient.signInWithPassword({ email, password });
+    return !response.error && Boolean(response.data.user);
+  };
+
+  const resendSignup = async (email: string) => {
+    const redirectTo = getVerificationRedirectUrl(config);
+    const response = await authClient.resend({
+      type: 'signup',
+      email,
+      options: {
+        ...(redirectTo ? { emailRedirectTo: redirectTo } : {}),
+      },
+    });
+    if (response.error) {
+      throw new AppError(
+        AUTH_ERROR_CODES.verificationUnavailable,
+        response.error.message,
+        502,
+        'email',
+      );
+    }
+  };
+
+  // Supabase sends no mail for a repeated signUp, which happens when the local
+  // account is new but the remote one already exists.
+  const recoverRepeatedSignup = async (
+    remoteUser: RepeatedSignupUser,
+    user: { email: string; password: string },
+  ): Promise<EmailVerificationDispatchResult> => {
+    if (!remoteUser.email_confirmed_at) {
+      await resendSignup(user.email);
+      return { status: 'verification-email-sent' };
+    }
+    if (await signsInWithPassword(user.email, user.password)) {
+      return { status: 'auto-verified' };
+    }
+    return { status: 'verification-email-sent' };
+  };
 
   return {
     async sendEmailVerification(user) {
@@ -282,6 +334,10 @@ export const createSupabaseEmailVerificationGateway = (
         );
       }
 
+      if (isRepeatedSignup(response.data.user)) {
+        return recoverRepeatedSignup(response.data.user, user);
+      }
+
       return {
         status: 'verification-email-sent',
       };
@@ -301,9 +357,16 @@ export const createSupabaseEmailVerificationGateway = (
             });
 
       if (response.error) {
-        throw new AppError(
-          AUTH_ERROR_CODES.invalidVerificationToken,
+        const isExpired = /expired|has expired|otp_expired/i.test(
           response.error.message,
+        );
+        throw new AppError(
+          isExpired
+            ? AUTH_ERROR_CODES.expiredVerificationToken
+            : AUTH_ERROR_CODES.invalidVerificationToken,
+          isExpired
+            ? 'Ma OTP da het han. Vui long gui lai ma moi.'
+            : response.error.message,
           400,
           'tokenHash' in input ? 'tokenHash' : 'token',
         );
@@ -321,25 +384,14 @@ export const createSupabaseEmailVerificationGateway = (
       return { email };
     },
 
-    async resendEmailVerification(input) {
-      const redirectTo = getVerificationRedirectUrl(config);
-      const response = await authClient.resend({
-        type: 'signup',
-        email: input.email,
-        options: {
-          ...(redirectTo ? { emailRedirectTo: redirectTo } : {}),
-        },
-      });
-
-      if (response.error) {
-        throw new AppError(
-          AUTH_ERROR_CODES.verificationUnavailable,
-          response.error.message,
-          502,
-          'email',
-        );
-      }
+    async isEmailConfirmed(input) {
+      return signsInWithPassword(input.email, input.password);
     },
+
+    async resendEmailVerification(input) {
+      await resendSignup(input.email);
+    },
+
   };
 };
 
@@ -347,7 +399,8 @@ export const createSupabaseOAuthVerifier = (
   config: AppConfig,
   dependencies: GatewayDependencies = {},
 ): OAuthVerifier | undefined => {
-  const authClient = dependencies.authClient ?? createSupabaseAuthClient(config);
+  const authClient =
+    dependencies.authClient ?? createSupabaseAuthClient(config);
 
   if (!authClient) {
     return undefined;
