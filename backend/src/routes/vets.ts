@@ -14,6 +14,7 @@ import {
   uploadReviewPhoto,
 } from '../infrastructure/review-photo-storage';
 import { type AuthService } from '../services/auth/auth-service';
+import { type ActionQuotaGuard } from '../security/distributed-action-quota';
 import {
   type CreateReviewInput,
   type ReviewListInput,
@@ -31,6 +32,14 @@ type VetRouteOptions = {
   authService: AuthService;
   vetService: VetService;
   reviewService: ReviewService;
+  actionQuotaGuard: ActionQuotaGuard;
+};
+
+const INLINE_PHOTO_BODY_LIMIT_BYTES = 7 * 1024 * 1024;
+
+const estimateBase64Bytes = (value?: string) => {
+  const normalized = value?.replace(/^data:[^;]+;base64,/, '').trim();
+  return normalized ? Buffer.byteLength(normalized, 'base64') : Number.NaN;
 };
 
 type VetSearchQuerystring = {
@@ -264,7 +273,7 @@ const parseReviewListInput = (
   sort: parseReviewSort(query.sort),
 });
 
-const getUserIdFromRequest = (
+const getUserIdFromRequest = async (
   authService: AuthService,
   authorization?: string,
 ) => {
@@ -277,7 +286,7 @@ const getUserIdFromRequest = (
   }
 
   const accessToken = authorization.replace('Bearer ', '').trim();
-  return authService.verifyAccessToken(accessToken).userId;
+  return (await authService.verifyAccessToken(accessToken)).userId;
 };
 
 type VetSearchRequest = FastifyRequest<{
@@ -285,6 +294,12 @@ type VetSearchRequest = FastifyRequest<{
 }> & {
   vetSearchInput?: VetSearchInput;
 };
+
+const buildPageInfo = (result: { nextCursor?: string; limit: number }) => ({
+  nextCursor: result.nextCursor ?? null,
+  hasMore: result.nextCursor !== undefined,
+  limit: result.limit,
+});
 
 type VetNearbyRequest = FastifyRequest<{
   Querystring: VetNearbyQuerystring;
@@ -348,6 +363,10 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
       preHandler: validateSearchQuery,
     },
     async (request) => {
+      await options.actionQuotaGuard.enforce({
+        action: 'discovery.read',
+        dimensions: { ip: request.ip },
+      });
       const parsedRequest = request as VetSearchRequest;
       const result = await options.vetService.search(
         parsedRequest.vetSearchInput ?? parseSearchInput(request.query),
@@ -360,6 +379,7 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
           limit: result.limit,
           nextCursor: result.nextCursor,
         },
+        pageInfo: buildPageInfo(result),
       };
     },
   );
@@ -370,6 +390,10 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
       preHandler: validateNearbyQuery,
     },
     async (request) => {
+      await options.actionQuotaGuard.enforce({
+        action: 'discovery.read',
+        dimensions: { ip: request.ip },
+      });
       const parsedRequest = request as VetNearbyRequest;
       const result = await options.vetService.nearby(
         parsedRequest.vetNearbyInput ?? parseNearbyInput(request.query),
@@ -382,6 +406,7 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
           limit: result.limit,
           nextCursor: result.nextCursor,
         },
+        pageInfo: buildPageInfo(result),
       };
     },
   );
@@ -390,6 +415,10 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
     Params: { vetId: string };
     Querystring: ReviewListQuerystring;
   }>('/vets/:vetId/reviews', async (request) => {
+    await options.actionQuotaGuard.enforce({
+      action: 'discovery.read',
+      dimensions: { ip: request.ip },
+    });
     const result = await options.reviewService.list(
       request.params.vetId,
       parseReviewListInput(request.query),
@@ -399,16 +428,25 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
       data: result.items,
       summary: result.summary,
       pagination: result.pagination,
+      pageInfo: buildPageInfo(result.pagination),
     };
   });
 
   app.post<{ Params: { vetId: string }; Body: CreateReviewInput }>(
     '/vets/:vetId/reviews',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
+      await options.actionQuotaGuard.enforce({
+        action: 'review.create',
+        dimensions: {
+          ip: request.ip,
+          account: userId,
+          resource: request.params.vetId,
+        },
+      });
 
       const review = await options.reviewService.create(
         request.params.vetId,
@@ -422,33 +460,71 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
   app.post<{
     Params: { vetId: string };
     Body: UploadReviewPhotoInput;
-  }>('/vets/:vetId/reviews/photos', async (request, reply) => {
-    const userId = getUserIdFromRequest(
-      options.authService,
-      request.headers.authorization,
-    );
+  }>(
+    '/vets/:vetId/reviews/photos',
+    { bodyLimit: INLINE_PHOTO_BODY_LIMIT_BYTES },
+    async (request, reply) => {
+      const userId = await getUserIdFromRequest(
+        options.authService,
+        request.headers.authorization,
+      );
+      const quotaDecision = await options.actionQuotaGuard.enforce({
+        action: 'upload.inline-photo',
+        dimensions: { ip: request.ip, account: userId },
+        units: { bytes: estimateBase64Bytes(request.body.base64Data) },
+        idempotencyKey:
+          typeof request.headers['idempotency-key'] === 'string'
+            ? request.headers['idempotency-key']
+            : request.id,
+      });
+      try {
+        await options.vetService.get(request.params.vetId);
+        const result = await uploadReviewPhoto(
+          options.config,
+          request.params.vetId,
+          userId,
+          request.body,
+        );
+        reply.code(201).send({ data: result });
+      } finally {
+        if (quotaDecision.lease) {
+          try {
+            await options.actionQuotaGuard.cancelLease(quotaDecision.lease);
+          } catch {
+            request.log.warn({
+              event: 'quota_lease_cleanup_deferred',
+              action: 'upload.inline-photo',
+              requestId: request.id,
+            });
+          }
+        }
+      }
+    },
+  );
 
-    await options.vetService.get(request.params.vetId);
-    const result = await uploadReviewPhoto(
-      options.config,
-      request.params.vetId,
-      userId,
-      request.body,
-    );
-    reply.code(201).send({ data: result });
+  app.get<{ Params: { vetId: string } }>('/vets/:vetId', async (request) => {
+    await options.actionQuotaGuard.enforce({
+      action: 'discovery.read',
+      dimensions: { ip: request.ip },
+    });
+    return { data: await options.vetService.get(request.params.vetId) };
   });
-
-  app.get<{ Params: { vetId: string } }>('/vets/:vetId', async (request) => ({
-    data: await options.vetService.get(request.params.vetId),
-  }));
 
   app.put<{ Params: { reviewId: string } }>(
     '/reviews/:reviewId/helpful',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
+      await options.actionQuotaGuard.enforce({
+        action: 'review.helpful',
+        dimensions: {
+          ip: request.ip,
+          account: userId,
+          resource: request.params.reviewId,
+        },
+      });
 
       return {
         data: await options.reviewService.toggleHelpful(
@@ -462,10 +538,18 @@ const vetRoute: FastifyPluginAsync<VetRouteOptions> = async (app, options) => {
   app.post<{ Params: { reviewId: string }; Body: ReportReviewBody }>(
     '/reviews/:reviewId/report',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
+      await options.actionQuotaGuard.enforce({
+        action: 'review.report',
+        dimensions: {
+          ip: request.ip,
+          account: userId,
+          resource: request.params.reviewId,
+        },
+      });
 
       const result = await options.reviewService.report(
         request.params.reviewId,
