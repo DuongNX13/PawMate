@@ -4,11 +4,12 @@ describe('getPrismaClient', () => {
   });
 
   it('caches clients per database URL', async () => {
-    const PrismaClientMock = jest
-      .fn()
-      .mockImplementation(function PrismaClient(this: Record<string, unknown>, options?: unknown) {
-        this.options = options;
-      });
+    const PrismaClientMock = jest.fn().mockImplementation(function PrismaClient(
+      this: Record<string, unknown>,
+      options?: unknown,
+    ) {
+      this.options = options;
+    });
 
     jest.doMock('@prisma/client', () => ({
       PrismaClient: PrismaClientMock,
@@ -45,12 +46,14 @@ describe('getRedisClient', () => {
   });
 
   it('creates a single lazy redis client', async () => {
-    const RedisMock = jest
-      .fn()
-      .mockImplementation(function Redis(this: Record<string, unknown>, url: string, options: unknown) {
-        this.url = url;
-        this.options = options;
-      });
+    const RedisMock = jest.fn().mockImplementation(function Redis(
+      this: Record<string, unknown>,
+      url: string,
+      options: unknown,
+    ) {
+      this.url = url;
+      this.options = options;
+    });
 
     jest.doMock('ioredis', () => ({
       __esModule: true,
