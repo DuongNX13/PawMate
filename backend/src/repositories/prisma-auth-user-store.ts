@@ -1,7 +1,4 @@
-import {
-  $Enums,
-  PrismaClient,
-} from '@prisma/client';
+import { $Enums, PrismaClient } from '@prisma/client';
 
 import {
   type AuthUserStore,
@@ -9,8 +6,9 @@ import {
   type UserRecord,
 } from '../services/auth/auth-service';
 
-const mapAuthProvider = (provider: $Enums.AuthProvider): UserRecord['authProvider'] =>
-  provider;
+const mapAuthProvider = (
+  provider: $Enums.AuthProvider,
+): UserRecord['authProvider'] => provider;
 
 const mapProviderAccounts = (user: {
   googleSub: string | null;
