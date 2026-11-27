@@ -50,7 +50,7 @@ type ReminderListQuerystring = {
   includeDone?: string;
 };
 
-const getUserIdFromRequest = (
+const getUserIdFromRequest = async (
   authService: AuthService,
   authorization?: string,
 ) => {
@@ -63,7 +63,7 @@ const getUserIdFromRequest = (
   }
 
   const accessToken = authorization.replace('Bearer ', '').trim();
-  return authService.verifyAccessToken(accessToken).userId;
+  return (await authService.verifyAccessToken(accessToken)).userId;
 };
 
 const parseLimit = (value: string | undefined) => {
@@ -159,7 +159,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   );
 
   app.get('/pets', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -170,7 +170,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   });
 
   app.post<{ Body: CreatePetInput }>('/pets', async (request, reply) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -180,7 +180,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   });
 
   app.get<{ Params: { petId: string } }>('/pets/:petId', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -193,7 +193,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.put<{ Params: { petId: string }; Body: UpdatePetInput }>(
     '/pets/:petId',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -211,7 +211,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.delete<{ Params: { petId: string } }>(
     '/pets/:petId',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -224,16 +224,18 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.post<{ Params: { petId: string }; Body: UploadPetPhotoInput }>(
     '/pets/:petId/photo',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
 
-      return options.petService.attachPhoto(
-        userId,
-        request.params.petId,
-        request.body,
-      );
+      return {
+        data: await options.petService.attachPhoto(
+          userId,
+          request.params.petId,
+          request.body,
+        ),
+      };
     },
   );
 
@@ -241,7 +243,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
     Params: { petId: string };
     Querystring: HealthRecordListQuerystring;
   }>('/pets/:petId/health-records', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -258,7 +260,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.post<{ Params: { petId: string }; Body: CreateHealthRecordInput }>(
     '/pets/:petId/health-records',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -276,7 +278,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
     Params: { petId: string; recordId: string };
     Body: UpdateHealthRecordInput;
   }>('/pets/:petId/health-records/:recordId', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -294,7 +296,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.delete<{ Params: { petId: string; recordId: string } }>(
     '/pets/:petId/health-records/:recordId',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -312,7 +314,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
     Params: { petId: string };
     Querystring: ReminderListQuerystring;
   }>('/pets/:petId/reminders', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -329,7 +331,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.post<{ Params: { petId: string }; Body: CreateReminderInput }>(
     '/pets/:petId/reminders',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -347,7 +349,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
     Params: { petId: string; reminderId: string };
     Body: UpdateReminderInput;
   }>('/pets/:petId/reminders/:reminderId', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -365,7 +367,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.delete<{ Params: { petId: string; reminderId: string } }>(
     '/pets/:petId/reminders/:reminderId',
     async (request, reply) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -383,7 +385,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
     Params: { petId: string; reminderId: string };
     Body: SnoozeReminderInput;
   }>('/pets/:petId/reminders/:reminderId/snooze', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -401,7 +403,7 @@ const petRoute: FastifyPluginAsync<PetRouteOptions> = async (app, options) => {
   app.post<{ Params: { petId: string; reminderId: string } }>(
     '/pets/:petId/reminders/:reminderId/mark-done',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
