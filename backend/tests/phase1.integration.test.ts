@@ -217,6 +217,7 @@ describe('Phase 1 Day 1-3 integration', () => {
         name: 'Bắp',
         species: 'dog',
         breed: 'Golden Retriever',
+        color: 'Vàng kem',
         gender: 'male',
         weight: 12.4,
         healthStatus: 'healthy',
@@ -260,14 +261,18 @@ describe('Phase 1 Day 1-3 integration', () => {
     expect(nearbyItems).toHaveLength(1);
     expect(nearbyItems[0].id).toBe('hn-001');
     expect(nearbyItems[0].services).toContain('Tiêm phòng');
-    expect(nearbyItems.some((item: { id: string }) => item.id.startsWith('perf-'))).toBe(false);
+    expect(
+      nearbyItems.some((item: { id: string }) => item.id.startsWith('perf-')),
+    ).toBe(false);
 
     const detailResponse = await app.inject({
       method: 'GET',
       url: `/vets/${nearbyItems[0].id}`,
     });
     expect(detailResponse.statusCode).toBe(200);
-    expect(detailResponse.json().data.openHours).toContain('Mon-Sun 08:00-20:00');
+    expect(detailResponse.json().data.openHours).toContain(
+      'Mon-Sun 08:00-20:00',
+    );
 
     const oauthResponse = await app.inject({
       method: 'POST',
@@ -278,7 +283,9 @@ describe('Phase 1 Day 1-3 integration', () => {
       },
     });
     expect(oauthResponse.statusCode).toBe(403);
-    expect(oauthResponse.json().error.code).toBe(AUTH_ERROR_CODES.providerDisabled);
+    expect(oauthResponse.json().error.code).toBe(
+      AUTH_ERROR_CODES.providerDisabled,
+    );
 
     const deletePetResponse = await app.inject({
       method: 'DELETE',
