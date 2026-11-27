@@ -25,9 +25,15 @@
     "test:vets:nearby-matrix": "tsx ./scripts/day3-vet-nearby-matrix.ts",
     "db:day5:unblock": "node ./scripts/day5-db-unblock.cjs",
     "db:day6:cloud-proof": "node ./scripts/day6-cloud-schema-proof.cjs",
+    "db:day27:health-time-proof": "node ./scripts/day27-health-event-time-proof.cjs",
+    "db:day34:rescue-proof": "node ./scripts/day34-rescue-schema-proof.cjs",
+    "db:day51:cloud-proof": "tsx ./scripts/day51-adoption-chat-cloud-proof.ts",
+    "contract:day59": "node ../scripts/ci/preferences/day59-contract-compatibility.cjs",
     "reminders:process-due": "tsx ./src/jobs/process-due-reminders.ts",
+    "prisma:generate": "node ./scripts/prisma-generate-safe.cjs",
     "prisma:validate": "node ./scripts/prisma-validate.cjs",
-    "supabase:bootstrap": "node ./scripts/supabase-bootstrap.cjs"
+    "supabase:bootstrap": "node ./scripts/supabase-bootstrap.cjs",
+    "supabase:keepalive": "node ./scripts/supabase-keepalive.cjs"
   },
   "keywords": [
     "fastify",
@@ -42,7 +48,7 @@
     "@supabase/supabase-js": "^2.102.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3",
-    "fastify": "^5.8.5",
+    "fastify": "^5.12.8",
     "ioredis": "^5.10.1",
     "jsonwebtoken": "^9.0.3"
   },
@@ -51,11 +57,10 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.5.2",
     "@types/supertest": "^6.0.3",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
+    "@typescript-eslint/eslint-plugin": "8.71.0",
+    "@typescript-eslint/parser": "8.71.0",
     "eslint": "^8.57.1",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "jest": "^30.2.0",
@@ -63,7 +68,14 @@
     "prisma": "^6.16.2",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.4",
-    "tsx": "^4.20.6",
+    "tsx": "4.23.15",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "ws": "8.21.0",
+    "deepmerge-ts": "8.0.2",
+    "fast-uri": "4.2.4",
+    "find-my-way": "9.7.0",
+    "effect": "3.22.5"
   }
 }
