@@ -241,6 +241,11 @@ describe('Review routes', () => {
     });
     expect(listResponse.statusCode).toBe(200);
     expect(listResponse.json().data).toHaveLength(2);
+    expect(listResponse.json().pageInfo).toMatchObject({
+      nextCursor: null,
+      hasMore: false,
+      limit: 20,
+    });
     expect(listResponse.json().summary).toEqual({
       averageRating: 4.5,
       reviewCount: 2,
