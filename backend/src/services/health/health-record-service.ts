@@ -19,6 +19,7 @@ export type HealthRecord = {
   createdByUserId: string;
   type: HealthRecordType;
   date: string;
+  time?: string;
   title?: string;
   note?: string;
   vetId?: string;
@@ -46,6 +47,8 @@ export type CreateHealthRecordInput = {
   recordType?: string;
   date?: string;
   recordDate?: string;
+  time?: string;
+  eventTime?: string;
   title?: string;
   note?: string;
   notes?: string;
@@ -150,6 +153,25 @@ const validateType = (value?: string): HealthRecordType => {
   return normalized as HealthRecordType;
 };
 
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const validateOptionalVetId = (value?: string): string | undefined => {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return undefined;
+  }
+  if (!uuidPattern.test(normalized)) {
+    throw new AppError(
+      HEALTH_ERROR_CODES.invalidInput,
+      'Ma phong kham khong hop le.',
+      400,
+      'vetId',
+    );
+  }
+  return normalized;
+};
+
 const validateOptionalType = (value?: string): HealthRecordType | undefined => {
   if (value === undefined) {
     return undefined;
@@ -200,6 +222,24 @@ const validateDate = (value?: string, options: { required?: boolean } = {}) => {
   }
 
   return value;
+};
+
+const validateTime = (value?: string) => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(normalized)) {
+    throw new AppError(
+      HEALTH_ERROR_CODES.invalidInput,
+      'Gio su kien suc khoe khong hop le.',
+      400,
+      'time',
+    );
+  }
+
+  return normalized;
 };
 
 const trimLimited = (
@@ -285,6 +325,46 @@ export const createHealthRecordService = (dependencies: {
 }) => {
   const store = dependencies.store ?? new InMemoryHealthRecordStore();
 
+  const updateEvent = (
+    record: HealthRecord,
+    input: UpdateHealthRecordInput,
+  ) => ({
+    type:
+      input.type === undefined && input.recordType === undefined
+        ? record.type
+        : validateType(input.type ?? input.recordType),
+    date:
+      input.date === undefined && input.recordDate === undefined
+        ? record.date
+        : validateDate(input.date ?? input.recordDate, { required: true })!,
+    time:
+      input.time === undefined && input.eventTime === undefined
+        ? record.time
+        : validateTime(input.time ?? input.eventTime),
+  });
+
+  const updateDetails = (
+    record: HealthRecord,
+    input: UpdateHealthRecordInput,
+  ) => ({
+    title:
+      input.title === undefined
+        ? record.title
+        : trimLimited(input.title, 'title', 120),
+    note:
+      input.note === undefined && input.notes === undefined
+        ? record.note
+        : trimLimited(input.note ?? input.notes, 'note', 1000),
+    vetId:
+      input.vetId === undefined
+        ? record.vetId
+        : validateOptionalVetId(input.vetId),
+    attachments:
+      input.attachments === undefined
+        ? record.attachments
+        : validateAttachments(input.attachments),
+  });
+
   const requireOwnedPet = (userId: string, petId: string) =>
     dependencies.petReader.get(userId, petId);
 
@@ -333,9 +413,10 @@ export const createHealthRecordService = (dependencies: {
         createdByUserId: userId,
         type: validateType(input.type ?? input.recordType),
         date: validateDate(input.date ?? input.recordDate, { required: true })!,
+        time: validateTime(input.time ?? input.eventTime),
         title: trimLimited(input.title, 'title', 120),
         note: trimLimited(input.note ?? input.notes, 'note', 1000),
-        vetId: input.vetId?.trim() || undefined,
+        vetId: validateOptionalVetId(input.vetId),
         attachments: validateAttachments(input.attachments),
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -354,30 +435,8 @@ export const createHealthRecordService = (dependencies: {
       const existingRecord = await requireOwnedRecord(userId, petId, recordId);
       const nextRecord: HealthRecord = {
         ...existingRecord,
-        type:
-          input.type === undefined && input.recordType === undefined
-            ? existingRecord.type
-            : validateType(input.type ?? input.recordType),
-        date:
-          input.date === undefined && input.recordDate === undefined
-            ? existingRecord.date
-            : validateDate(input.date ?? input.recordDate, { required: true })!,
-        title:
-          input.title === undefined
-            ? existingRecord.title
-            : trimLimited(input.title, 'title', 120),
-        note:
-          input.note === undefined && input.notes === undefined
-            ? existingRecord.note
-            : trimLimited(input.note ?? input.notes, 'note', 1000),
-        vetId:
-          input.vetId === undefined
-            ? existingRecord.vetId
-            : input.vetId.trim() || undefined,
-        attachments:
-          input.attachments === undefined
-            ? existingRecord.attachments
-            : validateAttachments(input.attachments),
+        ...updateEvent(existingRecord, input),
+        ...updateDetails(existingRecord, input),
         updatedAt: new Date().toISOString(),
       };
 
