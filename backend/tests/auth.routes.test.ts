@@ -99,7 +99,9 @@ describe('Auth routes', () => {
 
     expect(registerResponse.statusCode).toBe(201);
     const registerPayload = registerResponse.json();
-    expect(registerPayload.message).toBe('Check your email');
+    expect(registerPayload.message).toBe(
+      'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
+    );
 
     await authService.markEmailVerified(registerPayload.userId);
 
@@ -139,6 +141,21 @@ describe('Auth routes', () => {
     });
 
     expect(logoutResponse.statusCode).toBe(204);
+
+    const replayAfterLogout = await app.inject({
+      method: 'POST',
+      url: '/auth/refresh',
+      payload: {
+        refreshToken: refreshPayload.refreshToken,
+      },
+    });
+
+    expect(replayAfterLogout.statusCode).toBe(401);
+    expect(replayAfterLogout.json()).toMatchObject({
+      error: {
+        code: 'AUTH_009',
+      },
+    });
 
     await app.close();
   });
@@ -188,9 +205,22 @@ describe('Auth routes', () => {
     });
 
     expect(resendResponse.statusCode).toBe(200);
-    expect(resendResponse.json()).toEqual({
-      message: 'Verification email resent',
+    expect(resendResponse.json()).toMatchObject({
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
+      verificationStatus: 'pending',
+      verificationExpiresAt: expect.any(String),
+      resendAvailableAt: expect.any(String),
     });
+    const resendPayload = resendResponse.json<{
+      verificationExpiresAt: string;
+      resendAvailableAt: string;
+    }>();
+    expect(Date.parse(resendPayload.verificationExpiresAt)).not.toBeNaN();
+    expect(Date.parse(resendPayload.resendAvailableAt)).not.toBeNaN();
+    expect(
+      Date.parse(resendPayload.verificationExpiresAt) -
+        Date.parse(resendPayload.resendAvailableAt),
+    ).toBe(4 * 60 * 1000);
 
     const verifyResponse = await app.inject({
       method: 'POST',
@@ -204,13 +234,21 @@ describe('Auth routes', () => {
     expect(verifyResponse.json()).toMatchObject({
       email: 'verify-route@pawmate.vn',
       message: 'Email verified',
+      user: {
+        email: 'verify-route@pawmate.vn',
+        emailVerified: true,
+      },
+      accessToken: expect.any(String),
+      refreshToken: expect.any(String),
+      accessTokenExpiresAt: expect.any(String),
+      refreshTokenExpiresAt: expect.any(String),
     });
 
-    expect(emailVerificationGateway.resendEmailVerification).toHaveBeenCalledWith(
-      {
-        email: 'verify-route@pawmate.vn',
-      },
-    );
+    expect(
+      emailVerificationGateway.resendEmailVerification,
+    ).toHaveBeenCalledWith({
+      email: 'verify-route@pawmate.vn',
+    });
     expect(emailVerificationGateway.verifyEmailToken).toHaveBeenCalledWith({
       tokenHash: 'supabase-signup-hash',
     });
