@@ -67,24 +67,28 @@ describe('OAuth verifier', () => {
       },
     );
     const originalFetch = global.fetch;
-    const fetchMock = jest.fn().mockImplementation(async () =>
-      new Response(
-        JSON.stringify({
-          keys: [
-            {
-              ...(publicKey.export({ format: 'jwk' }) as Record<string, unknown>),
-              kid,
+    const fetchMock = jest.fn().mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            keys: [
+              {
+                ...(publicKey.export({ format: 'jwk' }) as Record<
+                  string,
+                  unknown
+                >),
+                kid,
+              },
+            ],
+          }),
+          {
+            status: 200,
+            headers: {
+              'cache-control': 'public, max-age=60',
+              'content-type': 'application/json',
             },
-          ],
-        }),
-        {
-          status: 200,
-          headers: {
-            'cache-control': 'public, max-age=60',
-            'content-type': 'application/json',
           },
-        },
-      ),
+        ),
     );
 
     global.fetch = fetchMock as typeof fetch;
@@ -229,10 +233,12 @@ describe('OAuth verifier', () => {
       },
     });
 
-    await expect(verifier?.verify('google', 'not-a-jwt')).rejects.toMatchObject({
-      code: AUTH_ERROR_CODES.oauthVerificationFailed,
-      field: 'credential',
-    });
+    await expect(verifier?.verify('google', 'not-a-jwt')).rejects.toMatchObject(
+      {
+        code: AUTH_ERROR_CODES.oauthVerificationFailed,
+        field: 'credential',
+      },
+    );
   });
 
   it('rejects Google tokens that are missing email claims', async () => {
