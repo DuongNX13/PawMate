@@ -77,6 +77,8 @@ export type VetNearbyStore = {
 
 export type VetSummary = {
   id: string;
+  /** Canonical public identifier; `id` remains a compatibility alias. */
+  vetId: string;
   name: string;
   city: string;
   district: string;
@@ -220,7 +222,9 @@ const pickOpenHoursEntry = (openHours: string[], weekday: string) => {
   const aliases = weekdayAliases[weekday] ?? [];
   const exactMatch = openHours.find((entry) => {
     const normalizedEntry = normalizeForSearch(entry);
-    return aliases.some((alias) => normalizedEntry.includes(normalizeForSearch(alias)));
+    return aliases.some((alias) =>
+      normalizedEntry.includes(normalizeForSearch(alias)),
+    );
   });
 
   if (exactMatch) {
@@ -230,6 +234,10 @@ const pickOpenHoursEntry = (openHours: string[], weekday: string) => {
   return openHours.find((entry) => entry.trim().length > 0)?.trim();
 };
 
+const openHourMinutes = (match: RegExpMatchArray, index: number) =>
+  Number.parseInt(match[index] ?? '0', 10) * 60 +
+  Number.parseInt(match[index + 1] ?? '0', 10);
+
 const computeIsOpen = (
   clinic: Pick<VetSummaryShape, 'is24h' | 'openHours'>,
   now: Date,
@@ -238,7 +246,9 @@ const computeIsOpen = (
     return true;
   }
 
-  const normalizedEntries = clinic.openHours.map((entry) => normalizeForSearch(entry));
+  const normalizedEntries = clinic.openHours.map((entry) =>
+    normalizeForSearch(entry),
+  );
   if (
     normalizedEntries.some(
       (entry) => entry.includes('24/7') || entry.includes('24h'),
@@ -258,12 +268,8 @@ const computeIsOpen = (
     return undefined;
   }
 
-  const openMinutes =
-    Number.parseInt(match[1] ?? '0', 10) * 60 +
-    Number.parseInt(match[2] ?? '0', 10);
-  const closeMinutes =
-    Number.parseInt(match[3] ?? '0', 10) * 60 +
-    Number.parseInt(match[4] ?? '0', 10);
+  const openMinutes = openHourMinutes(match, 1);
+  const closeMinutes = openHourMinutes(match, 3);
   const currentMinutes = hour * 60 + minute;
 
   if (closeMinutes < openMinutes) {
@@ -271,6 +277,22 @@ const computeIsOpen = (
   }
 
   return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+};
+
+const matchClinicAvailability = (
+  clinic: VetClinic,
+  input: VetSearchInput,
+  now: Date,
+) => {
+  const matches24h = input.is24h === true ? clinic.is24h === true : true;
+  const isOpen = computeIsOpen(clinic, now);
+  const matchesOpenNow = input.isOpenNow === true ? isOpen === true : true;
+  const matchesRating =
+    typeof input.minRating === 'number'
+      ? typeof clinic.averageRating === 'number' &&
+        clinic.averageRating >= input.minRating
+      : true;
+  return { matches24h, matchesOpenNow, matchesRating };
 };
 
 const buildSummary = (clinic: VetSummaryShape) => {
@@ -283,6 +305,7 @@ const buildSummary = (clinic: VetSummaryShape) => {
 
 const mapToSummary = (clinic: VetSummaryShape, now: Date): VetSummary => ({
   id: clinic.id,
+  vetId: clinic.id,
   name: clinic.name,
   city: clinic.city,
   district: clinic.district,
@@ -297,8 +320,7 @@ const mapToSummary = (clinic: VetSummaryShape, now: Date): VetSummary => ({
   is24h: clinic.is24h ?? undefined,
   isOpen: computeIsOpen(clinic, now),
   readyForMap: clinic.readyForMap,
-  latitude:
-    typeof clinic.latitude === 'number' ? clinic.latitude : undefined,
+  latitude: typeof clinic.latitude === 'number' ? clinic.latitude : undefined,
   longitude:
     typeof clinic.longitude === 'number' ? clinic.longitude : undefined,
   distanceMeters:
@@ -379,10 +401,20 @@ export const createVetService = (
     if (!cachedClinicsPromise) {
       const seedPath =
         options.seedPath ??
-        path.resolve(process.cwd(), 'prisma', 'data', 'day2_vet_seed_candidates.json');
+        path.resolve(
+          process.cwd(),
+          'prisma',
+          'data',
+          'day2_vet_seed_candidates.json',
+        );
       const pilotSeedPath =
         options.pilotSeedPath ??
-        path.resolve(process.cwd(), 'prisma', 'data', 'day3_vet_geo_pilot.json');
+        path.resolve(
+          process.cwd(),
+          'prisma',
+          'data',
+          'day3_vet_geo_pilot.json',
+        );
       cachedClinicsPromise = Promise.all([
         readJsonFile<VetSeedFile>(seedPath),
         readJsonFile<VetPilotOverlayFile>(pilotSeedPath).catch(() => ({
@@ -478,9 +510,7 @@ export const createVetService = (
         ),
       }))
       .filter((clinic) => clinic.distanceMeters <= input.radiusMeters)
-      .filter((clinic) =>
-        input.is24h === true ? clinic.is24h === true : true,
-      )
+      .filter((clinic) => (input.is24h === true ? clinic.is24h === true : true))
       .filter((clinic) =>
         typeof input.minRating === 'number'
           ? typeof clinic.averageRating === 'number' &&
@@ -496,15 +526,13 @@ export const createVetService = (
       const query = normalizeForSearch(input.q);
       const city = normalizeForSearch(input.city);
       const district = normalizeForSearch(input.district);
-      const { minRating } = input;
       const sort = input.sort ?? 'curated';
       const now = nowProvider();
 
       const clinics = await loadClinics();
       const filtered = clinics
         .filter((clinic) => {
-          const matchesCity =
-            !city || normalizeForSearch(clinic.city) === city;
+          const matchesCity = !city || normalizeForSearch(clinic.city) === city;
           const matchesDistrict =
             !district || normalizeForSearch(clinic.district) === district;
           const haystack = normalizeForSearch(
@@ -518,16 +546,8 @@ export const createVetService = (
             ].join(' '),
           );
           const matchesQuery = !query || haystack.includes(query);
-          const matches24h =
-            input.is24h === true ? clinic.is24h === true : true;
-          const isOpen = computeIsOpen(clinic, now);
-          const matchesOpenNow =
-            input.isOpenNow === true ? isOpen === true : true;
-          const matchesRating =
-            typeof minRating === 'number'
-              ? typeof clinic.averageRating === 'number' &&
-                clinic.averageRating >= minRating
-              : true;
+          const { matches24h, matchesOpenNow, matchesRating } =
+            matchClinicAvailability(clinic, input, now);
 
           return (
             matchesCity &&
@@ -543,7 +563,9 @@ export const createVetService = (
             const leftRating =
               typeof left.averageRating === 'number' ? left.averageRating : -1;
             const rightRating =
-              typeof right.averageRating === 'number' ? right.averageRating : -1;
+              typeof right.averageRating === 'number'
+                ? right.averageRating
+                : -1;
             const ratingCompare = rightRating - leftRating;
             if (ratingCompare !== 0) {
               return ratingCompare;
@@ -564,7 +586,8 @@ export const createVetService = (
 
       const slice = filtered.slice(offset, offset + limit);
       const nextOffset = offset + slice.length;
-      const nextCursor = nextOffset < filtered.length ? `${nextOffset}` : undefined;
+      const nextCursor =
+        nextOffset < filtered.length ? `${nextOffset}` : undefined;
 
       return {
         items: slice.map((clinic) => mapToSummary(clinic, now)),
@@ -600,7 +623,8 @@ export const createVetService = (
           input.isOpenNow === true ? computeIsOpen(clinic, now) === true : true,
         )
         .sort((left, right) => {
-          const distanceCompare = (left.distanceMeters ?? 0) - (right.distanceMeters ?? 0);
+          const distanceCompare =
+            (left.distanceMeters ?? 0) - (right.distanceMeters ?? 0);
           if (distanceCompare !== 0) {
             return distanceCompare;
           }
@@ -615,7 +639,8 @@ export const createVetService = (
 
       const slice = filtered.slice(offset, offset + limit);
       const nextOffset = offset + slice.length;
-      const nextCursor = nextOffset < filtered.length ? `${nextOffset}` : undefined;
+      const nextCursor =
+        nextOffset < filtered.length ? `${nextOffset}` : undefined;
 
       return {
         items: slice.map((clinic) => mapToSummary(clinic, now)),
