@@ -64,7 +64,9 @@ export class PrismaReminderStore implements ReminderStore {
       deletedAt: null,
       ...(input.includeDone
         ? {}
-        : { status: { notIn: ['done', 'cancelled'] as $Enums.ReminderStatus[] } }),
+        : {
+            status: { notIn: ['done', 'cancelled'] as $Enums.ReminderStatus[] },
+          }),
       ...(input.from || input.to
         ? {
             nextTriggerAt: {
@@ -117,12 +119,8 @@ export class PrismaReminderStore implements ReminderStore {
       repeatRule: reminder.repeatRule,
       timezone: reminder.timezone,
       status: reminder.status as $Enums.ReminderStatus,
-      completedAt: reminder.completedAt
-        ? new Date(reminder.completedAt)
-        : null,
-      cancelledAt: reminder.cancelledAt
-        ? new Date(reminder.cancelledAt)
-        : null,
+      completedAt: reminder.completedAt ? new Date(reminder.completedAt) : null,
+      cancelledAt: reminder.cancelledAt ? new Date(reminder.cancelledAt) : null,
       snoozedUntil: reminder.snoozedUntil
         ? new Date(reminder.snoozedUntil)
         : null,
@@ -141,11 +139,18 @@ export class PrismaReminderStore implements ReminderStore {
     });
   }
 
-  async listDue(now: string, limit: number) {
+  async listDue(
+    now: string,
+    limit: number,
+    input: { createdByUserId?: string } = {},
+  ) {
     const reminders = await this.prisma.reminder.findMany({
       where: {
         status: 'scheduled',
         deletedAt: null,
+        ...(input.createdByUserId
+          ? { createdByUserId: input.createdByUserId }
+          : {}),
         nextTriggerAt: { lte: new Date(now) },
         OR: [{ snoozedUntil: null }, { snoozedUntil: { lte: new Date(now) } }],
       },
