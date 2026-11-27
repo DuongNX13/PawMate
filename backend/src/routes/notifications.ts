@@ -12,7 +12,7 @@ import { type ReminderService } from '../services/reminders/reminder-service';
 type NotificationRouteOptions = {
   authService: AuthService;
   notificationService: NotificationService;
-  reminderService: Pick<ReminderService, 'processDueReminders'>;
+  reminderService: Pick<ReminderService, 'processDueRemindersForUser'>;
 };
 
 type NotificationListQuerystring = {
@@ -21,7 +21,7 @@ type NotificationListQuerystring = {
   unreadOnly?: string;
 };
 
-const getUserIdFromRequest = (
+const getUserIdFromRequest = async (
   authService: AuthService,
   authorization?: string,
 ) => {
@@ -34,7 +34,7 @@ const getUserIdFromRequest = (
   }
 
   const accessToken = authorization.replace('Bearer ', '').trim();
-  return authService.verifyAccessToken(accessToken).userId;
+  return (await authService.verifyAccessToken(accessToken)).userId;
 };
 
 const parseLimit = (value: string | undefined) => {
@@ -83,7 +83,7 @@ const notificationRoute: FastifyPluginAsync<NotificationRouteOptions> = async (
   app.get<{ Querystring: NotificationListQuerystring }>(
     '/notifications',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -99,17 +99,23 @@ const notificationRoute: FastifyPluginAsync<NotificationRouteOptions> = async (
   );
 
   app.post('/notifications/process-due-reminders', async (request) => {
-    getUserIdFromRequest(options.authService, request.headers.authorization);
+    const userId = await getUserIdFromRequest(
+      options.authService,
+      request.headers.authorization,
+    );
 
     return {
-      data: await options.reminderService.processDueReminders(new Date()),
+      data: await options.reminderService.processDueRemindersForUser(
+        userId,
+        new Date(),
+      ),
     };
   });
 
   app.patch<{ Params: { notificationId: string } }>(
     '/notifications/:notificationId/read',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
@@ -124,7 +130,7 @@ const notificationRoute: FastifyPluginAsync<NotificationRouteOptions> = async (
   );
 
   app.post('/notifications/read-all', async (request) => {
-    const userId = getUserIdFromRequest(
+    const userId = await getUserIdFromRequest(
       options.authService,
       request.headers.authorization,
     );
@@ -137,7 +143,7 @@ const notificationRoute: FastifyPluginAsync<NotificationRouteOptions> = async (
   app.patch<{ Params: { notificationId: string } }>(
     '/notifications/:notificationId/dismiss',
     async (request) => {
-      const userId = getUserIdFromRequest(
+      const userId = await getUserIdFromRequest(
         options.authService,
         request.headers.authorization,
       );
