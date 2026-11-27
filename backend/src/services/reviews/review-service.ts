@@ -5,7 +5,11 @@ import { REVIEW_ERROR_CODES } from '../../errors/error-codes';
 import { type VetService } from '../vets/vet-service';
 
 export type ReviewStatus = 'visible' | 'hidden';
-export type ReviewSentiment = 'UNPROCESSED' | 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+export type ReviewSentiment =
+  | 'UNPROCESSED'
+  | 'POSITIVE'
+  | 'NEGATIVE'
+  | 'NEUTRAL';
 export type ReviewReportReason =
   | 'spam'
   | 'false_information'
@@ -113,15 +117,13 @@ export type ReviewStore = {
     userId: string,
     toggledAt: Date,
   ) => Promise<HelpfulResult>;
-  reportReview: (
-    input: {
-      reviewId: string;
-      reporterId: string;
-      reason: ReviewReportReason;
-      description?: string;
-      createdAt: Date;
-    },
-  ) => Promise<ReviewReportResult>;
+  reportReview: (input: {
+    reviewId: string;
+    reporterId: string;
+    reason: ReviewReportReason;
+    description?: string;
+    createdAt: Date;
+  }) => Promise<ReviewReportResult>;
 };
 
 type ReviewServiceOptions = {
@@ -262,7 +264,9 @@ const mapToPublicReview = (review: ReviewRecord): PublicReview => {
     ...publicFields,
     reviewer: {
       id: review.isAnonymous ? 'anonymous' : userId,
-      displayName: review.isAnonymous ? 'Nguoi dung PawMate' : 'Thanh vien PawMate',
+      displayName: review.isAnonymous
+        ? 'Nguoi dung PawMate'
+        : 'Thanh vien PawMate',
     },
   };
 };
@@ -336,7 +340,9 @@ const createInMemoryReviewStore = (): ReviewStore => {
     async listReviews(vetId, input) {
       const offset = parseCursorOffset(input.cursor);
       const filtered = [...reviews.values()]
-        .filter((review) => review.vetId === vetId && review.status === 'visible')
+        .filter(
+          (review) => review.vetId === vetId && review.status === 'visible',
+        )
         .sort((left, right) => {
           if (input.sort === 'helpful') {
             const helpfulCompare = right.helpfulCount - left.helpfulCount;
@@ -476,7 +482,10 @@ export const createReviewService = ({
       return mapToPublicReview(review);
     },
 
-    async list(vetId: string, input: ReviewListInput = {}): Promise<ReviewListResult> {
+    async list(
+      vetId: string,
+      input: ReviewListInput = {},
+    ): Promise<ReviewListResult> {
       await assertVetExists(vetId);
       const limit = validateLimit(input.limit);
       const sort = input.sort ?? 'newest';
