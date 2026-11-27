@@ -32,8 +32,8 @@ const buildTransactionPrisma = (tx: {
   $executeRawUnsafe: jest.Mock;
 }) =>
   ({
-    $transaction: jest.fn(async (callback: (transaction: typeof tx) => unknown) =>
-      callback(tx),
+    $transaction: jest.fn(
+      async (callback: (transaction: typeof tx) => unknown) => callback(tx),
     ),
   }) as unknown as PrismaClient;
 
