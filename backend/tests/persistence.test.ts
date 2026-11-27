@@ -4,7 +4,10 @@ import { type Redis } from 'ioredis';
 import { PrismaAuthUserStore } from '../src/repositories/prisma-auth-user-store';
 import { PrismaPetStore } from '../src/repositories/prisma-pet-store';
 import { RedisAuthSessionStore } from '../src/repositories/redis-auth-session-store';
-import { type SessionRecord, type UserRecord } from '../src/services/auth/auth-service';
+import {
+  type SessionRecord,
+  type UserRecord,
+} from '../src/services/auth/auth-service';
 import { type PetRecord } from '../src/services/pets/pet-service';
 
 type PrismaUserDelegateMock = {
@@ -20,18 +23,11 @@ type PrismaPetDelegateMock = {
   findFirst: jest.Mock;
 };
 
-type RedisPipelineMock = {
-  set: jest.Mock;
-  zadd: jest.Mock;
-  pexpire: jest.Mock;
-  exec: jest.Mock;
-};
-
 type RedisMock = {
   zrange: jest.Mock;
   mget: jest.Mock;
   get: jest.Mock;
-  multi: jest.Mock<RedisPipelineMock, []>;
+  eval: jest.Mock;
 };
 
 const createUser = (): UserRecord => ({
@@ -215,13 +211,13 @@ describe('PrismaPetStore', () => {
 
     await expect(store.listByUser(pet.userId)).resolves.toEqual([pet]);
     await expect(store.findById(pet.id)).resolves.toEqual(pet);
-    await expect(
-      store.hasMicrochipConflict(pet.userId, pet.microchip ?? ''),
-    ).resolves.toBe(true);
+    await expect(store.hasMicrochipConflict(pet.microchip ?? '')).resolves.toBe(
+      true,
+    );
 
     prisma.pet.findFirst.mockResolvedValueOnce(null);
     await expect(
-      store.hasMicrochipConflict(pet.userId, pet.microchip ?? '', pet.id),
+      store.hasMicrochipConflict(pet.microchip ?? '', pet.id),
     ).resolves.toBe(false);
 
     await store.save(pet);
@@ -243,27 +239,95 @@ describe('PrismaPetStore', () => {
 });
 
 describe('RedisAuthSessionStore', () => {
-  it('serializes sessions, lists active ones, and revokes them', async () => {
+  it('serializes sessions and delegates lifecycle mutations to atomic scripts', async () => {
     const storedValues = new Map<string, string>();
-    const orderedSessionIds = ['session-2', 'session-1'];
+    const sessionScores = new Map<string, number>();
+    const orderedSessionIds = () =>
+      [...sessionScores.entries()]
+        .sort((left, right) => left[1] - right[1])
+        .map(([sessionId]) => sessionId);
     const redis: RedisMock = {
-      zrange: jest.fn().mockResolvedValue(orderedSessionIds),
-      mget: jest.fn().mockImplementation(async (keys: string[]) =>
-        keys.map((key) => storedValues.get(key) ?? null),
-      ),
-      get: jest.fn().mockImplementation(async (key: string) => storedValues.get(key) ?? null),
-      multi: jest.fn().mockImplementation(() => {
-        const pipeline: RedisPipelineMock = {
-          set: jest.fn().mockImplementation((key: string, value: string) => {
-            storedValues.set(key, value);
-            return pipeline;
-          }),
-          zadd: jest.fn().mockImplementation(() => pipeline),
-          pexpire: jest.fn().mockImplementation(() => pipeline),
-          exec: jest.fn().mockResolvedValue([]),
-        };
-        return pipeline;
-      }),
+      zrange: jest.fn().mockImplementation(async () => orderedSessionIds()),
+      mget: jest
+        .fn()
+        .mockImplementation(async (keys: string[]) =>
+          keys.map((key) => storedValues.get(key) ?? null),
+        ),
+      get: jest
+        .fn()
+        .mockImplementation(
+          async (key: string) => storedValues.get(key) ?? null,
+        ),
+      eval: jest
+        .fn()
+        .mockImplementation(
+          async (script: string, keyCount: number, ...args: string[]) => {
+            const keys = args.slice(0, keyCount);
+            const values = args.slice(keyCount);
+            if (script.includes('local maxActiveSessions')) {
+              storedValues.set(keys[0], values[1]);
+              sessionScores.set(values[4], Number(values[2]));
+              const maxActiveSessions = Number(values[5]);
+              const activeSessionIds = orderedSessionIds().filter(
+                (sessionId) => {
+                  const raw = storedValues.get(`auth:session:${sessionId}`);
+                  return raw != null && JSON.parse(raw).revokedAt == null;
+                },
+              );
+              activeSessionIds
+                .slice(
+                  0,
+                  Math.max(activeSessionIds.length - maxActiveSessions, 0),
+                )
+                .forEach((sessionId) => {
+                  const key = `auth:session:${sessionId}`;
+                  const session = JSON.parse(storedValues.get(key) ?? '{}');
+                  storedValues.set(
+                    key,
+                    JSON.stringify({ ...session, revokedAt: values[6] }),
+                  );
+                });
+              return 1;
+            }
+            if (script.includes('local expectedHash')) {
+              const current = JSON.parse(storedValues.get(keys[0]) ?? 'null');
+              if (
+                current == null ||
+                current.revokedAt != null ||
+                current.refreshTokenHash !== values[0] ||
+                current.userId !== values[4]
+              ) {
+                return 0;
+              }
+              storedValues.set(keys[0], values[1]);
+              sessionScores.set(values[3], Number(values[5]));
+              return 1;
+            }
+            if (script.includes('local revokedCount')) {
+              orderedSessionIds().forEach((sessionId) => {
+                const key = `auth:session:${sessionId}`;
+                const current = JSON.parse(storedValues.get(key) ?? 'null');
+                if (current != null && current.revokedAt == null) {
+                  storedValues.set(
+                    key,
+                    JSON.stringify({ ...current, revokedAt: values[1] }),
+                  );
+                }
+              });
+              return 1;
+            }
+
+            const current = JSON.parse(storedValues.get(keys[0]) ?? 'null');
+            if (current == null || current.revokedAt != null) {
+              return 0;
+            }
+            storedValues.set(
+              keys[0],
+              JSON.stringify({ ...current, revokedAt: values[0] }),
+            );
+            return 1;
+          },
+        ),
     };
 
     const store = new RedisAuthSessionStore(redis as unknown as Redis);
@@ -283,8 +347,16 @@ describe('RedisAuthSessionStore', () => {
       revokedAt: new Date('2026-04-08T09:30:00.000Z'),
     };
 
-    await store.saveSession(sessionA);
-    await store.saveSession(sessionB);
+    await store.createSession(
+      sessionA,
+      3,
+      new Date('2026-04-08T10:00:00.000Z'),
+    );
+    await store.createSession(
+      sessionB,
+      3,
+      new Date('2026-04-08T10:00:00.000Z'),
+    );
 
     await expect(store.findSessionById(sessionA.id)).resolves.toMatchObject({
       id: sessionA.id,
@@ -294,7 +366,22 @@ describe('RedisAuthSessionStore', () => {
       expect.objectContaining({ id: 'session-1' }),
     ]);
 
-    await store.revokeSession('session-1', new Date('2026-04-08T10:30:00.000Z'));
+    const rotatedSession = {
+      ...sessionA,
+      refreshTokenHash: 'hash-a-rotated',
+      expiresAt: new Date(Date.now() + 120_000),
+    };
+    await expect(store.rotateSession(rotatedSession, 'hash-a')).resolves.toBe(
+      true,
+    );
+    await expect(
+      store.rotateSession(rotatedSession, 'stale-hash'),
+    ).resolves.toBe(false);
+
+    await store.revokeSession(
+      'session-1',
+      new Date('2026-04-08T10:30:00.000Z'),
+    );
     await expect(store.findSessionById('session-1')).resolves.toMatchObject({
       revokedAt: new Date('2026-04-08T10:30:00.000Z'),
     });
@@ -304,6 +391,6 @@ describe('RedisAuthSessionStore', () => {
       new Date('2026-04-08T11:00:00.000Z'),
     );
 
-    expect(redis.multi).toHaveBeenCalled();
+    expect(redis.eval).toHaveBeenCalled();
   });
 });
