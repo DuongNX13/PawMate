@@ -179,7 +179,8 @@ const createRemoteJwksProvider = (
     }
 
     cache = {
-      expiresAt: now() + parseCacheMaxAgeMs(response.headers.get('cache-control')),
+      expiresAt:
+        now() + parseCacheMaxAgeMs(response.headers.get('cache-control')),
       keys: keyMap,
     };
 
@@ -289,7 +290,9 @@ const verifyJwtPayload = <TPayload extends JwtPayload>(
 
     throw new AppError(
       AUTH_ERROR_CODES.oauthVerificationFailed,
-      error instanceof Error ? error.message : 'Khong the xac minh OAuth token.',
+      error instanceof Error
+        ? error.message
+        : 'Khong the xac minh OAuth token.',
       401,
       'credential',
     );
@@ -305,9 +308,9 @@ const verifyGoogleIdentityToken = async (
   },
 ): Promise<OAuthIdentity> => {
   const { kid } = readTokenHeader(token);
-  const key =
-    await (dependencies.googleJwksProvider ??
-      createRemoteJwksProvider(GOOGLE_JWKS_URL)).getKey(kid);
+  const key = await (
+    dependencies.googleJwksProvider ?? createRemoteJwksProvider(GOOGLE_JWKS_URL)
+  ).getKey(kid);
   const payload = verifyJwtPayload<GoogleJwtPayload>(token, key, {
     algorithms: ['RS256'],
     issuer: ['accounts.google.com', 'https://accounts.google.com'],
@@ -343,9 +346,9 @@ const verifyAppleIdentityToken = async (
   },
 ): Promise<OAuthIdentity> => {
   const { kid } = readTokenHeader(token);
-  const key =
-    await (dependencies.appleJwksProvider ??
-      createRemoteJwksProvider(APPLE_JWKS_URL)).getKey(kid);
+  const key = await (
+    dependencies.appleJwksProvider ?? createRemoteJwksProvider(APPLE_JWKS_URL)
+  ).getKey(kid);
   const payload = verifyJwtPayload<AppleJwtPayload>(token, key, {
     algorithms: ['RS256'],
     issuer: 'https://appleid.apple.com',
@@ -391,7 +394,8 @@ export const createOpenIdOAuthVerifier = (
       dependencies.googleJwksProvider ??
       createRemoteJwksProvider(GOOGLE_JWKS_URL),
     appleJwksProvider:
-      dependencies.appleJwksProvider ?? createRemoteJwksProvider(APPLE_JWKS_URL),
+      dependencies.appleJwksProvider ??
+      createRemoteJwksProvider(APPLE_JWKS_URL),
   };
   const hasAnyAudienceConfig =
     config.oauthVerification.googleAllowedAudiences.length > 0 ||
