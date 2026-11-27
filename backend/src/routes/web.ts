@@ -193,8 +193,8 @@ const buildAuthLandingHtml = (appName: string) => `<!doctype html>
       </section>
 
       <ul id="hintList" class="hint-list">
-        <li>Nếu bạn đang ở luồng MVP hiện tại, cách ổn định nhất vẫn là nhập mã OTP ngay trong app.</li>
-        <li>Nếu link cũ bị lỗi, hãy dùng email mới nhất rồi chọn <code>Gửi lại mã</code> trong màn OTP.</li>
+        <li>Nếu email đã được xác minh, hãy mở PawMate và đăng nhập bằng email và mật khẩu đã tạo.</li>
+        <li>Nếu link báo hết hạn, hãy chọn <code>Gửi lại email</code> trong app rồi chỉ bấm link trong email mới nhất.</li>
       </ul>
 
       <div class="actions">
@@ -306,7 +306,7 @@ const buildAuthLandingHtml = (appName: string) => `<!doctype html>
 
         setState({
           status: 'Đã tới backend PawMate',
-          detail: 'Liên kết này không còn rơi vào lỗi 404 nữa. Nếu bạn vẫn chưa xác minh được, hãy quay lại app và nhập mã OTP.',
+          detail: 'Liên kết này không còn rơi vào lỗi 404 nữa. Nếu bạn vẫn chưa xác minh được, hãy quay lại app và chọn Gửi lại email.',
           summary: 'Backend đang mở đúng landing page cho luồng confirm email.',
         });
       };
