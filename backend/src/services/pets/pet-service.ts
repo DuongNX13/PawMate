@@ -10,7 +10,7 @@ import {
   saveLocalPetPhoto,
 } from '../../infrastructure/pet-photo-storage';
 
-export type PetSpecies = 'dog' | 'cat' | 'bird' | 'rabbit' | 'other';
+export type PetSpecies = 'dog' | 'cat' | 'other';
 
 export type PetGender = 'male' | 'female' | 'unknown';
 
@@ -45,7 +45,6 @@ export type PetStore = {
   findById: (petId: string) => Promise<PetRecord | undefined>;
   save: (pet: PetRecord) => Promise<void>;
   hasMicrochipConflict: (
-    userId: string,
     microchip: string,
     ignorePetId?: string,
   ) => Promise<boolean>;
@@ -54,18 +53,28 @@ export type PetStore = {
 export type CreatePetInput = {
   name: string;
   species: string;
-  breed?: string;
+  breed: string;
   gender?: string;
   dob?: string;
   weight?: number;
-  color?: string;
+  color: string;
   microchip?: string;
   isNeutered?: boolean;
-  avatarUrl?: string;
   healthStatus?: string;
 };
 
-export type UpdatePetInput = Partial<CreatePetInput>;
+export type UpdatePetInput = {
+  name?: string | null;
+  species?: string | null;
+  breed?: string | null;
+  gender?: string | null;
+  dob?: string | null;
+  weight?: number | null;
+  color?: string | null;
+  microchip?: string | null;
+  isNeutered?: boolean | null;
+  healthStatus?: string | null;
+};
 
 export type UploadPetPhotoInput = {
   fileName: string;
@@ -75,7 +84,7 @@ export type UploadPetPhotoInput = {
 
 export type PetService = ReturnType<typeof createPetService>;
 
-const allowedSpecies: PetSpecies[] = ['dog', 'cat', 'bird', 'rabbit', 'other'];
+const allowedSpecies: PetSpecies[] = ['dog', 'cat', 'other'];
 const allowedGenders: PetGender[] = ['male', 'female', 'unknown'];
 const allowedHealthStatuses: PetHealthStatus[] = [
   'healthy',
@@ -102,17 +111,10 @@ class InMemoryPetStore implements PetStore {
     this.pets.set(pet.id, pet);
   }
 
-  async hasMicrochipConflict(
-    userId: string,
-    microchip: string,
-    ignorePetId?: string,
-  ) {
+  async hasMicrochipConflict(microchip: string, ignorePetId?: string) {
     return [...this.pets.values()].some(
       (pet) =>
-        pet.userId === userId &&
-        pet.id !== ignorePetId &&
-        !pet.deletedAt &&
-        pet.microchip === microchip,
+        pet.id !== ignorePetId && !pet.deletedAt && pet.microchip === microchip,
     );
   }
 }
@@ -121,9 +123,37 @@ export const createPetService = (
   config: AppConfig,
   dependencies: {
     store?: PetStore;
+    savePhoto?: typeof saveLocalPetPhoto;
+    buildPhotoUrl?: typeof buildLocalPetPhotoUrl;
   } = {},
 ) => {
   const store = dependencies.store ?? new InMemoryPetStore();
+  const savePhoto = dependencies.savePhoto ?? saveLocalPetPhoto;
+  const buildPhotoUrl = dependencies.buildPhotoUrl ?? buildLocalPetPhotoUrl;
+
+  const validateRequiredText = (
+    value: string | null | undefined,
+    options: {
+      field: 'name' | 'breed' | 'color';
+      maxLength: number;
+      errorCode:
+        | typeof PET_ERROR_CODES.invalidName
+        | typeof PET_ERROR_CODES.invalidBreed
+        | typeof PET_ERROR_CODES.invalidColor;
+      label: string;
+    },
+  ) => {
+    const normalized = value?.trim();
+    if (!normalized || normalized.length > options.maxLength) {
+      throw new AppError(
+        options.errorCode,
+        `${options.label} phải có từ 1 đến ${options.maxLength} ký tự.`,
+        400,
+        options.field,
+      );
+    }
+    return normalized;
+  };
 
   const validateSpecies = (species?: string): PetSpecies => {
     if (!species || !allowedSpecies.includes(species as PetSpecies)) {
@@ -180,15 +210,15 @@ export const createPetService = (
     return value as PetHealthStatus;
   };
 
-  const validateWeight = (weight?: number) => {
-    if (weight === undefined) {
+  const validateWeight = (weight?: number | null) => {
+    if (weight === undefined || weight === null) {
       return undefined;
     }
 
-    if (!Number.isFinite(weight) || weight <= 0) {
+    if (!Number.isFinite(weight) || weight < 0.1 || weight > 99.9) {
       throw new AppError(
         PET_ERROR_CODES.invalidWeight,
-        'Can nang phai lon hon 0.',
+        'Cân nặng phải từ 0.1 đến 99.9 kg.',
         400,
         'weight',
       );
@@ -197,35 +227,77 @@ export const createPetService = (
     return Number(weight.toFixed(2));
   };
 
-  const validateDate = (value?: string) => {
-    if (!value) {
+  const validateDate = (value?: string | null) => {
+    if (value === undefined || value === null || value.trim() === '') {
       return undefined;
     }
 
-    const parsed = new Date(value);
-
-    if (Number.isNaN(parsed.getTime())) {
+    const normalized = value.trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
       throw new AppError(
         PET_ERROR_CODES.invalidDate,
-        'Ngay thang khong hop le.',
+        'Ngày sinh phải theo định dạng YYYY-MM-DD.',
         400,
         'dob',
       );
     }
 
-    return parsed.toISOString().slice(0, 10);
+    const [year, month, day] = normalized.split('-').map(Number);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.getUTCFullYear() !== year ||
+      parsed.getUTCMonth() !== month - 1 ||
+      parsed.getUTCDate() !== day ||
+      parsed.getTime() > Date.now()
+    ) {
+      throw new AppError(
+        PET_ERROR_CODES.invalidDate,
+        'Ngày sinh không hợp lệ hoặc lớn hơn ngày hiện tại.',
+        400,
+        'dob',
+      );
+    }
+
+    return normalized;
+  };
+
+  const validateMicrochip = (value?: string | null) => {
+    const normalized = value?.trim();
+    if (!normalized) {
+      return undefined;
+    }
+    if (normalized.length > 32 || !/^[A-Za-z0-9-]+$/.test(normalized)) {
+      throw new AppError(
+        PET_ERROR_CODES.invalidMicrochip,
+        'Số microchip chỉ gồm chữ, số, dấu gạch ngang và tối đa 32 ký tự.',
+        400,
+        'microchip',
+      );
+    }
+    return normalized;
   };
 
   const decodePhotoContent = (base64Data?: string) => {
-    if (!base64Data) {
-      return undefined;
+    if (!base64Data?.trim()) {
+      throw new AppError(
+        PET_ERROR_CODES.invalidPhotoReference,
+        'Nội dung ảnh là bắt buộc.',
+        400,
+        'base64Data',
+      );
     }
 
     const normalized = base64Data.replace(/^data:[^;]+;base64,/, '').trim();
-    if (!normalized) {
+    if (
+      !normalized ||
+      normalized.length % 4 !== 0 ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(normalized)
+    ) {
       throw new AppError(
         PET_ERROR_CODES.invalidPhotoReference,
-        'Noi dung anh khong hop le.',
+        'Nội dung ảnh không hợp lệ.',
         400,
         'base64Data',
       );
@@ -245,14 +317,6 @@ export const createPetService = (
         400,
         'fileName',
       );
-    }
-
-    if (!content) {
-      return {
-        content: undefined,
-        contentType: undefined,
-        fileName: normalizePetPhotoFileName(input.fileName),
-      };
     }
 
     if (!contentType || !allowedPetPhotoContentTypes.has(contentType)) {
@@ -302,6 +366,57 @@ export const createPetService = (
     return pet;
   };
 
+  const updatePetIdentity = (pet: PetRecord, input: UpdatePetInput) => ({
+    name:
+      input.name === undefined
+        ? pet.name
+        : validateRequiredText(input.name, {
+            field: 'name',
+            maxLength: 50,
+            errorCode: PET_ERROR_CODES.invalidName,
+            label: 'Tên thú cưng',
+          }),
+    species: input.species ? validateSpecies(input.species) : pet.species,
+    breed:
+      input.breed === undefined
+        ? pet.breed
+        : validateRequiredText(input.breed, {
+            field: 'breed',
+            maxLength: 80,
+            errorCode: PET_ERROR_CODES.invalidBreed,
+            label: 'Giống loài',
+          }),
+    gender: input.gender ? validateGender(input.gender) : pet.gender,
+  });
+
+  const updatePetCharacteristics = (
+    pet: PetRecord,
+    input: UpdatePetInput,
+    microchip: string | undefined,
+  ) => ({
+    dob: input.dob === undefined ? pet.dob : validateDate(input.dob),
+    weight:
+      input.weight === undefined ? pet.weight : validateWeight(input.weight),
+    color:
+      input.color === undefined
+        ? pet.color
+        : validateRequiredText(input.color, {
+            field: 'color',
+            maxLength: 80,
+            errorCode: PET_ERROR_CODES.invalidColor,
+            label: 'Màu lông',
+          }),
+    microchip: input.microchip === undefined ? pet.microchip : microchip,
+    isNeutered:
+      input.isNeutered === undefined || input.isNeutered === null
+        ? pet.isNeutered
+        : input.isNeutered,
+    healthStatus:
+      input.healthStatus === undefined || input.healthStatus === null
+        ? pet.healthStatus
+        : validateHealthStatus(input.healthStatus),
+  });
+
   return {
     async list(userId: string) {
       return store.listByUser(userId);
@@ -312,19 +427,28 @@ export const createPetService = (
     },
 
     async create(userId: string, input: CreatePetInput) {
-      const name = input.name?.trim();
-      if (!name) {
-        throw new AppError(
-          PET_ERROR_CODES.invalidSpecies,
-          'Ten thu cung la bat buoc.',
-          400,
-          'name',
-        );
-      }
+      const name = validateRequiredText(input.name, {
+        field: 'name',
+        maxLength: 50,
+        errorCode: PET_ERROR_CODES.invalidName,
+        label: 'Tên thú cưng',
+      });
+      const species = validateSpecies(input.species);
+      const breed = validateRequiredText(input.breed, {
+        field: 'breed',
+        maxLength: 80,
+        errorCode: PET_ERROR_CODES.invalidBreed,
+        label: 'Giống loài',
+      });
+      const color = validateRequiredText(input.color, {
+        field: 'color',
+        maxLength: 80,
+        errorCode: PET_ERROR_CODES.invalidColor,
+        label: 'Màu lông',
+      });
+      const microchip = validateMicrochip(input.microchip);
 
-      const microchip = input.microchip?.trim() || undefined;
-
-      if (microchip && (await store.hasMicrochipConflict(userId, microchip))) {
+      if (microchip && (await store.hasMicrochipConflict(microchip))) {
         throw new AppError(
           PET_ERROR_CODES.duplicateMicrochip,
           'Ma microchip da ton tai.',
@@ -338,15 +462,14 @@ export const createPetService = (
         id: randomUUID(),
         userId,
         name,
-        species: validateSpecies(input.species),
-        breed: input.breed?.trim() || undefined,
-        gender: validateGender(input.gender, { required: true }),
+        species,
+        breed,
+        gender: validateGender(input.gender),
         dob: validateDate(input.dob),
         weight: validateWeight(input.weight),
-        color: input.color?.trim() || undefined,
+        color,
         microchip,
         isNeutered: Boolean(input.isNeutered),
-        avatarUrl: input.avatarUrl?.trim() || undefined,
         healthStatus: validateHealthStatus(input.healthStatus),
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -358,12 +481,9 @@ export const createPetService = (
 
     async update(userId: string, petId: string, input: UpdatePetInput) {
       const existingPet = await requirePetForUser(userId, petId);
-      const microchip = input.microchip?.trim();
+      const microchip = validateMicrochip(input.microchip);
 
-      if (
-        microchip &&
-        (await store.hasMicrochipConflict(userId, microchip, petId))
-      ) {
+      if (microchip && (await store.hasMicrochipConflict(microchip, petId))) {
         throw new AppError(
           PET_ERROR_CODES.duplicateMicrochip,
           'Ma microchip da ton tai.',
@@ -374,40 +494,8 @@ export const createPetService = (
 
       const nextPet: PetRecord = {
         ...existingPet,
-        name: input.name?.trim() || existingPet.name,
-        species: input.species
-          ? validateSpecies(input.species)
-          : existingPet.species,
-        breed:
-          input.breed === undefined
-            ? existingPet.breed
-            : input.breed.trim() || undefined,
-        gender: input.gender
-          ? validateGender(input.gender)
-          : existingPet.gender,
-        dob: input.dob === undefined ? existingPet.dob : validateDate(input.dob),
-        weight:
-          input.weight === undefined
-            ? existingPet.weight
-            : validateWeight(input.weight),
-        color:
-          input.color === undefined
-            ? existingPet.color
-            : input.color.trim() || undefined,
-        microchip:
-          input.microchip === undefined ? existingPet.microchip : microchip,
-        isNeutered:
-          input.isNeutered === undefined
-            ? existingPet.isNeutered
-            : input.isNeutered,
-        avatarUrl:
-          input.avatarUrl === undefined
-            ? existingPet.avatarUrl
-            : input.avatarUrl.trim() || undefined,
-        healthStatus:
-          input.healthStatus === undefined
-            ? existingPet.healthStatus
-            : validateHealthStatus(input.healthStatus),
+        ...updatePetIdentity(existingPet, input),
+        ...updatePetCharacteristics(existingPet, input, microchip),
         updatedAt: new Date().toISOString(),
       };
 
@@ -425,17 +513,26 @@ export const createPetService = (
       });
     },
 
-    async attachPhoto(userId: string, petId: string, input: UploadPetPhotoInput) {
+    async attachPhoto(
+      userId: string,
+      petId: string,
+      input: UploadPetPhotoInput,
+    ) {
       const pet = await requirePetForUser(userId, petId);
       const photo = validatePhotoMetadata(input);
 
-      if (photo.content) {
-        await saveLocalPetPhoto(petId, photo.fileName, photo.content);
+      try {
+        await savePhoto(petId, photo.fileName, photo.content);
+      } catch {
+        throw new AppError(
+          PET_ERROR_CODES.photoStorageFailure,
+          'Không thể lưu ảnh thú cưng. Vui lòng thử lại.',
+          503,
+          'base64Data',
+        );
       }
 
-      const avatarUrl = photo.content
-        ? buildLocalPetPhotoUrl(config, petId, photo.fileName)
-        : buildLocalPetPhotoUrl(config, petId, photo.fileName);
+      const avatarUrl = buildPhotoUrl(config, petId, photo.fileName);
       const updatedPet = {
         ...pet,
         avatarUrl,
