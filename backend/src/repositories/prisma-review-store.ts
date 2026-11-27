@@ -43,7 +43,7 @@ type ReviewRow = {
 };
 
 type SummaryRow = {
-  averageRating: number | string | null;
+  averageRating: number | string | Prisma.Decimal | null;
   reviewCount: number | bigint;
 };
 
@@ -62,13 +62,20 @@ const readStringList = (value: unknown) => {
   return [];
 };
 
-const readNumber = (value: number | string | null | undefined) => {
+const readNumber = (
+  value: number | string | bigint | Prisma.Decimal | null | undefined,
+) => {
   if (typeof value === 'number') {
     return value;
   }
 
   if (typeof value === 'bigint') {
     return Number(value);
+  }
+
+  if (Prisma.Decimal.isDecimal(value)) {
+    const parsed = value.toNumber();
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 
   if (typeof value === 'string' && value.trim().length > 0) {
@@ -320,9 +327,10 @@ export class PrismaReviewStore implements ReviewStore {
     const offset = parseCursorOffset(input.cursor);
     const sortClause = resolveSortClause(input.sort);
 
-    const [items, totalRows, summaryRows, distributionRows] = await Promise.all([
-      this.prisma.$queryRawUnsafe<ReviewRow[]>(
-        `
+    const [items, totalRows, summaryRows, distributionRows] = await Promise.all(
+      [
+        this.prisma.$queryRawUnsafe<ReviewRow[]>(
+          `
           SELECT
             r.id::text AS id,
             COALESCE(v.external_id, v.id::text) AS "vetId",
@@ -346,20 +354,20 @@ export class PrismaReviewStore implements ReviewStore {
           ORDER BY ${sortClause}
           LIMIT $2 OFFSET $3
         `,
-        vet.id,
-        input.limit,
-        offset,
-      ),
-      this.prisma.$queryRawUnsafe<{ count: number | bigint }[]>(
-        `
+          vet.id,
+          input.limit,
+          offset,
+        ),
+        this.prisma.$queryRawUnsafe<{ count: number | bigint }[]>(
+          `
           SELECT COUNT(*) AS count
           FROM public.reviews
           WHERE vet_id = $1::uuid AND status = 'visible'
         `,
-        vet.id,
-      ),
-      this.prisma.$queryRawUnsafe<SummaryRow[]>(
-        `
+          vet.id,
+        ),
+        this.prisma.$queryRawUnsafe<SummaryRow[]>(
+          `
           SELECT
             CASE
               WHEN COUNT(*) = 0 THEN NULL
@@ -369,18 +377,19 @@ export class PrismaReviewStore implements ReviewStore {
           FROM public.reviews
           WHERE vet_id = $1::uuid AND status = 'visible'
         `,
-        vet.id,
-      ),
-      this.prisma.$queryRawUnsafe<DistributionRow[]>(
-        `
+          vet.id,
+        ),
+        this.prisma.$queryRawUnsafe<DistributionRow[]>(
+          `
           SELECT rating, COUNT(*) AS count
           FROM public.reviews
           WHERE vet_id = $1::uuid AND status = 'visible'
           GROUP BY rating
         `,
-        vet.id,
-      ),
-    ]);
+          vet.id,
+        ),
+      ],
+    );
 
     const distribution = emptyDistribution();
     distributionRows.forEach((row) => {
