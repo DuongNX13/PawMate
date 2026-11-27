@@ -1,11 +1,11 @@
 # PawMate Backend
 
-Day 1 backend scaffold for PawMate Phase 1.
+Fastify/TypeScript API for PawMate Phase 1 and Phase 2.
 
 ## What is in place
 
-- Fastify 4 + TypeScript 5 bootstrap
-- `GET /health` route
+- Fastify 5 + TypeScript 5 bootstrap
+- `GET /health` liveness and `GET /ready` dependency readiness routes
 - Jest smoke tests
 - ESLint + Prettier
 - Dockerfile scaffold
@@ -31,13 +31,24 @@ Minimum local bootstrap:
 - `HOST`
 - `PORT`
 
-Next-step integration placeholders:
+Production is fail-closed and also requires:
 
 - `DATABASE_URL`
 - `REDIS_URL`
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PUBLISHABLE_KEY` (legacy `SUPABASE_ANON_KEY` is accepted)
+- `SUPABASE_SECRET_KEY` (legacy `SUPABASE_SERVICE_ROLE_KEY` is accepted)
+- independent access/refresh secrets of at least 32 UTF-8 bytes
+- explicit JWT issuer, audience and distinct key IDs
+
+PawMate application tokens are issued with `HS256`, issuer `pawmate-api`,
+audience `pawmate-mobile`, a 15-minute access lifetime and a refresh lifetime
+of at most 30 days. Rotation supports one optional previous verify-only key per
+token class. See `docs/qa/security/day131/DAY131_DEC03_CONFIG_TOKEN_CONTRACT.md`
+for the rollout and rollback contract.
+
+`TRUSTED_PROXY_CIDRS` is empty by default. Set it only to the exact proxy IPs or
+bounded CIDRs used by the deployment; wildcard trust is rejected.
 
 ## Runtime notes
 
