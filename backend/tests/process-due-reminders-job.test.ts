@@ -69,7 +69,9 @@ describe('process due reminders job', () => {
 
     await expect(
       processDueRemindersOnce(service, { limit: 0 }),
-    ).rejects.toThrow('Reminder processing limit must be an integer from 1 to 500.');
+    ).rejects.toThrow(
+      'Reminder processing limit must be an integer from 1 to 500.',
+    );
     expect(service.processDueReminders).not.toHaveBeenCalled();
   });
 
