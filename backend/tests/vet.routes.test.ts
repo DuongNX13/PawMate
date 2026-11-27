@@ -219,6 +219,9 @@ describe('Vet routes', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().data).toHaveLength(1);
     expect(response.json().data[0].id).toBeTruthy();
+    expect(response.json().data[0].vetId).toBe(response.json().data[0].id);
+    expect(response.json().pageInfo.limit).toBe(1);
+    expect(typeof response.json().pageInfo.hasMore).toBe('boolean');
 
     await app.close();
   });
@@ -234,7 +237,13 @@ describe('Vet routes', () => {
     expect(searchResponse.statusCode).toBe(200);
     expect(searchResponse.json().data).toHaveLength(1);
     expect(searchResponse.json().data[0].id).toBe('hn-001');
+    expect(searchResponse.json().data[0].vetId).toBe('hn-001');
     expect(searchResponse.json().pagination.limit).toBe(1);
+    expect(searchResponse.json().pageInfo).toMatchObject({
+      nextCursor: null,
+      hasMore: false,
+      limit: 1,
+    });
     expect(searchResponse.json().data[0].isOpen).toBe(true);
 
     const pagedResponse = await app.inject({
@@ -284,6 +293,10 @@ describe('Vet routes', () => {
     expect(emptyResponse.statusCode).toBe(200);
     expect(emptyResponse.json().data).toHaveLength(0);
     expect(emptyResponse.json().pagination.total).toBe(0);
+    expect(emptyResponse.json().pageInfo).toMatchObject({
+      nextCursor: null,
+      hasMore: false,
+    });
 
     await app.close();
   });
@@ -300,7 +313,9 @@ describe('Vet routes', () => {
     expect(nearbyResponse.json().data).toHaveLength(2);
     expect(nearbyResponse.json().data[0].id).toBe('hcm-001');
     expect(nearbyResponse.json().data[1].id).toBe('hcm-002');
-    expect(nearbyResponse.json().data[0].distanceMeters).toBeGreaterThanOrEqual(0);
+    expect(nearbyResponse.json().data[0].distanceMeters).toBeGreaterThanOrEqual(
+      0,
+    );
     expect(nearbyResponse.json().data[0].latitude).toBeCloseTo(10.78798, 4);
 
     const only24hNearbyResponse = await app.inject({
@@ -333,6 +348,7 @@ describe('Vet routes', () => {
     expect(detailResponse.statusCode).toBe(200);
     expect(detailResponse.json().data.latitude).toBeCloseTo(10.78798, 4);
     expect(detailResponse.json().data.readyForMap).toBe(true);
+    expect(detailResponse.json().data.vetId).toBe('hcm-001');
 
     await app.close();
   });
@@ -399,7 +415,9 @@ describe('Vet routes', () => {
     expect(detailResponse.statusCode).toBe(200);
     expect(detailResponse.json().data.name).toBe(dbOnlyClinic.name);
     expect(detailResponse.json().data.latitude).toBeCloseTo(10.7769, 4);
-    expect(detailResponse.json().data.source.list).toBe('runtime-vet-directory');
+    expect(detailResponse.json().data.source.list).toBe(
+      'runtime-vet-directory',
+    );
 
     await app.close();
   });
