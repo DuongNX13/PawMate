@@ -1,19 +1,28 @@
 import { buildApp } from './app';
-import { loadEnv } from './config/env';
+import { ConfigError, loadEnv } from './config/env';
 
 const start = async () => {
-  const config = loadEnv();
-  const app = buildApp({
-    logger: {
-      level: config.logLevel,
-    },
-  });
+  let app: ReturnType<typeof buildApp> | undefined;
 
   try {
+    const config = loadEnv();
+    app = buildApp(
+      {
+        logger: {
+          level: config.logLevel,
+        },
+      },
+      { config },
+    );
     await app.listen({ port: config.port, host: config.host });
   } catch (error) {
-    app.log.error(error);
-    process.exit(1);
+    const code =
+      error instanceof ConfigError ? error.code : 'STARTUP_FAILED';
+    process.stderr.write(
+      `${JSON.stringify({ level: 'fatal', code, message: 'PawMate backend startup failed.' })}\n`,
+    );
+    if (app) await app.close().catch(() => undefined);
+    process.exitCode = 1;
   }
 };
 
