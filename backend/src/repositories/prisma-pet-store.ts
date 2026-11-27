@@ -1,9 +1,15 @@
-import {
-  $Enums,
-  PrismaClient,
-} from '@prisma/client';
+import { $Enums, PrismaClient } from '@prisma/client';
 
 import { type PetRecord, type PetStore } from '../services/pets/pet-service';
+
+const normalizePetSpecies = (
+  species: $Enums.PetSpecies,
+): PetRecord['species'] => {
+  if (species === 'dog' || species === 'cat') {
+    return species;
+  }
+  return 'other';
+};
 
 const mapPet = (pet: {
   id: string;
@@ -26,7 +32,7 @@ const mapPet = (pet: {
   id: pet.id,
   userId: pet.userId,
   name: pet.name,
-  species: pet.species,
+  species: normalizePetSpecies(pet.species),
   breed: pet.breed ?? undefined,
   gender: pet.gender,
   dob: pet.dob ? pet.dob.toISOString().slice(0, 10) : undefined,
@@ -104,10 +110,9 @@ export class PrismaPetStore implements PetStore {
     });
   }
 
-  async hasMicrochipConflict(userId: string, microchip: string, ignorePetId?: string) {
+  async hasMicrochipConflict(microchip: string, ignorePetId?: string) {
     const conflict = await this.prisma.pet.findFirst({
       where: {
-        userId,
         microchipNumber: microchip,
         deletedAt: null,
         ...(ignorePetId ? { id: { not: ignorePetId } } : {}),
