@@ -50,6 +50,130 @@ describe('Pet routes', () => {
     });
   });
 
+  it('accepts the P1-06 form contract without hidden gender or health fields', async () => {
+    const config = buildConfig();
+    const authService = createAuthService({ config });
+    const app = buildApp(
+      { logger: false },
+      {
+        config,
+        authService,
+        petService: createPetService(config),
+      },
+    );
+    await app.ready();
+
+    const registerResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: 'pet-contract@pawmate.vn',
+        password: 'Pawmate123',
+      },
+    });
+    await authService.markEmailVerified(registerResponse.json().userId);
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: 'pet-contract@pawmate.vn',
+        password: 'Pawmate123',
+      },
+    });
+    const authorization = {
+      authorization: `Bearer ${loginResponse.json().accessToken}`,
+    };
+
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/pets',
+      headers: authorization,
+      payload: {
+        name: 'Mochi',
+        species: 'cat',
+        breed: 'Mèo tam thể',
+        color: 'Tam thể',
+      },
+    });
+
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json().data).toMatchObject({
+      name: 'Mochi',
+      species: 'cat',
+      breed: 'Mèo tam thể',
+      color: 'Tam thể',
+      gender: 'unknown',
+      healthStatus: 'healthy',
+      isNeutered: false,
+    });
+    await app.close();
+  });
+
+  it('rejects a photo upload that has metadata but no image bytes', async () => {
+    const config = buildConfig();
+    const authService = createAuthService({ config });
+    const app = buildApp(
+      { logger: false },
+      {
+        config,
+        authService,
+        petService: createPetService(config),
+      },
+    );
+    await app.ready();
+
+    const registerResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: 'pet-photo-contract@pawmate.vn',
+        password: 'Pawmate123',
+      },
+    });
+    await authService.markEmailVerified(registerResponse.json().userId);
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: 'pet-photo-contract@pawmate.vn',
+        password: 'Pawmate123',
+      },
+    });
+    const authorization = {
+      authorization: `Bearer ${loginResponse.json().accessToken}`,
+    };
+    const createResponse = await app.inject({
+      method: 'POST',
+      url: '/pets',
+      headers: authorization,
+      payload: {
+        name: 'Bắp',
+        species: 'dog',
+        breed: 'Corgi',
+        color: 'Vàng trắng',
+        gender: 'unknown',
+      },
+    });
+    const petId = createResponse.json().data.id;
+
+    const uploadResponse = await app.inject({
+      method: 'POST',
+      url: `/pets/${petId}/photo`,
+      headers: authorization,
+      payload: {
+        fileName: 'bap.png',
+        contentType: 'image/png',
+      },
+    });
+
+    expect(uploadResponse.statusCode).toBe(400);
+    expect(uploadResponse.json().error).toMatchObject({
+      code: 'PET_009',
+      field: 'base64Data',
+    });
+    await app.close();
+  });
+
   it('creates, lists, updates, uploads a photo reference, and soft deletes a pet', async () => {
     const config = buildConfig();
     const authService = createAuthService({ config });
@@ -92,6 +216,8 @@ describe('Pet routes', () => {
       payload: {
         name: 'Milo',
         species: 'dog',
+        breed: 'Golden Retriever',
+        color: 'Vàng kem',
         gender: 'male',
         weight: 12.5,
         healthStatus: 'healthy',
@@ -137,7 +263,7 @@ describe('Pet routes', () => {
     });
 
     expect(uploadResponse.statusCode).toBe(200);
-    const uploadPayload = uploadResponse.json();
+    const uploadPayload = uploadResponse.json().data;
     expect(uploadPayload.avatarUrl).toContain('/assets/pet-photos/');
 
     const assetPath = new URL(uploadPayload.avatarUrl).pathname;
@@ -248,6 +374,8 @@ describe('Pet routes', () => {
       payload: {
         name: 'Lucky',
         species: 'cat',
+        breed: 'Mèo ta',
+        color: 'Tam thể',
         gender: 'female',
       },
     });
@@ -333,6 +461,8 @@ describe('Pet routes', () => {
       payload: {
         name: 'Bap',
         species: 'dog',
+        breed: 'Corgi',
+        color: 'Vàng trắng',
         gender: 'male',
       },
     });
@@ -382,6 +512,34 @@ describe('Pet routes', () => {
     expect(dateTimeValue.statusCode).toBe(400);
     expect(dateTimeValue.json().error.field).toBe('date');
 
+    const invalidTime = await app.inject({
+      method: 'POST',
+      url: `/pets/${petId}/health-records`,
+      headers: ownerAuth,
+      payload: {
+        type: 'vaccination',
+        date: '2026-04-20',
+        time: '25:70',
+      },
+    });
+    expect(invalidTime.statusCode).toBe(400);
+    expect(invalidTime.json().error.code).toBe('HEALTH_002');
+    expect(invalidTime.json().error.field).toBe('time');
+
+    const invalidVetId = await app.inject({
+      method: 'POST',
+      url: `/pets/${petId}/health-records`,
+      headers: ownerAuth,
+      payload: {
+        type: 'vaccination',
+        date: '2026-04-20',
+        vetId: 'PetCare Elite',
+      },
+    });
+    expect(invalidVetId.statusCode).toBe(400);
+    expect(invalidVetId.json().error.code).toBe('HEALTH_002');
+    expect(invalidVetId.json().error.field).toBe('vetId');
+
     const deworming = await app.inject({
       method: 'POST',
       url: `/pets/${petId}/health-records`,
@@ -389,6 +547,7 @@ describe('Pet routes', () => {
       payload: {
         type: 'deworming',
         date: '2026-04-24',
+        time: '09:30',
         title: 'Tay giun dinh ky',
         note: 'Lap moi 3 thang.',
         attachments: ['https://cdn.pawmate.test/health/deworming.png'],
@@ -400,6 +559,7 @@ describe('Pet routes', () => {
       petId,
       type: 'deworming',
       date: '2026-04-24',
+      time: '09:30',
       title: 'Tay giun dinh ky',
     });
 
@@ -459,6 +619,7 @@ describe('Pet routes', () => {
       payload: {
         type: 'grooming',
         date: '2026-04-25',
+        time: '10:45',
         note: 'Da cap nhat thanh grooming.',
       },
     });
@@ -467,6 +628,7 @@ describe('Pet routes', () => {
       id: dewormingRecord.id,
       type: 'grooming',
       date: '2026-04-25',
+      time: '10:45',
       note: 'Da cap nhat thanh grooming.',
     });
 
