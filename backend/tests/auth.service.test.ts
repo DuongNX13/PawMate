@@ -3,7 +3,10 @@ import jwt from 'jsonwebtoken';
 import { type AppConfig } from '../src/config/env';
 import { AppError } from '../src/errors/app-error';
 import { AUTH_ERROR_CODES } from '../src/errors/error-codes';
-import { createAuthService } from '../src/services/auth/auth-service';
+import {
+  createAuthService,
+  type AuthSessionResult,
+} from '../src/services/auth/auth-service';
 
 const buildConfig = (): AppConfig => ({
   appName: 'PawMate Backend',
@@ -45,7 +48,7 @@ const extractRefreshPayload = (refreshToken: string) =>
   jwt.decode(refreshToken) as jwt.JwtPayload & { sid: string; sub: string };
 
 describe('Auth service', () => {
-  it('registers a new user and rejects duplicates or malformed email', async () => {
+  it('registers a new user, masks duplicates, and rejects malformed email', async () => {
     const service = createAuthService({
       config: buildConfig(),
       emailVerificationGateway: {
@@ -65,7 +68,7 @@ describe('Auth service', () => {
         password: 'Pawmate123',
       }),
     ).resolves.toMatchObject({
-      message: 'Check your email',
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
     });
 
     await expect(
@@ -82,12 +85,50 @@ describe('Auth service', () => {
         email: 'shelly@pawmate.vn',
         password: 'Pawmate123',
       }),
-    ).rejects.toMatchObject({
-      code: AUTH_ERROR_CODES.duplicateEmail,
+    ).resolves.toMatchObject({
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
+      verificationStatus: 'pending',
     });
   });
 
-  it('rolls back the local user when the verification email gateway fails', async () => {
+  it('validates v0.27 phone format and registration field limits', async () => {
+    const service = createAuthService({ config: buildConfig() });
+
+    await expect(
+      service.register({
+        email: 'phone@pawmate.vn',
+        password: 'Pawmate123',
+        phone: '901234567',
+      }),
+    ).rejects.toMatchObject({
+      code: AUTH_ERROR_CODES.invalidPhone,
+      field: 'phone',
+    });
+
+    await expect(
+      service.register({
+        email: 'password@pawmate.vn',
+        password: `A1${'x'.repeat(63)}`,
+        phone: '0901234567',
+      }),
+    ).rejects.toMatchObject({
+      code: AUTH_ERROR_CODES.weakPassword,
+      field: 'password',
+    });
+
+    await expect(
+      service.register({
+        email: `${'a'.repeat(245)}@example.com`,
+        password: 'Pawmate123',
+        phone: '0901234567',
+      }),
+    ).rejects.toMatchObject({
+      code: AUTH_ERROR_CODES.invalidEmail,
+      field: 'email',
+    });
+  });
+
+  it('keeps a pending user and a generic response when the provider fails', async () => {
     const emailVerificationGateway = {
       sendEmailVerification: jest
         .fn()
@@ -117,8 +158,9 @@ describe('Auth service', () => {
         email: 'rollback@pawmate.vn',
         password: 'Pawmate123',
       }),
-    ).rejects.toMatchObject({
-      code: AUTH_ERROR_CODES.verificationUnavailable,
+    ).resolves.toMatchObject({
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
+      verificationStatus: 'pending',
     });
 
     await expect(
@@ -127,8 +169,11 @@ describe('Auth service', () => {
         password: 'Pawmate123',
       }),
     ).resolves.toMatchObject({
-      message: 'Check your email',
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
     });
+    expect(
+      emailVerificationGateway.sendEmailVerification,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it('marks the user verified immediately when email fallback auto-verifies', async () => {
@@ -162,8 +207,8 @@ describe('Auth service', () => {
     ).resolves.toHaveProperty('accessToken');
   });
 
-  it('locks the account after repeated wrong passwords and recovers after the lock window', async () => {
-    let currentTime = new Date('2026-04-08T03:00:00.000Z');
+  it('tracks repeated wrong passwords without letting an attacker lock out a correct login', async () => {
+    const currentTime = new Date('2026-04-08T03:00:00.000Z');
     const service = createAuthService({
       config: buildConfig(),
       now: () => currentTime,
@@ -214,19 +259,8 @@ describe('Auth service', () => {
         password: 'wrong-password',
       }),
     ).rejects.toMatchObject({
-      code: AUTH_ERROR_CODES.accountLocked,
+      code: AUTH_ERROR_CODES.invalidCredentials,
     });
-
-    await expect(
-      service.login({
-        email: 'lock@pawmate.vn',
-        password: 'Pawmate123',
-      }),
-    ).rejects.toMatchObject({
-      code: AUTH_ERROR_CODES.accountLocked,
-    });
-
-    currentTime = new Date('2026-04-08T03:16:00.000Z');
 
     await expect(
       service.login({
@@ -236,7 +270,7 @@ describe('Auth service', () => {
     ).resolves.toHaveProperty('accessToken');
   });
 
-  it('rotates refresh tokens, rejects expired tokens, and detects token reuse', async () => {
+  it('rotates refresh tokens, rejects an immediate duplicate, and rejects expired tokens', async () => {
     const config = buildConfig();
     const service = createAuthService({ config });
     const registration = await service.register({
@@ -261,7 +295,7 @@ describe('Auth service', () => {
         refreshToken: loginResult.refreshToken,
       }),
     ).rejects.toMatchObject({
-      code: AUTH_ERROR_CODES.refreshTokenReuse,
+      code: AUTH_ERROR_CODES.invalidRefreshToken,
     });
 
     const payload = extractRefreshPayload(rotated.refreshToken);
@@ -272,8 +306,12 @@ describe('Auth service', () => {
       },
       config.auth.refreshTokenSecret,
       {
+        algorithm: 'HS256',
+        keyid: 'refresh-v1',
+        issuer: 'pawmate-api',
+        audience: 'pawmate-mobile',
         subject: payload.sub,
-        expiresIn: -1,
+        expiresIn: -61,
       },
     );
 
@@ -284,6 +322,136 @@ describe('Auth service', () => {
     ).rejects.toMatchObject({
       code: AUTH_ERROR_CODES.expiredRefreshToken,
     });
+  });
+
+  it('allows only one concurrent refresh without revoking the winning token family', async () => {
+    const service = createAuthService({ config: buildConfig() });
+    const registration = await service.register({
+      email: 'concurrent-refresh@pawmate.vn',
+      password: 'Pawmate123',
+    });
+    await service.markEmailVerified(registration.userId);
+    const loginResult = await service.login({
+      email: 'concurrent-refresh@pawmate.vn',
+      password: 'Pawmate123',
+      rememberMe: true,
+    });
+
+    const results = await Promise.allSettled([
+      service.refresh({ refreshToken: loginResult.refreshToken }),
+      service.refresh({ refreshToken: loginResult.refreshToken }),
+    ]);
+    const fulfilled = results.filter(
+      (result): result is PromiseFulfilledResult<AuthSessionResult> =>
+        result.status === 'fulfilled',
+    );
+    const rejected = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0].reason).toMatchObject({
+      code: AUTH_ERROR_CODES.invalidRefreshToken,
+    });
+    await expect(
+      service.verifyAccessToken(fulfilled[0].value.accessToken),
+    ).resolves.toMatchObject({ userId: registration.userId });
+  });
+
+  it('cannot restore an active session after refresh races logout-all', async () => {
+    const service = createAuthService({ config: buildConfig() });
+    const registration = await service.register({
+      email: 'refresh-logout-race@pawmate.vn',
+      password: 'Pawmate123',
+    });
+    await service.markEmailVerified(registration.userId);
+    const loginResult = await service.login({
+      email: 'refresh-logout-race@pawmate.vn',
+      password: 'Pawmate123',
+      rememberMe: true,
+    });
+
+    const [refreshResult, logoutResult] = await Promise.allSettled([
+      service.refresh({ refreshToken: loginResult.refreshToken }),
+      service.logout({ refreshToken: loginResult.refreshToken }),
+    ]);
+
+    expect(logoutResult.status).toBe('fulfilled');
+    await expect(
+      service.verifyAccessToken(loginResult.accessToken),
+    ).rejects.toMatchObject({ code: AUTH_ERROR_CODES.unauthorized });
+    if (refreshResult.status === 'fulfilled') {
+      await expect(
+        service.verifyAccessToken(refreshResult.value.accessToken),
+      ).rejects.toMatchObject({ code: AUTH_ERROR_CODES.unauthorized });
+      await expect(
+        service.refresh({ refreshToken: refreshResult.value.refreshToken }),
+      ).rejects.toMatchObject({ code: AUTH_ERROR_CODES.refreshTokenReuse });
+    }
+  });
+
+  it('refreshes an existing session without evicting another active session', async () => {
+    const service = createAuthService({ config: buildConfig() });
+    const registration = await service.register({
+      email: 'refresh-session-limit@pawmate.vn',
+      password: 'Pawmate123',
+    });
+    await service.markEmailVerified(registration.userId);
+    const sessions = await Promise.all(
+      ['device-a', 'device-b', 'device-c'].map((deviceId) =>
+        service.login({
+          email: 'refresh-session-limit@pawmate.vn',
+          password: 'Pawmate123',
+          rememberMe: true,
+          deviceId,
+        }),
+      ),
+    );
+
+    const rotated = await service.refresh({
+      refreshToken: sessions[2].refreshToken,
+    });
+
+    await expect(
+      service.verifyAccessToken(sessions[0].accessToken),
+    ).resolves.toHaveProperty('userId', registration.userId);
+    await expect(
+      service.verifyAccessToken(sessions[1].accessToken),
+    ).resolves.toHaveProperty('userId', registration.userId);
+    await expect(
+      service.verifyAccessToken(rotated.accessToken),
+    ).resolves.toHaveProperty('userId', registration.userId);
+  });
+
+  it('enforces the active-session limit across concurrent logins', async () => {
+    const service = createAuthService({ config: buildConfig() });
+    const registration = await service.register({
+      email: 'concurrent-session-limit@pawmate.vn',
+      password: 'Pawmate123',
+    });
+    await service.markEmailVerified(registration.userId);
+
+    const sessions = await Promise.all(
+      ['device-a', 'device-b', 'device-c', 'device-d'].map((deviceId) =>
+        service.login({
+          email: 'concurrent-session-limit@pawmate.vn',
+          password: 'Pawmate123',
+          rememberMe: true,
+          deviceId,
+        }),
+      ),
+    );
+    const verificationResults = await Promise.allSettled(
+      sessions.map((session) => service.verifyAccessToken(session.accessToken)),
+    );
+
+    expect(
+      verificationResults.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(3);
+    expect(
+      verificationResults.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
   });
 
   it('revokes all active sessions when logout is called', async () => {
@@ -317,6 +485,16 @@ describe('Auth service', () => {
       }),
     ).rejects.toMatchObject({
       code: AUTH_ERROR_CODES.refreshTokenReuse,
+    });
+    await expect(
+      service.verifyAccessToken(firstSession.accessToken),
+    ).rejects.toMatchObject({
+      code: AUTH_ERROR_CODES.unauthorized,
+    });
+    await expect(
+      service.verifyAccessToken(secondSession.accessToken),
+    ).rejects.toMatchObject({
+      code: AUTH_ERROR_CODES.unauthorized,
     });
   });
 
@@ -405,6 +583,15 @@ describe('Auth service', () => {
       userId: registration.userId,
       email: 'verify@pawmate.vn',
       message: 'Email verified',
+      user: {
+        id: registration.userId,
+        email: 'verify@pawmate.vn',
+        emailVerified: true,
+      },
+      accessToken: expect.any(String),
+      refreshToken: expect.any(String),
+      accessTokenExpiresAt: expect.any(String),
+      refreshTokenExpiresAt: expect.any(String),
     });
 
     expect(emailVerificationGateway.verifyEmailToken).toHaveBeenCalledWith({
@@ -420,6 +607,7 @@ describe('Auth service', () => {
   });
 
   it('resends verification for unverified users and short-circuits verified users', async () => {
+    const now = new Date('2026-07-14T10:00:00.000Z');
     const emailVerificationGateway = {
       sendEmailVerification: jest.fn().mockResolvedValue({
         status: 'verification-email-sent',
@@ -432,6 +620,7 @@ describe('Auth service', () => {
     const service = createAuthService({
       config: buildConfig(),
       emailVerificationGateway,
+      now: () => now,
     });
 
     const registration = await service.register({
@@ -444,7 +633,10 @@ describe('Auth service', () => {
         email: 'resend@pawmate.vn',
       }),
     ).resolves.toEqual({
-      message: 'Verification email resent',
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
+      verificationStatus: 'pending',
+      verificationExpiresAt: '2026-07-14T10:05:00.000Z',
+      resendAvailableAt: '2026-07-14T10:01:00.000Z',
     });
 
     expect(
@@ -460,12 +652,15 @@ describe('Auth service', () => {
         email: 'resend@pawmate.vn',
       }),
     ).resolves.toEqual({
-      message: 'Email already verified',
+      message: 'Nếu email hợp lệ, hướng dẫn xác minh sẽ được gửi.',
+      verificationStatus: 'pending',
+      verificationExpiresAt: '2026-07-14T10:05:00.000Z',
+      resendAvailableAt: '2026-07-14T10:01:00.000Z',
     });
 
-    expect(emailVerificationGateway.resendEmailVerification).toHaveBeenCalledTimes(
-      1,
-    );
+    expect(
+      emailVerificationGateway.resendEmailVerification,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it('raises a clear conflict when the same email is already linked to another provider', async () => {
@@ -510,11 +705,15 @@ describe('Auth service', () => {
       password: 'Pawmate123',
     });
 
-    expect(service.verifyAccessToken(loginResult.accessToken)).toMatchObject({
+    await expect(
+      service.verifyAccessToken(loginResult.accessToken),
+    ).resolves.toMatchObject({
       userId: registration.userId,
     });
 
-    expect(() => service.verifyAccessToken('broken-token')).toThrow(AppError);
+    await expect(service.verifyAccessToken('broken-token')).rejects.toThrow(
+      AppError,
+    );
   });
 
   it('passes provider context through to the OAuth verifier', async () => {
