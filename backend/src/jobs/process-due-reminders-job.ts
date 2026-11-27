@@ -5,7 +5,10 @@ import { PrismaPetStore } from '../repositories/prisma-pet-store';
 import { PrismaReminderStore } from '../repositories/prisma-reminder-store';
 import { createNotificationService } from '../services/notifications/notification-service';
 import { createPetService } from '../services/pets/pet-service';
-import { type ReminderService, createReminderService } from '../services/reminders/reminder-service';
+import {
+  type ReminderService,
+  createReminderService,
+} from '../services/reminders/reminder-service';
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
@@ -25,13 +28,17 @@ export type DueReminderJobResources = {
 const validateLimit = (limit?: number) => {
   const nextLimit = limit ?? DEFAULT_LIMIT;
   if (!Number.isInteger(nextLimit) || nextLimit < 1 || nextLimit > MAX_LIMIT) {
-    throw new Error(`Reminder processing limit must be an integer from 1 to ${MAX_LIMIT}.`);
+    throw new Error(
+      `Reminder processing limit must be an integer from 1 to ${MAX_LIMIT}.`,
+    );
   }
 
   return nextLimit;
 };
 
-export const createDueReminderJobResources = (config: AppConfig): DueReminderJobResources => {
+export const createDueReminderJobResources = (
+  config: AppConfig,
+): DueReminderJobResources => {
   if (!config.databaseUrl) {
     throw new Error(
       'DATABASE_URL is required for production reminder processing.',
@@ -39,7 +46,9 @@ export const createDueReminderJobResources = (config: AppConfig): DueReminderJob
   }
 
   const prisma = getPrismaClient(config.databaseUrl);
-  const petService = createPetService(config, { store: new PrismaPetStore(prisma) });
+  const petService = createPetService(config, {
+    store: new PrismaPetStore(prisma),
+  });
   const notificationService = createNotificationService({
     store: new PrismaNotificationStore(prisma),
   });
