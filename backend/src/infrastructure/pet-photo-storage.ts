@@ -36,7 +36,9 @@ export const normalizePetPhotoFileName = (
 ) => {
   const trimmed = fileName.trim();
   const extension = path.extname(trimmed).toLowerCase();
-  const baseName = path.basename(trimmed, extension).replace(safeFileNamePattern, '-');
+  const baseName = path
+    .basename(trimmed, extension)
+    .replace(safeFileNamePattern, '-');
   const safeBaseName = baseName || 'pet-photo';
   const resolvedExtension =
     extension || (contentType ? extensionByContentType[contentType] : '');
