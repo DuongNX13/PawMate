@@ -113,6 +113,8 @@ describe('Reminder and notification routes', () => {
       payload: {
         name: 'Bap',
         species: 'dog',
+        breed: 'Corgi',
+        color: 'Vàng trắng',
         gender: 'male',
       },
     });
@@ -216,6 +218,35 @@ describe('Reminder and notification routes', () => {
     );
     expect(earlyProcess.processedCount).toBe(0);
 
+    const createIntruderPet = await app.inject({
+      method: 'POST',
+      url: '/pets',
+      headers: intruder.auth,
+      payload: {
+        name: 'Kem',
+        species: 'cat',
+        breed: 'British Shorthair',
+        color: 'Xam',
+        gender: 'female',
+      },
+    });
+    expect(createIntruderPet.statusCode).toBe(201);
+    const intruderPetId = createIntruderPet.json().data.id;
+
+    const createIntruderReminder = await app.inject({
+      method: 'POST',
+      url: `/pets/${intruderPetId}/reminders`,
+      headers: intruder.auth,
+      payload: {
+        title: 'Lich rieng cua tai khoan khac',
+        reminderAt: '2026-04-20T08:30:00.000Z',
+        repeatRule: 'none',
+        timezone: 'Asia/Bangkok',
+      },
+    });
+    expect(createIntruderReminder.statusCode).toBe(201);
+    const intruderReminder = createIntruderReminder.json().data;
+
     const dueProcess = await app.inject({
       method: 'POST',
       url: '/notifications/process-due-reminders',
@@ -228,6 +259,21 @@ describe('Reminder and notification routes', () => {
       status: 'scheduled',
     });
     expect(dueProcess.json().data.items[0].nextTriggerAt).toBeTruthy();
+
+    const intruderReminderAfterOwnerProcessing = await reminderService.list(
+      intruder.userId,
+      intruderPetId,
+      { includeDone: true },
+    );
+    const untouchedIntruderReminder =
+      intruderReminderAfterOwnerProcessing.items.find(
+        (item) => item.id === intruderReminder.id,
+      );
+    expect(untouchedIntruderReminder).toMatchObject({
+      id: intruderReminder.id,
+      status: 'scheduled',
+    });
+    expect(untouchedIntruderReminder?.lastTriggeredAt).toBeUndefined();
 
     const notificationList = await app.inject({
       method: 'GET',
